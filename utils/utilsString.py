@@ -102,7 +102,6 @@ def unicodeCodeScore(string, countSpaces=False, unicodeBlocksList=[(0, 128)]):
 ##################################################################################
 
 
-
 def removeStopwords(tokenList, language=u'english'):
 	from nltk.corpus import stopwords		
 	#stopwords
@@ -233,6 +232,68 @@ def eliminateMultipleSpaces(string):
 
 
 ##################################################################################
+# NON-REGEX INDICATOR OR EXTRACTOR
+##################################################################################
+
+def fillCorrespondenceList(string1, string2, ngramSize=2):
+	''''''
+	correspondenceList = []
+	for indexChar, char in enumerate( string1[:len(string1)-(ngramSize-1)] ):
+		# if the string2 has not yet got to the end of the string
+		if len(string2)-(ngramSize-1) > indexChar:
+			# get each ngram in the string1 and string2
+			ngramString1 = char if ngramSize == 1 else string1[indexChar:indexChar+ngramSize]
+			ngramString2 = string2[indexChar] if ngramSize == 1 else string2[indexChar:indexChar+ngramSize]
+			# if there is a correspondence
+			if ngramString1 == ngramString2:
+				correspondenceList.append(1)
+			else:
+				correspondenceList.append(0)
+		# if there is no possible correspondence because the string2 has no more ngrams
+		else:
+			correspondenceList.append(None)
+	return correspondenceList
+
+
+def isStringTruncated(string1, string2, caseSensitive=True):
+	''' detects if the string2 is a truncated version of the string1 and returns a boolean decision indicating 
+	if it is (True) or not (False) truncated as well as a normalized score indicating the degree of truncation (the higher the 
+	score the more truncated the string2 is, compared to the string1) '''
+	if caseSensitive != True:
+		string1, string2 = string1.lower(), string2.lower()
+	# the string1 must be the full version and the string 2 the "supposedly" truncated one, not the other way around
+	if len(string1) < len(string2):
+		return False, 0.0
+	# special case for the very small words of lenght 2 or 3
+	elif len(string1) in [2,3]:
+		correspondenceList = fillCorrespondenceList(string1, string2, ngramSize=1)
+	# normal cases
+	else:
+		correspondenceList = fillCorrespondenceList(string1, string2, ngramSize=2)
+	# case where there is no correspondence at all, which means the strings are not in a
+	# truncation situation, they are just completely different strings from the start
+	if 1 not in correspondenceList:
+		return False, 0.0
+	# case where everything corresponds, which means the strings are not truncated
+	elif None not in correspondenceList:
+		return False, 0.0
+	# case where there is a non-correspondence instead of an truncation 
+	# (there is an element there, but it doesn't correspond)
+	elif 0 in correspondenceList:
+		return False, 0.0
+	# analysis of the correspondence list
+	for indexCorresp, correspScore in enumerate(correspondenceList):
+		if correspScore == None:
+			# if there was a non-correspondence in the middle of the word but there is a 
+			# correspondence further ahead, then it's not a truncation is a correction
+			if 1 in correspondenceList[indexCorresp:]:
+				return False, 0.0
+	#analysis of the degree of truncation
+	trueCorrespondence = [ score for score in correspondenceList if score == 1]
+	return True, float(len(trueCorrespondence))/float(len(correspondenceList))
+
+
+##################################################################################
 #LANGUAGE
 ##################################################################################
 
@@ -287,28 +348,8 @@ def englishOrFrench(string):
 
 
 ##################################################################################
-#TRANSFORM TO NLP UNITS (NGRAM, POS, LEMMA, STEM, etc.)
+#TRANSFORM TO NLP UNITS (TOKENS, NGRAM, POS, LEMMA, STEM, etc.)
 ##################################################################################
-
-def ngrams(string, n=3): 
-	'''
-	given a string, tokenizes and groups by n-grams
-	it returns a list of ngrams, each in string format 
-	separated by a space
-	'''
-	ngramList = []
-	tokens = naiveRegexTokenizer(string, caseSensitive=True, eliminateStopwords=False, language=u'english')
-	#go through the list of tokens
-	for startIndex in range(len(tokens)-(n-1)):
-		#prepare the string n-gram to add to the ngramlist (depending on n) 
-		for subN in range(n):
-			if subN == 0:
-				stringedNgram = u'{0}'.format(tokens[startIndex])
-			else:
-				stringedNgram += u' {0}'.format(tokens[startIndex+ subN])
-		#add to the ngram list
-		ngramList.append(stringedNgram)
-	return ngramList
 
 
 def words(string): return re.findall(r'\w+', string.lower().replace(u'\n', u' ')) #extracted from peter norvig spell post : https://norvig.com/spell-correct.html
@@ -356,6 +397,83 @@ def naiveRegexTokenizer(string, caseSensitive=True, eliminateStopwords=False, la
 	if eliminateStopwords != False:
 		tokens = removeStopwords(tokens, language=language)
 	return tokens
+	
+
+def nltkTokenizer(string):
+	return word_tokenize(string)
+
+def spacyLoadModel(lang='fr'):
+	''' load the spacy model outside the tokenizing function, that way the
+	model is charged once while the tokenizer can be launched multiple times '''
+	if lang in [u'en', u'fr']:
+		typeCore = u'web' if lang == u'en' else u'news'
+	return spacy.load(u'{0}_core_{1}_sm'.format(lang, typeCore), disable=['parser', 'tagger', 'ner'])
+
+
+def spacyTokenizer(string, spacyModel):
+	return list([ tok.text for tok in spacyModel(string) ])
+
+
+def ngrams(string, n=3): 
+	'''
+	given a string, tokenizes and groups by n-grams
+	it returns a list of ngrams, each in string format 
+	separated by a space
+	'''
+	ngramList = []
+	tokens = naiveRegexTokenizer(string, caseSensitive=True, eliminateStopwords=False, language=u'english')
+	#go through the list of tokens
+	for startIndex in range(len(tokens)-(n-1)):
+		#prepare the string n-gram to add to the ngramlist (depending on n) 
+		for subN in range(n):
+			if subN == 0:
+				stringedNgram = u'{0}'.format(tokens[startIndex])
+			else:
+				stringedNgram += u' {0}'.format(tokens[startIndex+ subN])
+		#add to the ngram list
+		ngramList.append(stringedNgram)
+	return ngramList
+
+
+def tokenizeAndExtractSpecificPos(string, listOfPosToReturn, caseSensitive=True, eliminateStopwords=False):
+	'''
+	using nltk pos tagging, tokenize a string and extract the
+	tokens corresponding to the specified pos
+	The pos labels are:	
+		- cc coordinating conjunction
+		- cd cardinal digit
+		- dt determiner
+		- in preposition/subordinating conjunction
+		- j adjective
+		- n noun
+		- np proper noun
+		- p pronoun
+		- rb adverb
+		- vb verb
+	'''
+	posDict = {u'cc': [u'CC'], u'cd': [u'CD'], u'dt': [u'DT', u'WDT'], u'in': [u'IN'], u'j': [u'JJ', u'JJR', u'JJS'], u'n': [u'NN', u'NNS'], u'np': [u'NNP', u'NNPS'], u'p': [u'PRP', u'PRP$', u'WP$'], u'rb': [u'RB', u'RBR', u'RBS', u'WRB'], u'vb': [u'MD', u'VB', u'VBD', u'VBG', u'VBN', u'VBZ']}
+	listPos = []
+	#tokenize
+	tokens = nltk.word_tokenize(string)
+	#we replace the general pos for the actual nltk pos
+	for generalPos in listOfPosToReturn:
+		listPos = listPos + posDict[generalPos]
+	#pos tagging
+	tokensPos = nltk.pos_tag(tokens)
+	#reseting the tokens list
+	tokens = []
+	#selection of the pos specified tokens
+	for tupleTokPos in tokensPos:
+		#if they have the right pos
+		if tupleTokPos[1] in listPos:
+			tokens.append(tupleTokPos[0])
+	#if we don't want to be case sensitive
+	if caseSensitive != True:
+		tokens = [tok.lower() for tok in tokens]
+	#if we don't want the stopwords
+	if eliminateStopwords != False:
+		tokens = removeStopwords(tokens, language='english')
+	return tokens
 
 
 def naiveStemmer(string, caseSensitive=True, eliminateStopwords=False, language=u'english'):
@@ -401,49 +519,8 @@ def naiveEnLemmatizer(string, caseSensitive=True, eliminateStopwords=False):
 	return tokens
 
 
-def tokenizeAndExtractSpecificPos(string, listOfPosToReturn, caseSensitive=True, eliminateStopwords=False):
-	'''
-	using nltk pos tagging, tokenize a string and extract the
-	tokens corresponding to the specified pos
-	The pos labels are:	
-		- cc coordinating conjunction
-		- cd cardinal digit
-		- dt determiner
-		- in preposition/subordinating conjunction
-		- j adjective
-		- n noun
-		- np proper noun
-		- p pronoun
-		- rb adverb
-		- vb verb
-	'''
-	posDict = {u'cc': [u'CC'], u'cd': [u'CD'], u'dt': [u'DT', u'WDT'], u'in': [u'IN'], u'j': [u'JJ', u'JJR', u'JJS'], u'n': [u'NN', u'NNS'], u'np': [u'NNP', u'NNPS'], u'p': [u'PRP', u'PRP$', u'WP$'], u'rb': [u'RB', u'RBR', u'RBS', u'WRB'], u'vb': [u'MD', u'VB', u'VBD', u'VBG', u'VBN', u'VBZ']}
-	listPos = []
-	#tokenize
-	tokens = nltk.word_tokenize(string)
-	#we replace the general pos for the actual nltk pos
-	for generalPos in listOfPosToReturn:
-		listPos = listPos + posDict[generalPos]
-	#pos tagging
-	tokensPos = nltk.pos_tag(tokens)
-	#reseting the tokens list
-	tokens = []
-	#selection of the pos specified tokens
-	for tupleTokPos in tokensPos:
-		#if they have the right pos
-		if tupleTokPos[1] in listPos:
-			tokens.append(tupleTokPos[0])
-	#if we don't want to be case sensitive
-	if caseSensitive != True:
-		tokens = [tok.lower() for tok in tokens]
-	#if we don't want the stopwords
-	if eliminateStopwords != False:
-		tokens = removeStopwords(tokens, language='english')
-	return tokens
-
-
 ##################################################################################
-#SPELLING
+#SPELL CHECKING
 ##################################################################################
 
 def wordProbability(word, wordCountDict, N=None): 

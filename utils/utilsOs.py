@@ -44,6 +44,24 @@ def getContentOfFolder(folderPath):
 	return [file for file in os.listdir(folderPath)]
 
 
+def goDeepGetFiles(folderPath, fileList=[], format=None):
+	'''
+	recusively looks into any subsolder of the given folder until it finds some files
+	'''
+	files = [u'{0}{1}'.format(folderPath, file) for file in os.listdir(folderPath) if os.path.isfile(u'{0}{1}'.format(folderPath, file))]
+	if format != None:
+		indexFormat = -1 * len(format)
+		files = [ path for path in files if path[indexFormat:] == format ]
+	#we stop going deep as soon as we find at least one file
+	if len(files) == 0:
+		subfolderContent = []
+		for subfolderPath in [u'{0}{1}/'.format(folderPath, subF) for subF in os.listdir(folderPath) if not os.path.isfile(u'{0}{1}'.format(folderPath, subF))]:
+			subfolderContent = goDeepGetFiles(subfolderPath, subfolderContent, format)
+		return fileList + subfolderContent
+	finalList = fileList + files
+	return finalList
+
+
 def getIntersectionOf2Folders(aFolder, bFolder):
 	'''
 	Browses the files contained in 2 folders and returns a 
@@ -78,6 +96,12 @@ def createEmptyFile(filePath, headerLine=None):
 	if headerLine != None:
 		openFile.write(u'{0}\n'.format(headerLine))
 	return openFile
+
+
+def createEmptyFolder(folderPath):
+	""" given a non existing folder path, creates the necessary folders so the path exists """
+	if not os.path.exists(folderPath):
+		os.makedirs(folderPath)
 
 
 def getLastLineIndexOfExistingFile(filePath):
@@ -121,7 +145,6 @@ def theFileExists(directoryOrWholeFilePath, nameOfFile=None, fileExtension=None)
 					strNb = str(nb)
 				if u'%s_%s' %(nameOfFile, strNb) == utilsString.toUtf8(splittedFileName[0]) or u'%s_%s' %(noTroublesomeName(nameOfFile), strNb) == utilsString.toUtf8(splittedFileName[0]):
 					return True
-				
 		#if the file never appeared
 		return False
 	#exclusive extension
