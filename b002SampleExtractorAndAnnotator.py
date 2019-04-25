@@ -114,8 +114,10 @@ def getNbLongLines(listOfSent, n=141):
     for sent in listOfSent:
         # make sure the sentence has no red keywords in it
         sent = sent.replace(u'\033[1;31m', u'').replace(u'\033[0m', u'')
-        if len(sent) > n:
+        long = len(sent)
+        while long > n:
             longLines += 1
+            long -= n
     return longLines
 
 
@@ -181,12 +183,18 @@ def annotateFiles(listOfFilesPath=None, anotatedOutputFolder=u'./manuallyAnnotat
     elif type(listOfFilesPath) is str:
         listOfFilesPath = utilsOs.openJsonFileAsDict(listOfFilesPath)
     # do not include the files that have already been annotated
-    alreadyAnnotated = ([localFile.replace(u'./manuallyAnnotated/', u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/') for localFile in utilsOs.goDeepGetFiles(anotatedOutputFolder, format=u'.tmx')])
-    listOfFilesPath = [filePath for filePath in listOfFilesPath if filePath not in alreadyAnnotated]
+    alreadyAnnotated = [
+        localFile.replace(u'./manuallyAnnotated/', u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/') for localFile in
+        utilsOs.goDeepGetFiles(anotatedOutputFolder, format=u'.tmx')]
+    # but include those who started being annotated but didn't finish annotating
+    listOfNotEndedAnnotating = [
+        localFile.replace(u'./manuallyAnnotated/', u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/').replace(
+            u'.notEnded', u'') for localFile in utilsOs.goDeepGetFiles(anotatedOutputFolder, format=u'.notEnded')]
+    listOfFilesPath = listOfNotEndedAnnotating + [filePath for filePath in listOfFilesPath if filePath not in alreadyAnnotated]
     # print the annotator cheat sheet
     print(""""0 - badly aligned
         \n\t0.0 - AMPLIFICATION: compensation, description, repetition or lang tendency to hypergraphy
-        \n\t0.1 - ELISION: absence, omision, reduction or lang tendency to micrography
+        \n\t0.1 - ELISION: absence, omission, reduction or lang tendency to micrography
         \n\t0.2 - DISPLACEMENT: modification of the line order also modifying the order of the following lines
         \n\t0.3 - MISALIGNED and FOIBLE: alignment and quality errors
         \n1 - well aligned
@@ -263,7 +271,7 @@ def annotateFiles(listOfFilesPath=None, anotatedOutputFolder=u'./manuallyAnnotat
                     utilsOs.moveUpAndLeftNLines(14+longLines, slowly=False)
                     # erase all remainder of the previous sentences and go back up again
                     for e in range(14+longLines):
-                        print(u' '*(lineLength+4))
+                        print(u' '*(lineLength+5))
                     utilsOs.moveUpAndLeftNLines(14 + longLines, slowly=False)
                     # next line source
                     beforeSentSource = duringSentSource
@@ -275,9 +283,13 @@ def annotateFiles(listOfFilesPath=None, anotatedOutputFolder=u'./manuallyAnnotat
                     localFilePath = filePath.replace(u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/',
                                                      u'./manuallyAnnotated/')
                     utilsOs.dumpRawLines(listOfAnnotations, localFilePath, addNewline=True, rewrite=True)
+                    utilsOs.createEmptyFile(u'{0}.notEnded'.format(localFilePath), headerLine=None)
         # dump the file result
         localFilePath = filePath.replace(u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/', u'./manuallyAnnotated/')
         utilsOs.dumpRawLines(listOfAnnotations, localFilePath, addNewline=True, rewrite=True)
+        # delete the empty file indicating the annotation is not over
+        utilsOs.deleteAFile(u'{0}.notEnded'.format(localFilePath))
+        # clear part of terminal
         utilsOs.moveUpAndLeftNLines(2, slowly=False)
 
 
