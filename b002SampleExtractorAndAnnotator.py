@@ -1,12 +1,15 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
+import re, math
+from random import randint
+import pandas as pd
+import numpy as np
+
 import sys
 sys.path.append(u'../utils')
 sys.path.append(u'./utils')
-
-import b000path, utilsOs
-from random import randint
+import b000path, utilsOs, utilsString
 
 
 def getRandomIntNerverseenBefore(listLength, dejaVus=[]):
@@ -52,7 +55,7 @@ def randomlySelectNDocsFromPath(folderPath, n=100):
 def makeLocalFolderPaths(listOfFilePaths):
     """ given a list of file paths, creates the equivalent in the local path """
     for filePath in listOfFilePaths:
-        localFilePath = filePath.replace(u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/', u'./manuallyAnnotated/')
+        localFilePath = filePath.replace(u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/', u'./002manuallyAnnotated/')
         localFileList = localFilePath.split(u'/')
         folderPath = localFilePath.replace(localFileList[-1], u'')
         utilsOs.createEmptyFolder(folderPath)
@@ -174,23 +177,24 @@ def correctionToAnnotation(listOfAnnotations):
     return annotatorGeneralInput, listOfAnnotations
 
 
-def annotateFiles(listOfFilesPath=None, anotatedOutputFolder=u'./manuallyAnnotated/'):
+def annotateFiles(listOfFilesPath=None, annotatedOutputFolder=u'./002manuallyAnnotated/', dumpSP=True):
     """ given a list of paths, manually show and annotate the sentence pairs """
+    referencePathLine = []
     # get the list containing the file paths
-    if listOfFilesPath == None:
+    if listOfFilesPath is None:
         listOfFilesPath = randomlySelectNDocsFromPath(b000path.getBtFolderPath(flagFolder=None), n=100)
         makeLocalFolderPaths(listOfFilesPath)
     elif type(listOfFilesPath) is str:
-        listOfFilesPath = utilsOs.openJsonFileAsDict(listOfFilesPath)
-    # do not include the files that have already been annotated
-    alreadyAnnotated = [
-        localFile.replace(u'./manuallyAnnotated/', u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/') for localFile in
-        utilsOs.goDeepGetFiles(anotatedOutputFolder, format=u'.tmx')]
-    # but include those who started being annotated but didn't finish annotating
-    listOfNotEndedAnnotating = [
-        localFile.replace(u'./manuallyAnnotated/', u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/').replace(
-            u'.notEnded', u'') for localFile in utilsOs.goDeepGetFiles(anotatedOutputFolder, format=u'.notEnded')]
-    listOfFilesPath = listOfNotEndedAnnotating + [filePath for filePath in listOfFilesPath if filePath not in alreadyAnnotated]
+        if u'.json' in listOfFilesPath:
+            listOfFilesPath = utilsOs.openJsonFileAsDict(listOfFilesPath)
+        else:
+            listOfFilesPath = [listOfFilesPath]
+    # get rid of the files we have already annotated
+    if utilsOs.theFileExists(u'{0}sampleReference.tsv'.format(annotatedOutputFolder)):
+        refLines = utilsOs.readAllLinesFromFile(u'{0}sampleReference.tsv'.format(annotatedOutputFolder),
+                                                noNewLineChar=True)
+        annotatedFiles = set([line.split(u'\t')[0] for line in refLines])
+        listOfFilesPath = [file for file in listOfFilesPath if file not in annotatedFiles]
     # print the annotator cheat sheet
     print(""""0 - badly aligned
         \n\t0.0 - AMPLIFICATION: compensation, description, repetition or lang tendency to hypergraphy
@@ -205,8 +209,8 @@ def annotateFiles(listOfFilesPath=None, anotatedOutputFolder=u'./manuallyAnnotat
         print(u'############# {0} ##############'.format(filePath.replace(u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/', u'')))
         listOfAnnotations = []
         # get the path for the source and target
-        fileSourcePath = u'{0}.en'.format(filePath) if u'en-fr' in filePath else u'{0}.fr'.format(filePath)
-        fileTargetPath = u'{0}.fr'.format(filePath) if u'en-fr' in filePath else u'{0}.en'.format(filePath)
+        fileSourcePath = u'{0}.fr'.format(filePath) if u'fr-en' in filePath else u'{0}.en'.format(filePath)
+        fileTargetPath = u'{0}.en'.format(filePath) if u'fr-en' in filePath else u'{0}.fr'.format(filePath)
         with open(fileSourcePath) as fileSource:
             with open(fileTargetPath) as fileTarget:
                 # show the context of the annotated sentence
@@ -217,6 +221,16 @@ def annotateFiles(listOfFilesPath=None, anotatedOutputFolder=u'./manuallyAnnotat
                 # annotate the first sentence pair
                 listOfAnnotations = annotateFirstSP(beforeSentSource, duringSentSource, beforeSentTarget,
                                                     duringSentTarget, listOfAnnotations, lineLength=137)
+                # save the reference
+                referencePathLine.append(u'{0}\t{0}'.format(filePath, 0))
+                # dump the first SP
+                if dumpSP is True:
+                    enSent = beforeSentSource if u'.en' in fileSourcePath else beforeSentTarget
+                    frSent = beforeSentTarget if u'.en' in fileSourcePath else beforeSentSource
+                    utilsOs.appendLineToFile(enSent, u'{0}sampleEn.tsv'.format(annotatedOutputFolder), addNewLine=False)
+                    utilsOs.appendLineToFile(frSent, u'{0}sampleFr.tsv'.format(annotatedOutputFolder), addNewLine=False)
+                duringIndex = 1
+                # for each line
                 while duringSentSource or duringSentTarget:
                     # get the correct terminal line length
                     lineLength = 137-len(str(len(listOfAnnotations)+1))
@@ -271,7 +285,7 @@ def annotateFiles(listOfFilesPath=None, anotatedOutputFolder=u'./manuallyAnnotat
                     utilsOs.moveUpAndLeftNLines(14+longLines, slowly=False)
                     # erase all remainder of the previous sentences and go back up again
                     for e in range(14+longLines):
-                        print(u' '*(lineLength+5))
+                        print(u' '*(lineLength+4))
                     utilsOs.moveUpAndLeftNLines(14 + longLines, slowly=False)
                     # next line source
                     beforeSentSource = duringSentSource
@@ -279,20 +293,512 @@ def annotateFiles(listOfFilesPath=None, anotatedOutputFolder=u'./manuallyAnnotat
                     # next line target
                     beforeSentTarget = duringSentTarget
                     duringSentTarget = afterSentTarget
+                    # append the reference to the file
+                    referencePathLine.append(u'{0}\t{1}'.format(filePath, duringIndex))
+                    duringIndex += 1
                     # dump the file line by line, to be sure in case of error
-                    localFilePath = filePath.replace(u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/',
-                                                     u'./manuallyAnnotated/')
-                    utilsOs.dumpRawLines(listOfAnnotations, localFilePath, addNewline=True, rewrite=True)
-                    utilsOs.createEmptyFile(u'{0}.notEnded'.format(localFilePath), headerLine=None)
-        # dump the file result
-        localFilePath = filePath.replace(u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/', u'./manuallyAnnotated/')
-        utilsOs.dumpRawLines(listOfAnnotations, localFilePath, addNewline=True, rewrite=True)
-        # delete the empty file indicating the annotation is not over
-        utilsOs.deleteAFile(u'{0}.notEnded'.format(localFilePath))
+                    # dump the reference
+                    utilsOs.dumpRawLines(referencePathLine, u'{0}sampleReference.tsv'.format(annotatedOutputFolder),
+                                         addNewline=True, rewrite=True)
+                    # dump the annotation
+                    utilsOs.dumpRawLines(listOfAnnotations, u'{0}sampleAnnotation.tsv'.format(annotatedOutputFolder),
+                                         addNewline=True, rewrite=True)
+                    # dump the SP
+                    if dumpSP is True:
+                        enSent = beforeSentSource if u'.en' in fileSourcePath else beforeSentTarget
+                        frSent = beforeSentTarget if u'.en' in fileSourcePath else beforeSentSource
+                        utilsOs.appendLineToFile(enSent, u'{0}sample.en'.format(annotatedOutputFolder), addNewLine=False)
+                        utilsOs.appendLineToFile(frSent, u'{0}sample.fr'.format(annotatedOutputFolder), addNewLine=False)
         # clear part of terminal
         utilsOs.moveUpAndLeftNLines(2, slowly=False)
 
 
+def changeStructure():
+    annotationFiles = utilsOs.goDeepGetFiles(u'./002manuallyAnnotated/oldOnes/MISALIGNED/', format=u'.tmx')
+    for annotationPath in annotationFiles:
+        origPath = u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/MISALIGNED/' + annotationPath.split(u'MISALIGNED/')[-1]
+        srcPath = origPath + u'.en'
+        trgtPath = origPath + u'.fr'
+        with open(annotationPath) as file:
+            fileLines = file.readlines()
+        with open(srcPath) as src:
+            srcLines = src.readlines()
+        with open(trgtPath) as trgt:
+            trgtLines = trgt.readlines()
+        for i, anot in enumerate(fileLines):
+            srcLn = srcLines[i]
+            tgrtLn = trgtLines[i]
+            # dump the reference
+            referencePathLine = u'{0}\t{1}\n'.format(origPath, i)
+            utilsOs.appendLineToFile(referencePathLine, u'./002manuallyAnnotated/sampleReference.tsv', addNewLine=False)
+            # dump the annotation
+            utilsOs.appendLineToFile(anot, u'./002manuallyAnnotated/sampleAnnotation.tsv', addNewLine=False)
+            # dump the SP
+            utilsOs.appendLineToFile(srcLn, u'./002manuallyAnnotated/sampleEn.tsv', addNewLine=False)
+            utilsOs.appendLineToFile(tgrtLn, u'./002manuallyAnnotated/sampleFr.tsv', addNewLine=False)
 
-listOfFilesPath = u'./randomSelected100MISALIGNED.json'
-annotateFiles(listOfFilesPath, anotatedOutputFolder=u'./manuallyAnnotated/')
+
+def getNbsAlone(tokList):
+    finalList = []
+    for tok in tokList:
+        numbersIntok = utilsString.extractNumbersFromString(tok, digitByDigit=False)
+        finalList += numbersIntok
+    return finalList
+
+
+def nbMismatch(stringSrc, stringTrgt, includeNumberNames=True, useEditDistance=True):
+    """ given a string sentence pair, returns a score indicating how much a the
+    numbers in the source appear in the target """
+    # if it's not already tokenized
+    if type(stringSrc) is str and type(stringTrgt) is str:
+        stringSrc, stringTrgt = stringSrc.lower().replace(u' pm', u'pm'), stringTrgt.lower().replace(u' pm', u'pm')
+        addSeparators = [u'.', u',', u':', u'/', u'-', u'h', u"''", u"'"]
+        stringSrc = utilsString.nltkTokenizer(stringSrc, addSeparators)
+        stringTrgt = utilsString.nltkTokenizer(stringTrgt, addSeparators)
+    # transform all number names in actual numbers
+    if includeNumberNames is True:
+        stringSrcList = utilsString.transformNbNameToNb(stringSrc)
+        stringTrgtList = utilsString.transformNbNameToNb(stringTrgt)
+    # get the tokens containing a digit
+    nbrs = re.compile(r'[0-9]')
+    stringSrcList = [tok for tok in stringSrc if len(re.findall(nbrs, tok)) != 0]
+    stringTrgtList = [tok for tok in stringTrgt if len(re.findall(nbrs, tok)) != 0]
+    # if there were no numbers, return the max score (we can't use this heuristic to evaluate)
+    if len(stringSrcList) + len(stringTrgtList) == 0:
+        return 1.0
+    # if we want to search for the exact same numbers
+    if useEditDistance == False:
+        # extract the figures from the tokens
+        numbersInSrc = set(getNbsAlone(stringSrcList))
+        numbersInTrgt = set(getNbsAlone(stringTrgtList))
+        # if there were no numbers, return the max score (we can't use this heuristic to evaluate)
+        if len(numbersInSrc) + len(numbersInTrgt) == 0:
+            return 1.0
+        # calculate the score of src-trgt coincidence
+        nbIntersection = numbersInSrc.intersection(numbersInTrgt)
+        return len(nbIntersection) / (((len(numbersInSrc)+len(numbersInTrgt)))/2)
+    # if we want to use the edit distance to match the source digit tokens with the target ones
+    else:
+        nbIntersection = []
+        # sort the digitfull src token list by decreasing length
+        stringSrcList.sort(key=lambda tok: len(tok), reverse=True)
+        # make a copy of the target list
+        trgtList = stringTrgtList.copy()
+        for srcTok in stringSrcList:
+            # find the most similar trgt token
+            mostSimil = [None, None, None, 1]
+            for trgtInd, trgtTok in enumerate(trgtList):
+                editDistScore = utilsString.getNormalizedEditDist(srcTok, trgtTok)
+                # get the less distant in the trgt tokens
+                if editDistScore < 0.5 and editDistScore < mostSimil[-1]:
+                    mostSimil = [srcTok, trgtTok, trgtInd, editDistScore]
+            # remove the most similar from the trgt list
+            if mostSimil[0] is not None:
+                del trgtList[mostSimil[-2]]
+                nbIntersection.append(tuple(mostSimil[:2]))
+        return len(nbIntersection) / ((len(stringSrcList)+len(stringTrgtList))/2)
+
+
+def tooFewTokens(stringSrc, stringTrgt, nTokens=4):
+    """ given a string sentence pair return 0 if there are less
+    than N tokens on either the src or the trgt and return 1 otherwise """
+    # if it's not already tokenized
+    if type(stringSrc) is str and type(stringTrgt) is str:
+        stringSrc, stringTrgt = stringSrc.lower(), stringTrgt.lower()
+        addSeparators = [u'.', u',', u':', u'/', u'-', u"''", u"'"]
+        stringSrc = utilsString.nltkTokenizer(stringSrc, addSeparators)
+        stringTrgt = utilsString.nltkTokenizer(stringTrgt, addSeparators)
+    # count the tokens
+    if len(stringSrc) <= nTokens or len(stringTrgt) <= nTokens:
+        return 0
+    return 1
+
+
+def tableOfContents(stringSrc, stringTrgt, nTokens=4, contextScores=None, placeInDocument=None):
+    """ given a string sentence pair return a score of the ratio
+    of small sentence pairs in the context of the current sp """
+    # change the place in the doc to obtain low metric in the beginning and end of doc and a high one at the middle
+    placeInDocument = math.sqrt(placeInDocument-(placeInDocument**2))*2
+    # if it's not already tokenized
+    if type(stringSrc) is str and type(stringTrgt) is str:
+        stringSrc, stringTrgt = stringSrc.lower(), stringTrgt.lower()
+        addSeparators = [u'.', u',', u':', u'/', u'-', u"''", u"'"]
+        stringSrc = utilsString.nltkTokenizer(stringSrc, addSeparators)
+        stringTrgt = utilsString.nltkTokenizer(stringTrgt, addSeparators)
+    scores = [tooFewTokens(stringSrc, stringTrgt, nTokens)]
+    # re make the token list a string so we can check the first characters
+    origSrcString = u' '.join(stringSrc)
+    if len(origSrcString) > 4:
+        # if there is a number or a symbol indicating a table of contents at the start of the string
+        extractedNmbrs = utilsString.extractNumbersFromString(origSrcString[:3])
+        if len(extractedNmbrs) != 0 or u'-' in origSrcString[:3] or u'.' in origSrcString[:3]:
+            scores.append(0)
+        else:
+            scores.append(1)
+    # add the context to the current scores
+    if contextScores is not None:
+        scores = scores + contextScores
+    # add the location of the sentence in the document to the current scores
+    if placeInDocument is not None:
+        scores = scores + [placeInDocument]
+    return sum(scores) / len(scores)
+
+
+def getCognates(tokensList, cognateSize):
+    cognates = []
+    for token in tokensList:
+        if len(token) > cognateSize:
+            cognates.append(token[:cognateSize])
+    return cognates
+
+
+def cognateCoincidence(stringSrc, stringTrgt, cognateSize=4):
+    """ given a string sentence pair return the ratio of coincidence
+     between the cognates (start of word char ngram) between source and target"""
+    # if it's not already tokenized
+    if type(stringSrc) is str and type(stringTrgt) is str:
+        stringSrc, stringTrgt = stringSrc.lower(), stringTrgt.lower()
+        addSeparators = [u'.', u',', u':', u'/', u'-', u"''", u"'"]
+        stringSrc = utilsString.nltkTokenizer(stringSrc, addSeparators)
+        stringTrgt = utilsString.nltkTokenizer(stringTrgt, addSeparators)
+    # sort by decreasing length of the original word
+    stringSrc.sort(key=lambda tok: len(tok), reverse=True)
+    stringTrgt.sort(key=lambda tok: len(tok), reverse=True)
+    # compile the cognates of each token for the source and target
+    srcCognates = getCognates(stringSrc, cognateSize)
+    trgtCognates = set(getCognates(stringTrgt, cognateSize))
+    # get intersection of cognates
+    intersection = [cog for cog in srcCognates if cog in trgtCognates]
+    smallerLength = min(len(srcCognates), len(trgtCognates))
+    if smallerLength == 0:
+        return 0
+    return len(intersection)/smallerLength
+
+
+def addToDict(extractedSp, filePath, index, extrType=0):
+    if filePath not in extractedSp[extrType]:
+        extractedSp[extrType][filePath] = [index]
+    else: extractedSp[extrType][filePath].append(index)
+    return extractedSp
+
+
+def applyExtractor(extractFunct, maxAllowedScore, srcTokens, trgtTokens,
+                   extractedSp, filePath, extractorType, srcLnIndex, **kwargs):
+    """ given an extractor it applies it and if needed, saves the ref in the dict """
+    # application of extractor
+    score = extractFunct(srcTokens, trgtTokens, **kwargs)
+    if score < maxAllowedScore:
+        return addToDict(extractedSp, filePath, srcLnIndex, extractorType), score
+    return extractedSp, score
+
+
+def dumpReferenceToLangFiles(listOfRef, outputGeneralFilePath):
+    """ given a lof of the references (original path, line index)
+    dump the original lines into lang separated files """
+    outputGeneralFilePath = outputGeneralFilePath.replace(u'.tsv', u'')
+    enOutputPath = u'{0}.en'.format(outputGeneralFilePath)
+    frOutputPath = u'{0}.fr'.format(outputGeneralFilePath)
+    # open each ref and get each line by lang
+    for ref in listOfRef:
+        pathIndex = ref.split(u'\t')
+        enPath = u'{0}.en'.format(pathIndex[0])
+        frPath = u'{0}.fr'.format(pathIndex[0])
+        with open(enPath) as enFile:
+            enLines = [line.replace(u'\n', u'') for line in enFile.readlines()]
+        with open(frPath) as frFile:
+            frLines = [line.replace(u'\n', u'') for line in frFile.readlines()]
+        enLine = enLines[int(pathIndex[1])]
+        frLine = frLines[int(pathIndex[1])]
+        utilsOs.appendLineToFile(enLine, enOutputPath, addNewLine=True)
+        utilsOs.appendLineToFile(frLine, frOutputPath, addNewLine=True)
+
+
+def getRandomIndex(iterableObj):
+    # if there is no element in the dict
+    if len(iterableObj) == 0:
+        return None
+    # if there is only one element in the dict
+    elif len(iterableObj) == 1:
+        rdmIndex = 0
+    else:
+        # randomly select an index
+        rdmIndex = randint(0, len(iterableObj) - 1)
+    return rdmIndex
+
+
+def randomlyExtractAndDump(extractedSp, extractionSize, subsetName):
+    """ given a dict with all the heuristically extracted """
+    outputDict = {0: u'./003negativeNaiveExtractors/numberCoincidence/random100Nb{0}.tsv'.format(subsetName),
+                    1: u'./003negativeNaiveExtractors/fewTokens/random100few{0}.tsv'.format(subsetName),
+                    2: u'./003negativeNaiveExtractors/cognates/random100cog{0}.tsv'.format(subsetName)}
+    for extrType, fileDict in extractedSp.items():
+        # maintain a census of which index we have already used
+        dejaVu = []
+        # count the total lines
+        print(u"-  EXTRACTION TYPE : ", extrType, u'NUMBER OF FILES : ', len(fileDict))
+        nbLines = 0
+        for path, lineList in fileDict.items():
+            nbLines += len(lineList)
+        print(u'\tNUMBER OF EXTRACTED LINES : ', nbLines)
+        dictPaths = list(fileDict.keys())
+        # we stop if we achieve our limit
+        while len(dejaVu) < extractionSize:
+            # get the file path index if it's empty then abort
+            rdmFileIndex = getRandomIndex(dictPaths)
+            if rdmFileIndex is None:
+                break
+            # get the list of the lines
+            lineList = fileDict[dictPaths[rdmFileIndex]]
+            rdmLineIndex = getRandomIndex(lineList)
+            # if it's empty, abort
+            if rdmLineIndex is None:
+                break
+            # otherwise
+            while u'{0}\t{1}'.format(dictPaths[rdmFileIndex], rdmLineIndex) in dejaVu:
+                rdmFileIndex = getRandomIndex(dictPaths)
+                lineList = fileDict[dictPaths[rdmFileIndex]]
+                rdmLineIndex = getRandomIndex(lineList)
+            # add to the deja vu
+            dejaVu.append(u'{0}\t{1}'.format(dictPaths[rdmFileIndex], rdmLineIndex))
+        # dump
+        utilsOs.dumpRawLines(dejaVu, outputDict[extrType], addNewline=True, rewrite=True)
+        dumpReferenceToLangFiles(dejaVu, outputDict[extrType])
+    return dejaVu
+
+
+def getContextScores(srcLnIndex, srcLines, trgtLines):
+    pre0 = 1 if srcLnIndex < 2 else tooFewTokens(srcLines[srcLnIndex - 2], trgtLines[srcLnIndex - 2])
+    pre1 = 1 if srcLnIndex < 1 else tooFewTokens(srcLines[srcLnIndex - 1], trgtLines[srcLnIndex - 1])
+    post0 = 1 if srcLnIndex >= (len(srcLines)-1) else tooFewTokens(srcLines[srcLnIndex + 1], trgtLines[srcLnIndex + 1])
+    post1 = 1 if srcLnIndex >= (len(srcLines)-2) else tooFewTokens(srcLines[srcLnIndex + 2], trgtLines[srcLnIndex + 2])
+    return [pre0, pre1, post0, post1]
+
+
+def extractMisalignedSP(pathToSrcTrgtFiles, extractionSize=100, typeOfExtractors=[0,1,2]):
+    """ given a path to the original source and target files, and the types of
+    extractors to be used returns SP (sentence pairs) extracted as misaligned
+    extractor types:
+    - 0 : same number presence in src and trgt
+    - 1 : 4 or less than 4 tokens
+    - 2 : """
+    extractedSp = {0: {}, 1: {}, 2: {}}
+    totalLines = 0
+    #get name of subset
+    for subset in [u'/ALIGNMENT-QUALITY', u'/MISALIGNED', u'/NOT-FLAGGED', u'/QUALITY']:
+        if subset in pathToSrcTrgtFiles:
+            subsetName = subset
+    # type 1 block
+    output1Path = u'./003negativeNaiveExtractors/numberCoincidence/'
+    utilsOs.createEmptyFolder(output1Path)
+    # type 2 block
+    output1Path = u'./003negativeNaiveExtractors/fewTokens/'
+    utilsOs.createEmptyFolder(output1Path)
+    # get the path to the src and trgt files
+    srcTrgtFiles = utilsOs.goDeepGetFiles(pathToSrcTrgtFiles, format=u'.tmx')
+    print(u'TOTAL FILES : ', len(srcTrgtFiles))
+    for filePath in srcTrgtFiles:
+        srcFilePath = u'{0}.en'.format(filePath) if u'en-fr' in filePath else u'{0}.fr'.format(filePath)
+        trgtFilePath = u'{0}.fr'.format(filePath) if u'en-fr' in filePath else u'{0}.en'.format(filePath)
+        # open line by line and apply extractors
+        try:
+            with open(srcFilePath) as srcFile:
+                with open(trgtFilePath) as trgtFile:
+                    srcLines = srcFile.readlines()
+                    trgtLines = trgtFile.readlines()
+                    for srcLnIndex, srcLn in enumerate(srcLines):
+                        trgtLn = trgtLines[srcLnIndex]
+                        # tokenize
+                        srcLn = srcLn.lower().replace(u' pm', u'pm')
+                        trgtLn = trgtLn.lower().replace(u' pm', u'pm')
+                        addSeparators = [u'.', u',', u':', u'/', u'-', u"''", u"'"]
+                        srcTokens = utilsString.nltkTokenizer(srcLn, addSeparators)
+                        trgtTokens = utilsString.nltkTokenizer(trgtLn, addSeparators)
+                        # apply the extractors
+                        if 0 in typeOfExtractors:
+                            extractedSp, score = applyExtractor(nbMismatch, 0.75, srcTokens, trgtTokens,
+                                           extractedSp, filePath, 0, int(srcLnIndex))
+                        if 1 in typeOfExtractors:
+                            # get context scores and location in doc
+                            cntxtScores = getContextScores(srcLnIndex, srcLines, trgtLines)
+                            docLoc = srcLnIndex/len(srcLines)
+                            extractedSp, score = applyExtractor(tableOfContents, 0.32, srcTokens, trgtTokens,
+                                                                extractedSp, filePath, 1, int(srcLnIndex),
+                                                                contextScores=cntxtScores, placeInDocument=docLoc)
+                        if 2 in typeOfExtractors:
+                            extractedSp, score = applyExtractor(cognateCoincidence, 0.1, srcTokens, trgtTokens,
+                                                         extractedSp, filePath, 2, int(srcLnIndex))
+                    totalLines += len(srcLines)
+        # some folders have no .en and .fr to each .tmx file
+        # (e.g.: '/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/MISALIGNED/241-CAN_CENT_OCC_HEALTH/SAFE/en-fr/')
+        except FileNotFoundError:
+            pass
+    print(u'TOTAL LINES : ', totalLines)
+    # randomly extract and dump the file path and the line index for the extracted SP
+    randomlyExtractAndDump(extractedSp, extractionSize, subsetName)
+
+
+def populateConfMatrix(pred, real, confMatrix=[]):
+    if len(confMatrix) == 0:
+        content = np.zeros(shape=(2,2))
+        confMatrix = pd.DataFrame(content, index=[u'pred pos', u'pred neg'], columns=[u'real pos', u'real neg'])
+    if pred == real:
+        if pred == False:
+            # true negative
+            confMatrix[u'real neg'][u'pred neg'] += 1
+        else:
+            # true positive
+            confMatrix[u'real pos'][u'pred pos'] += 1
+    else:
+        if pred == False:
+            # false negative
+            confMatrix[u'real pos'][u'pred neg'] += 1
+        else:
+            # false positive
+            confMatrix[u'real neg'][u'pred pos'] += 1
+    return confMatrix
+
+
+def printPrecisionRecallAccuracy(confMatrix):
+    precision = confMatrix[u'real pos'][u'pred pos'] / (confMatrix[u'real pos'][u'pred pos']+confMatrix[u'real pos'][u'pred neg'])
+    recall = confMatrix[u'real pos'][u'pred pos'] / (confMatrix[u'real pos'][u'pred pos']+confMatrix[u'real neg'][u'pred pos'])
+    accuracy = (confMatrix[u'real pos'][u'pred pos']+confMatrix[u'real neg'][u'pred neg']) / (confMatrix[u'real pos'][u'pred pos']+confMatrix[u'real neg'][u'pred neg']+confMatrix[u'real pos'][u'pred neg']+confMatrix[u'real neg'][u'pred pos'])
+    print(u'PRECISION : ', precision)
+    print(u'RECALL : ', recall)
+    print(u'ACCURACY : ', accuracy)
+
+
+def checkExtractorsAgainstAnnotatedCorpusFolder(annotatedCorpusPath):
+    """ given the path to an annotated corpus, it checks if the extractors correspond to the annotation """
+    confMatrix0, confMatrix1, confMatrix2 = [], [], []
+    # if there is only one file
+    if u'.tsv' in annotatedCorpusPath or u'.tmx' in annotatedCorpusPath:
+        annotatedFiles = [annotatedCorpusPath]
+    else:
+        # get the annotated files if there are multiple files
+        annotatedFiles = utilsOs.goDeepGetFiles(annotatedCorpusPath, format=u'.tmx')
+    # get the annotated specific prefix
+    annotatedPathPrefix = annotatedCorpusPath.split(u'/')
+    for indexPart, pathPart in enumerate(annotatedPathPrefix):
+        if pathPart in [u'ALIGNMENT-QUALITY', u'MISALIGNED', u'NOT-FLAGGED', u'QUALITY']:
+            break
+    annotatedPathPrefix = u'/'.join(annotatedPathPrefix[:indexPart])
+    # open each annotation and get the original sentences
+    for annotatedPath in annotatedFiles:
+        # get the src-trgt path
+        srcTrgtPath = annotatedPath.replace(annotatedPathPrefix, u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed')
+        srcPath = u'{0}.en'.format(srcTrgtPath) if u'en-fr' in srcTrgtPath else u'{0}.fr'.format(srcTrgtPath)
+        trgtPath = u'{0}.fr'.format(srcTrgtPath) if u'en-fr' in srcTrgtPath else u'{0}.en'.format(srcTrgtPath)
+        # open the files
+        with open(annotatedPath) as annotFile:
+            with open(srcPath) as srcFile:
+                with open(trgtPath) as trgtFile:
+                    annotations = [ a.replace(u'\n', u'') for a in annotFile.readlines() ]
+                    srcLines = [src.replace(u'\n', u'') for src in srcFile.readlines()]
+                    trgtLines = [trgt.replace(u'\n', u'') for trgt in trgtFile.readlines()]
+                    for index, annot in enumerate(annotations):
+                        srcLn = srcLines[index]
+                        trgtLn = trgtLines[index]
+                        # annotation score
+                        annotScore = False if u'0.' in annot else True
+                        # number coincidence
+                        score0 = nbMismatch(srcLn, trgtLn)
+                        score0 = False if score0 < 0.75 else True
+                        confMatrix0 = populateConfMatrix(score0, annotScore, confMatrix0)
+                        # too few words
+                        cntxtScores = getContextScores(index, srcLines, trgtLines)
+                        docLoc = index / len(srcLines)
+                        score1 = tableOfContents(srcLn, trgtLn, nTokens=4,
+                                                 contextScores=cntxtScores, placeInDocument=docLoc)
+                        score1 = False if score1 < 0.32 else True
+                        confMatrix1 = populateConfMatrix(score1, annotScore, confMatrix1)
+                        # cognates
+                        score2 = cognateCoincidence(srcLn, trgtLn)
+                        score2 = False if score2 < 0.1 else True
+                        confMatrix2 = populateConfMatrix(score2, annotScore, confMatrix2)
+    print(u'NUMBER COINCIDENCE')
+    print(confMatrix0)
+    print()
+    print(u'TOO FEW TOK')
+    print(confMatrix1)
+    print()
+    print(u'COGNATES COINCIDENCE')
+    print(confMatrix2)
+
+
+def checkExtractorsAgainstAnnotatedCorpusFile(annotationFolderPath):
+    """ given the path to an annotated corpus, it checks if the extractors correspond to the annotation """
+    confMatrix0, confMatrix1, confMatrix2 = [], [], []
+    # get the file paths
+    annotationFilePath = u'{0}sampleAnnotation.tsv'.format(annotationFolderPath)
+    referenceFilePath = u'{0}sampleReference.tsv'.format(annotationFolderPath)
+    with open(referenceFilePath) as referenceFile:
+        referenceLines = referenceFile.readlines()
+        with open(annotationFilePath) as annotationFile:
+            annotationLines = annotationFile.readlines()
+            # get the lines
+            for index, refLine in enumerate(referenceLines):
+                refLineList = (refLine.replace(u'\n', '')).split(u'\t')
+                refPath = refLineList[0]
+                refIndex = int(refLineList[1])
+                # get the original source and target lines
+                srcFilePath = u'{0}.en'.format(refPath) if u'en-fr' in refPath else u'{0}.fr'.format(refPath)
+                trgtFilePath = u'{0}.fr'.format(refPath) if u'en-fr' in refPath else u'{0}.en'.format(refPath)
+                with open(srcFilePath) as srcFile:
+                    srcLines = srcFile.readlines()
+                with open(trgtFilePath) as trgtFile:
+                    trgtLines = trgtFile.readlines()
+                # get the human annotation
+                annot = annotationLines[index]
+                # get the src-trgt lines
+                srcLn = srcLines[refIndex].replace(u'\n', u'')
+                trgtLn = trgtLines[refIndex].replace(u'\n', u'')
+                # annotation score
+                annotScore = False if u'0.' in annot else True
+                # number coincidence
+                score0 = nbMismatch(srcLn, trgtLn)
+                score0 = False if score0 < 0.75 else True
+                confMatrix0 = populateConfMatrix(score0, annotScore, confMatrix0)
+                # too few words
+                cntxtScores = getContextScores(refIndex, srcLines, trgtLines)
+                docLoc = refIndex / len(srcLines)
+                score1 = tableOfContents(srcLn, trgtLn, nTokens=4,
+                                         contextScores=cntxtScores, placeInDocument=docLoc)
+                score1 = False if score1 < 0.32 else True
+                confMatrix1 = populateConfMatrix(score1, annotScore, confMatrix1)
+                # cognates
+                score2 = cognateCoincidence(srcLn, trgtLn)
+                score2 = False if score2 < 0.1 else True
+                confMatrix2 = populateConfMatrix(score2, annotScore, confMatrix2)
+    print(u'NUMBER COINCIDENCE')
+    print(confMatrix0)
+    printPrecisionRecallAccuracy(confMatrix0)
+    print()
+    print(u'TOO FEW TOK')
+    print(confMatrix1)
+    printPrecisionRecallAccuracy(confMatrix1)
+    print()
+    print(u'COGNATES COINCIDENCE')
+    print(confMatrix2)
+    printPrecisionRecallAccuracy(confMatrix2)
+
+# count the time the algorithm takes to run
+startTime = utilsOs.countTime()
+
+# annotate the SP
+# listOfFilesPath = u'./randomSelected100MISALIGNED.json'
+# annotateFiles(listOfFilesPath, anotatedOutputFolder=u'./002manuallyAnnotated/')
+
+# extract naive heuristic detected random SPs
+# extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'aq'), extractionSize=100, typeOfExtractors=[0,1,2])
+# extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'a'), extractionSize=100, typeOfExtractors=[0,1,2])
+# extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'q'), extractionSize=100, typeOfExtractors=[0,1,2])
+# extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'n'), extractionSize=100, typeOfExtractors=[0,1,2])
+
+# annotate the randomly extracted misaligned SPs
+# annotateFiles(listOfFilesPath=u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/ALIGNMENT-QUALITY', annotatedOutputFolder=u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/', dumpSP=False)
+
+# check the extractors on the annotated corpus
+checkExtractorsAgainstAnnotatedCorpusFile(u'./002manuallyAnnotated/')
+
+# print the time the algorithm took to run
+print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

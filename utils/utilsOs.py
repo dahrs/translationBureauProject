@@ -2,11 +2,11 @@
 #-*- coding:utf-8 -*-
 
 
-import os, sys, json, codecs, gzip
+import os, sys, json, codecs, gzip, time
 import pandas as pd
 
 ##################################################################################
-#FOLDERS
+# FOLDERS
 ##################################################################################
 
 def emptyTheFolder(directoryPath, fileExtensionOrListOfExtensions=u'*'):
@@ -79,6 +79,12 @@ def getIntersectionOf2Folders(aFolder, bFolder):
 	return intersectionFiles
 
 
+def createEmptyFolder(folderPath):
+	""" given a non existing folder path, creates the necessary folders so the path exists """
+	if not os.path.exists(folderPath):
+		os.makedirs(folderPath)
+
+
 ##################################################################################
 #FILES
 ##################################################################################
@@ -96,12 +102,6 @@ def createEmptyFile(filePath, headerLine=None):
 	if headerLine != None:
 		openFile.write(u'{0}\n'.format(headerLine))
 	return openFile
-
-
-def createEmptyFolder(folderPath):
-	""" given a non existing folder path, creates the necessary folders so the path exists """
-	if not os.path.exists(folderPath):
-		os.makedirs(folderPath)
 
 
 def getLastLineIndexOfExistingFile(filePath):
@@ -242,6 +242,14 @@ def dumpDictToJsonFile(aDict, pathOutputFile='./dump.json', overwrite=False):
 	return 
 
 
+def deleteAFile(filePath):
+	""" given a path to a file simply deletes it if it exists """
+	if theFileExists(filePath):
+		os.remove(filePath)
+		return True
+	return False
+
+
 def deleteTheFile(directoryPath, nameOfFile, fileExtension):
 	'''
 	Removes all files corresponding to the given name and the specified file(s) extension(s).
@@ -250,18 +258,15 @@ def deleteTheFile(directoryPath, nameOfFile, fileExtension):
 	#if the path is correctly written at the end
 	if directoryPath[-1] !=u'/':
 		directoryPath = u'%s/' %(directoryPath)
-
 	#preparing to dump into file
 	for char in [u' ', u'_', u'/', u'\\', u':', u'…', u'。', u';', u',', u'.', u'>', u'<', u'?', u'!', u'*', u'+', u'(', u')', u'[', u']', u'{', u'}', u'"', u"'", u'=']:
 		nameOfFile = nameOfFile.replace(char, u'_')
 	#we change the iri code if there is one
 	if u'%' in nameOfFile or '%' in nameOfFile:
 		nameOfFile = iriToUri(nameOfFile)
-
 	#we make a list of all the possible names of the files to be deleted
 	fileNamesToBeDeleted = []
 	namePlusExt = u'%s.%s' %(nameOfFile, fileExtension)
-
 	fileNamesToBeDeleted.append(namePlusExt)
 	fileNamesToBeDeleted.append(noTroublesomeName(namePlusExt))
 	for nb in range(10):
@@ -273,7 +278,6 @@ def deleteTheFile(directoryPath, nameOfFile, fileExtension):
 			strNb = str(nb)
 		fileNamesToBeDeleted.append(u'%s_%s.%s' %(nameOfFile, strNb, fileExtension))
 		fileNamesToBeDeleted.append(u'%s_%s.%s' %(noTroublesomeName(nameOfFile), strNb, fileExtension))
-
 	#we make a list of all extension-like 
 	try:
 		#we catch all corresponding names
@@ -283,7 +287,6 @@ def deleteTheFile(directoryPath, nameOfFile, fileExtension):
 			filelist = [utilsString.toUtf8(file) for file in os.listdir(directoryPath) if file.endswith(".%s" %(fileExtension.encode('utf8'))) ]		
 	except OSError:
 		filelist = []
-
 	#we make a list of the intersection between the 2 lists
 	intersection = list(set(fileNamesToBeDeleted) & set(filelist))
 	#we delete the files
@@ -306,6 +309,16 @@ def deleteFileContent(pathToFile, openAnAppendFile=False):
 	if openAnAppendFile != False:
 		openedFile = codecs.open(pathToFile, 'a', encoding='utf8')
 	return openedFile
+
+
+def appendLineToFile(stringLine, filePath, addNewLine=True):
+	if theFileExists(filePath) != True:
+		with open(filePath, 'w') as emptyFile:
+			emptyFile.write(u'')
+	if addNewLine == True:
+		stringLine = u'{0}\n'.format(stringLine)
+	with open(filePath, 'a') as file:
+		file.write(stringLine)
 
 
 def countLines(openedFile):
@@ -371,6 +384,16 @@ def safeFilePath(outputFilePath):
 			fileName = fileName.replace(u'_%s' %(str(nb)), u'_%s' %(str(nb+1)))
 			nb += 1
 	return u'%s%s.%s' %(folderPath, fileName, fileExtension)
+
+
+##################################################################################
+#TIME COUNTING
+##################################################################################
+
+def countTime(startingTime=None):
+	if startingTime == None:
+		return time.time()
+	return time.time() - startingTime
 
 
 ##################################################################################
