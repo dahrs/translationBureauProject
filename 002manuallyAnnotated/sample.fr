@@ -1,0 +1,1121 @@
+ANNEXE B
+LIENS UTILES ET GLOSSAIRE
+Liens utiles
+Aliénation du matériel en surplus, Directive sur l’
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?section=text&id=12066
+Cadre de responsabilisation de gestion – CRG
+www.tbs-sct.gc.ca/maf-crg/index-fra.asp
+Comptabilité des stocks, Politique sur la
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=12153
+Gestion des biens meubles patrimoniaux, Guide de
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=13872
+Gestion du matériel, Guide de
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=14671
+Gestion du matériel, Politique sur la
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=12062
+Gestion du parc automobile : Véhicules légers, Directive sur la
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=12065
+Gestion du parc automobile : Voitures de fonction, Directive sur la
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=12064
+Gestion du parc automobile, Guide sur la
+www.tbs-sct.gc.ca/mm-gm/doc/gfm-ggpa/c1-00-fra.aspx
+Loi fédérale sur la responsabilité
+www.faa-lfi.gc.ca/faa-lfi/faa-lfi00-fra.asp
+Loi sur la gestion des finances publiques
+www.laws.justice.gc.ca/fr/F-11/index.html
+Manuel de comptabilité – SIF
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=12182
+Marchandises contrôlées, Directive sur les
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=12063
+Marchés, Politique sur les
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=14494
+Planification des investissements – Actifs et services acquis, Politique de
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=18225
+Plans d’investissement à long terme, Politique sur les
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=12039
+Services communs, Politique sur les
+www.tbs-sct.gc.ca/pol/doc-fra.aspx?id=12025
+Titre de propriété intellectuelle découlant des marchés d’acquisition de l’État, Guide de mise en œuvre concernant la politique intitulée
+www.tbs-sct.gc.ca/pubs_pol/dcgpubs/Contracting/tipaucpc_ig-fra.asp
+Glossaire
+Acquisition
+Établissement de la définition contenant les exigences pour l’achat de biens
+Aliénation
+Retrait d’un bien excédentaire
+Amélioration
+Modification qui augmente la durée du cycle de vie ou les extrants d’un bien
+Autres ministères
+Autres ministères et organismes du gouvernement fédéral
+BEOG
+Bureau de l’écologisation des opérations gouvernementales – TPSGC/déchets électroniques
+Biens saisis
+Biens qui ont été confisqués par un tribunal au profit de la Couronne
+CAFE
+Créditeurs à la fin de l’exercice – opération comptable visant à ce qu’il n’y ait pas de fonds inutilisés
+CDBC
+Centre de distribution des biens de la Couronne (CDBC)
+Comptabilité d’exercice
+Méthode d’amortissement des immobilisations d’un ministère ou d’un organisme
+CRG
+Cadre de responsabilisation de gestion pour les cadres supérieurs
+CT
+Conseil du Trésor – formé des ministres de la Couronne et appuyé par le SCT CTP Coût total de la propriété pour la durée de vie d’un bien, ce qui comprend l’aliénation
+DBC
+Distribution des biens de la Couronne (DBC)
+DD Développement durable
+Déchet électronique Tout bien excédentaire doté d’une fiche ou activé par une batterie et qui ne peut faire l’objet d’une revente
+Détenteur d’actif
+Personne chargée de tenir les registres relatifs aux biens dans le système de PRE pour le compte du GCR
+Écrans TRC
+Anciens écrans à tube cathodique – ne sont plus vendus par la DBC, mais font partie des déchets électroniques
+Éthique
+Ensemble de principes de bonne conduite
+Établissement de la définition des besoins en ce qui a trait à un bien
+Évitement des investissements
+Méthode d’obtention d’un bien par un moyen autre que l’achat
+Gardien
+Personne qui utilise le bien
+GCC
+Garde côtière canadienne
+GCR
+Gestionnaire de centre de responsabilité (peut également être le gardien ou le détenteur d’actif)
+GCVB
+Gestion du cycle de vie des biens – même signification que la GCVM, applicable aux biens
+GCVM
+Gestion de cycle de vie du matériel – comprend quatre étapes : planification, acquisition, fonctionnement et entretien, et aliénation
+GGB
+Gestionnaire régional des biens ou gestionnaire des biens ou gestionnaire du matériel
+ICAGM
+Institut canadien d’approvisionnement et de gestion du matériel (anciennement l’Institut de gestion du matériel du Canada)
+Immobilisations
+Biens dont le coût d’acquisition est égal ou supérieur au seuil ministériel (généralement fixé à 10 000 $)
+ITAR
+International Traffic in Arms Regulations
+LGFP
+Loi sur la gestion des finances publiques
+MDN
+Ministère de la Défense nationale
+Mise hors service d’un bien
+Synonyme d’aliénation, en comptabilité
+OC
+Offre à commandes
+OCIM
+Offre à commandes individuelle et ministérielle – utilisée par TPSGC
+OPE
+Ordinateurs pour les écoles, programme géré par Industrie Canada
+PRE
+Planification des ressources de l’entreprise (systèmes financiers ministériels)
+RDS
+Rapport de surplus de la DBC utilisé pour déclarer des biens en vue de leur aliénation
+Recouvrement des investissements
+Processus d’aliénation en temps opportun des biens excédentaires qui permet de maximiser la valeur de revente des biens de la Couronne
+SCT
+Secrétariat du Conseil du Trésor
+SGIE
+Système de gestion de l’information de l’entretien, qui sert à surveiller les coûts relatifs à un bien
+SIF Stratégie d’information financière (comptabilité d’exercice)
+SIMDUT
+Système d’information sur les matières dangereuses utilisées au travail Systèmes financiers ministériels Systèmes financiers, comme SAP, Oracle, FreeBalance, etc.
+TPSGC
+Travaux publics et Services gouvernementaux Canada
+Utilisation
+Usage d’un bien, à partir de l’étape de la livraison jusqu’à celle de l’aliénation
+Valeurs
+Généralement, croyances ou idéaux durables partagés par les membres d’un groupe, comme la collectivité de la gestion du matériel
+VCN
+Valeur comptable nette de l’immobilisation faisant l’objet d’un amortissement (dépréciation)
+Assurer un processus de recours impartial Servir nos clientsCommentaires, plaintes et complimentsRenseignements généraux
+Foire aux questions — examen ministériel
+Qu’est-ce qu’une mesure d’exécution de la loi?
+Aux fins de l’ASFC, une mesure d’exécution de la loi peut inclure, entre autres, saisir des marchandises non déclarées ou imposer une pénalité ou une amende si vous n’avez pas déclaré correctement des marchandises, des espèces et instruments monétaires ou des aliments, des végétaux ou des animaux.
+Cela inclut plus précisément :
+la saisie de marchandises ou d’un moyen de transport en vertu de la Loi sur les douanes;
+une sanction administrative pécuniaire (SAP) en vertu de la Loi sur les douanes;
+une saisie en vertu de la Loi sur le recyclage des produits de la criminalité et le financement des activités terroristes;
+un avertissement ou une pénalité en vertu de la Loi sur les sanctions administratives pécuniaires en matière d’agriculture et d’agroalimentaire.
+Qu’est-ce qu’une demande pour un examen ministériel?
+Il s’agit d’une demande que le ministre de Sécurité publique, par l’entremise de ses pouvoirs délégués, passe en revue avant de rendre une décision concernant le caractère judicieux de la mesure d’exécution de la loi.
+Le personnel de la Direction des recours de l’ASFC mène ces examens et rend les décisions au nom du ministre.
+Ai-je besoin d’un avocat/représentant?
+Non, vous n’avez pas besoin d’un avocat/représentant pour que l’ASFC passe votre dossier en revue. Cependant, vous pourriez vouloir que quelqu’un vous représente.
+Dans ce cas, vous devez présenter une lettre d’autorisation signée, expliquant que cette personne vous représente.
+Comment mène-t-on l’examen ministériel?
+Un représentant indépendant et impartial au sein de la Direction des recours à l’ASFC mène l’examen qui consiste à passer les documents en revue, ce qui signifie que vous et l’agent qui a pris la mesure d’exécution devez présenter par écrit toutes les preuves au représentant des Recours.
+Les documents que vous aurez fournis auront une incidence sur la décision ministérielle et seront communiqués à l’agent pour examen et réponse, tout comme les rapports de ce dernier vous seront fournis.
+Vous aurez l’occasion de répondre et de fournir des observations supplémentaires, au besoin, avant qu’une recommandation et une décision ne soient rendues.
+Comment savoir quels documents il faudra présenter au cours de l’examen?
+Au cours du processus d’examen, le représentant des Recours à l’ASFC communiquera avec vous concernant la « preuve à réfuter ». Il vous expliquera où en est votre dossier, ce que sont les questions en suspens et quels autres documents seront nécessaires pour appuyer votre cas.
+Afin de mieux vous faire comprendre la preuve à réfuter, au cours du processus d’examen, le représentant des Recours vous fournira les copies de tous les documents présentés par l’agent qui a pris la mesure d’exécution ayant une incidence sur la décision ministérielle finale, tout comme des copies de tous les documents que vous présenterez seront envoyées à l’agent.
+Le processus d’examen ministériel permet de s’assurer que vous et l’agent connaissez les informations présentées par l’autre partie qui auront une incidence sur la décision ministérielle.
+Il permet également de s’assurer que les deux parties ont eu l’occasion de répondre aux informations présentées et de fournir tout autre document qu’ils souhaitent voir pris en considération.
+Nota : Dans la plupart des cas, les documents originaux sont nécessaires.
+Sur demande, les documents vous seront rendus à la fin de l’examen.
+Quels sont les résultats possibles pour un examen ministériel?
+L’examen ministériel permettra de déterminer s’il y a bien eu contravention aux lois applicables, comme il a été indiqué, et si les termes et /ou conditions évaluées étaient adéquats.
+Les représentants de la Direction des recours à l’ASFC ne peuvent annuler ou modifier de façon subjective une mesure d’exécution de la loi; par exemple, en se basant sur le fait que la personne concernée n’avait pas l’intention de contrevenir à la loi.
+Une mesure d’exécution de la loi n’est annulée ou modifiée que si l’examen révèle que la mesure était incorrecte en droit ou dans l’application de la politique (p. ex. : niveau de mesure d’exécution de la loi ou valeur en douane des marchandises saisies).
+Quelle est la durée du processus d’examen ministériel?
+La durée de l’examen varie d’un cas à l’autre en raison de la nature du processus, de la complexité de chaque dossier et de la charge de travail.
+Pour vous donner une meilleure idée de ce à quoi vous attendre, vous pouvez consulter les normes de services de la Direction des recours.
+Quelles répercussions l’examen ministériel aura-t-il sur ma participation à un programme des voyageurs ou des négociants fiables?
+Toute décision concernant votre participation à un programme des voyageurs ou des négociants fiables demeure la responsabilité de ce programme.
+L’examen ministériel ne traitera que du caractère judicieux de la mesure d’exécution de la loi prise.
+Pour de plus amples informations concernant votre participation à un programme des voyageurs ou des négociants fiables, veuillez consulter l’hyperlien approprié :
+http://www.cbsa-asfc.gc.ca/prog/canpass/menu-fra.html
+http://www.cbsa-asfc.gc.ca/prog/nexus/menu-fra.html
+PICSC (PAD)
+http://www.cbsa-asfc.gc.ca/prog/csa-pad/menu-fra.html
+http://www.cbsa-asfc.gc.ca/prog/cdrp-picsc/menu-fra.html
+EXPRES
+http://www.cbsa-asfc.gc.ca/prog/fast-expres/menu-fra.html
+Si je crois que l’agent de m’a pas traité équitablement, ou si je ne suis pas satisfait des services que j’ai reçus, que devrais-je faire?
+Si vous avez des questions, souhaitez de plus amples informations ou voulez nous faire par de votre rétroaction concernant les services que vous avez reçus, vous pouvez nous envoyer vos commentaires, plaintes ou compliments par écrit :
+en remplissant notre formulaire de rétroaction en ligne; ou
+en bous écrivant à l’adresse suivante :
+Agence des services frontaliers du Canada
+Direction des recours
+Le Centre d’information de la bibliothèque
+trouver de l’information dans votre domaine de recherche,
+faire des recherches dans son catalogue, dans des bases de données d’articles et sur Internet,
+vous montrer comment exploiter les nombreuses ressources de la bibliothèque et
+vous envoyer des info-alertes dès qu’un article, un rapport ou un communiqué sur un sujet qui vous intéresse est publié dans un bulletin électronique ou un journal, pour que vous restiez au courant.
+Le Service est chargé du soutien, de la maintenance et de l’amélioration permanents d’InfoNet, des sites Internet du BCP et du greffier, ainsi que de leurs sous-sites.
+Pour en savoir plus : http://intranet/index.aspx?flNm=research-recherche\lib-biblio\lib-biblio
+mettre en place la bouée; récupérer la bouée à la fin de la saison.
+Ce guide est issu du travail commun du Groupe de travail sur le réseau de bouées (MBTWG), octobre 2008, Toronto, Ontario.
+Acronymes et abréviations
+OMM - Organisation météorologique mondiale
+CIMO - Commission des instruments et des méthodes d'observation
+GQ - gestion de la qualité
+SBM - Système de bouées météorologiques
+SMC - Service météorologique du Canada
+GCC - Garde côtière canadienne
+PES -
+procédure d'exploitation sûre
+ICEDF -
+intensité du courant électrique au démarrage à froid
+GOES -
+Geostationary Operational Environmental Satellite (Satellite d'exploitation
+géostationnaire pour l'étude de l'environnement)
+GPS -
+Global Positioning System (système de positionnement global)
+STHP -
+sonde de température de haute précision
+Table des matières
+Préface
+Acronymes et abréviations
+Table des matières
+1.0 Introduction
+1.1 Carte du réseau canadien de bouées ancrées
+1.2 Organisation du document
+1.3 Aperçu de l'inspection
+1.4 Documents pertinents
+1.5 Guides des fabricants
+9 2.0 Vérifications préalables à l'inspection 10
+3.0 Température de l'air
+3.1 Thermistance YSI 703
+3.1.1 Inspection préalable à la mise en place
+3.1.2 Nettoyage et réparation
+3.1.3 Valeurs d'après-saison
+4.0 Température de l'eau
+4.1 Thermistance YSI 44203
+12 4.1.1 Inspection préalable à la mise en place 12
+4.1.2 Nettoyage et réparation
+12 4.1.3 Valeurs d'après-saison 12
+5.0 Pression
+5.1 Vaisala PTB 210
+13 5.1.1 Inspection préalable à la mise en place 13
+5.1.2 Nettoyage et réparation
+13 5.1.3 Valeurs d'après-saison 13
+6.0 Vent
+6.1 RM Young 05103/RM Young 05106 14
+6.1.1 Direction du vent
+14 6.1.1.1 Inspection préalable à la mise en place 14
+6.1.1.2 Nettoyage et réparation
+14 6.1.1.3 Valeurs d'après saison 14
+6.1.2 Vitesse du vent
+14 6.1.2.1 Inspection préalable à la mise en place
+14 6.1.2.2 Nettoyage et réparation 15
+6.1.2.3 Valeurs d'après saison
+15 6.2 Vaisala Ultrasonic WS425 15
+6.2.1 Direction du vent
+15 6.2.1.1 Inspection préalable à la mise en place 15
+6.1.1.2 Nettoyage et réparation
+15 6.1.1.3 Valeurs d'après-saison 16
+6.2.2 Vitesse du vent
+16 6.2.2.1 Inspection préalable à la mise en place 16
+6.2.2.2 Nettoyage et réparation
+16 6.2.2.3 Valeurs d'après-saison 16
+7.0 Vagues
+7.1 Jewell Accelerometer LCM 100/Columbia Research SA-107B 17
+7.1.1 Vérification préalable à la mise en place
+17 7.1.2 Nettoyage et réparation 17
+7.1.3 Valeurs d'après-saison
+17 8.0 Batteries
+8.1 Batteries de la charge utile/batterie de l'émetteur HDR/batterie du système ARGOS
+19 8.1.1 État du matériel 19
+8.1.2 Nettoyage et réparation
+19 8.1.3 Comparaison/vérification 19
+9.0 Boussole
+20 9.1.1 Inspection préalable à la mise en place 20
+9.1.2 Nettoyage et réparation
+20 9.1.3 Valeurs d'après-saison 20
+10.0 Feu d'obstacle
+10.1 Feu à incandescence ML-140
+21 10.1.1 État du matériel 21
+10.1.2 Nettoyage et réparation
+21 10.1.3 Comparaison/vérification 21
+10.2 MLED-120
+21 10.2.1 État du matériel 21
+10.2.2 Nettoyage et réparation
+21 10.2.3 Comparaison/vérification 22
+10.3 CARMANAH
+22 10.3.1 État du matériel 22
+10.3.2 Nettoyage et réparation
+22 10.3.3 Comparaison/vérification 22
+11.0 Panneaux solaires
+11.1 État du matériel 23
+11.2 Nettoyage et réparation
+23 11.3 Comparaison/vérification 23
+12.0 État des compartiments étanches
+12.1 Compartiment étanche numéro 1
+24 12.2 Compartiment étanche numéro 2 25
+12.3 Compartiment étanche numéro 3
+25 12.4 Compartiment étanche numéro 4 26
+13.0 Extérieur de la coque et mâts
+14.0 Ancrage
+15.0 Vérifications préalables à la mise en place
+16.0 Mise en place/récupération
+17.0 Vérification sur place
+Annexe A : Liste des capteurs
+Annexe B – Guides des fabricants
+Introduction
+Depuis la première mise en place de bouées en 1986, le réseau de bouées canadien s'est développé jusqu'à devenir le deuxième plus important au monde.
+Dans les années 80, les naufrages survenus sur les côtes atlantique et pacifique ont poussé à l'amélioration des services météorologiques maritimes.
+Ainsi, plus de 47 bouées automatisées fournissent aujourd'hui plus de 300 000 observations horaires chaque année, en provenance d'environnements maritimes qui n'étaient pas surveillés auparavant.
+Le réseau de bouées canadien comprend environ 47 bouées dont 11 bouées Nomad de 6 m, 23 bouées Discus de 3 m, 11 bouées Watchkeepers et deux bouées de recherche de 3 m, selon la saison.
+Dix-huit de ces bouées se trouvent dans le nord-est de l'océan Pacifique et neuf sont installées dans le nord-ouest de l'océan Atlantique.
+Les autres bouées canadiennes se trouvent dans les Grands Lacs, le lac Winnipeg, le Grand lac des Esclaves, la baie d'Hudson et le golfe Saint-Laurent (voir la carte 1.1).
+La bouée en aluminium de 6 m de diamètre est utilisée dans les eaux profondes des océans Pacifique et Atlantique.
+Les bouées Nomad de 6 m comprennent deux capteurs de mesure du vent, deux baromètres, un capteur de température de l'air, un capteur de température de l'eau et un capteur de houle.
+Ces instruments permettent de mesurer la vitesse et la direction du vent, les vents maximums, la pression atmosphérique, la température de l'air, la température à la surface de l'eau et les données relatives aux vagues et d'effectuer des diagnostics embarqués.
+Carte du réseau canadien de bouées ancrées
+Français
+Réseau national de bouées (au 16 juin 2009)
+Types de bouées
+Watchkeeper
+Organisation du document
+Le présent document contient les sections suivantes :
+La section 2 donne un aperçu des tâches préalables à l'inspection effectuées dans les bureaux avant le départ pour d'inspection d'un site.
+Les sections 3 à 14 présentent les procédures d'inspection et de maintenance de chacun des capteurs et du reste de l'équipement de soutien contenu dans une bouée de 6 m.
+Les annexes contiennent des documents pertinents.
+Aperçu de l'inspection
+Le réseau de bouées doit être inspecté chaque année afin de s'assurer que l'équipement est parfaitement fonctionnel et qu'il fournit des données exactes pouvant être utilisées pour surveiller la variabilité et les modifications du climat.
+L'objectif de ces inspections est d'étudier et de maintenir le rendement de la bouée et de son équipement, mais aussi d'accroître la valeur des données en enregistrant l'histoire de la bouée.
+Conformément au guide de l'OMM sur la gestion de la qualité, il est hautement recommandé de disposer de procédures systématiques, exhaustives et entièrement documentées sous la forme de guides d'inspection et de maintenance à l'usage des inspecteurs.
+La maintenance et l'inspection du réseau de bouées comprennent les activités suivantes :
+Exécution réussie des tâches préalables à l'inspection.
+Les tâches préalables à l'inspection sont effectuées dans les bureaux avant le départ pour un déplacement en vue d'une inspection.
+La section 2 fournit une liste des procédures préalables à l'inspection.
+Chacune des sections consacrées aux capteurs présente les procédures à suivre pour vérifier leur état de fonctionnement.
+Les tâches de nettoyage et de réparation de chaque capteur conformes aux procédures sont énoncées dans chacune des sections relatives aux capteurs de ce guide.
+Vérifier que chaque capteur est en état de fonctionnement.
+Chaque capteur doit fonctionner dans les limites établies dans la partie comparaison/vérification de chaque section consacrée à un capteur.
+La marche à suivre est énoncée à la section 14.
+Saisir tous les renseignements nécessaires dans la liste de vérification de la maintenance/l'inspection et dans les rapports d'inspection, et en transmettre une copie au personnel requis.
+Documents pertinents
+Les documents suivants font partie des documents de référence indiqués pour l'inspection et la maintenance générales.
+Normes de maintenance du SMC pour le réseau de bouées
+Guides des fabricants
+Consultez l'annexe B pour voir une liste des guides des fabricants.
+Vérifications préalables à l'inspection
+Les tâches préalables à l'inspection sont exécutées dans les bureaux avant le départ pour l'inspection prévue ou le déplacement de maintenance.
+La réussite d'une inspection dépend en grande partie du travail accompli avant le départ du bureau.
+Prendre les dispositions nécessaires avec l'équipage du navire ou avec le Centre des opérations régionales de la Garde côtière canadienne (GCC), qui assurera le trajet de service.
+Étudier les dossiers d'inspection précédents afin de déterminer les besoins de remplacement de l'équipement.
+Étudier les statistiques de rendement et le contrôle de la qualité des données (SRT) afin de déterminer les éléments à corriger.
+Veiller à ce que tout l'équipement d'essai au sol et tous les étalons de travail soient vérifiés et prêts pour l'inspection.
+Étudier toutes les pratiques de travail sécuritaire et les pratiques de travail solitaire.
+Comparer tous les étalons de travail avec les étalons de transfert et noter le résultat de ces comparaisons.
+Acquérir tous les articles requis et veiller à ce que l'équipement soit disponible au site de chargement avant de partir pour une inspection.
+Veiller à ce que tous les capteurs de remplacement soient prêts à être utilisés.
+Veiller à ce que les dossiers médicaux et les autorisations de sécurité (documents) à jour soient disponibles.
+S'assurer d'avoir l'autorisation de sécurité requise pour voyager à bord d'un navire de la GCC.
+Veiller à ce que l'ensemble de la documentation relative à l'équipement de levage (harnais, sangles, élingues) soit à disposition de l'équipage du navire.
+Préparer la liste de vérification de l'inspection et saisir toutes les données de base.
+Faire une liste des tâches à effectuer lors du déplacement.
+Si cela est pertinent, préparer un plan de navigation détaillant le travail à effectuer à chaque station (y compris un schéma d'ancrage) et en distribuer des copies à l'équipage du navire (passerelle, capitaine et maître d’équipage) et aux techniciens d'entretien et de réparation.
+Si l'on utilise de l'équipement ARGOS, on doit signaler à CLS America (ARGOS) & PADS l'intervention prévue et éteindre toute alarme hors station pour les unités ARGOS pouvant être déplacées.
+Température de l'air
+Noter le modèle, le numéro de série et la date d'installation de la thermistance.
+Thermistance YSI 703
+Inspection préalable à la mise en place
+Effectuer une inspection visuelle du capteur de température de l'air et noter son état.
+Laisser l'étalon de travail se stabiliser avant d'effectuer des comparaisons.
+Noter trois températures mesurées par le capteur et par l'étalon de travail pour une période de dix minutes.
+La température moyenne de l'air mesurée par le capteur ne doit pas différer de plus de 0,5 °C de la valeur de l'étalon de transfert.
+Si l'écart entre ces valeurs dépasse les limites acceptables, remplacer le capteur.
+En cas de non-conformité, le noter dans les remarques.
+Nettoyage et réparation
+Vérifier l'état de la protection antiradiation et noter si elle doit être remplacée à la prochaine visite sur place.
+Nettoyer la protection antiradiation si nécessaire.
+Nettoyer le capteur de température.
+Vérifier qu'aucun des câbles apparents ne présente de défaut visible et que chacun d'eux est solidement attaché.
+Noter l'état de propreté de l'écran de protection antiradiation et du capteur de température ainsi que l'état du câble.
+Remettre l'écran de protection antiradiation en état de fonctionnement.
+Valeurs d'après-saison
+Relever les trois températures mesurées par le capteur et l'étalon de travail pour une période de dix minutes.
+Noter et comparer trois relevés de température de la norme de déplacement et du capteur pour s'assurer de son état de marche au moment de la récupération pour l'hivérisation.
+Température de l'eau
+Noter le modèle, le numéro de série et la date d'installation de la thermistance.
+Thermistance YSI 44203
+Inspection préalable à la mise en place
+Effectuer une inspection visuelle du capteur de température de l'eau et noter son état.
+La température moyenne de l'eau mesurée par le capteur ne doit pas différer de plus de 0,5 °C de la valeur de l'étalon de transfert.
+Veiller à ce que le cavalier soit en bonne position dans l'unité processeur du capteur pour la STH (consulter l'annexe B).
+Nettoyage et réparation
+Noter l'état de propreté du capteur de température et l'état du câble.
+Valeurs d'après-saison
+Noter trois températures relevées par le capteur et par l'étalon de travail pour une période de dix minutes.
+Nota : En cas d'utilisation d'une STHP, effectuer un calibrage du capteur tous les quatre ans.
+Pression
+Noter le modèle, le numéro de série et la date d'installation des deux baromètres.
+Vaisala PTB 210
+Inspection préalable à la mise en place
+Faire trois relevés des mesures de l'étalon de travail et du baromètre de la bouée à 15 min d'intervalle.
+Noter chacune de ces valeurs, avec la date et l'heure du relevé, dans la liste de vérification.
+Comparer les valeurs moyennes de l'étalon de travail afin de s'assurer qu'elles ne diffèrent pas de plus de 0,5 hPa de celles du baromètre de la bouée.
+Si les valeurs du baromètre de la bouée diffèrent de plus de 0,5 hPa de la valeur de l'étalon de travail, remplacer le capteur.
+Si le baromètre a subi un décalage, noter les valeurs conformément à la liste de vérification (avant et après).
+Répéter la même procédure pour le second baromètre.
+Nettoyage et réparation
+Veiller à ce que rien n'obstrue le trou d'aération du module de l'unité de processeur du capteur.
+Changer le déshydratant dans l'unité processeur du capteur si besoin.
+Valeurs d'après-saison
+Faire trois relevés des mesures de l'étalon de travail et du baromètre de la bouée à 15 min d'intervalle.
+Vent
+Noter le modèle, le numéro de série et la date d'installation des capteurs de vent.
+Noter l'état du capteur (nouveau, remis en état ou autre).
+RM Young 05103/RM Young 05106
+Attention : Grimper sur la bouée peut être dangereux – consulter le guide des pratiques sécuritaires à ce sujet
+Direction du vent
+6.1.1.1 Inspection préalable à la mise en place
+Mener une inspection visuelle du capteur de vent.
+Vérifier la direction du vent à 90 °, 180 °, 270 °, et 355 ° afin de s'assurer que la direction indiquée ne diffère pas de plus de 10 o de la valeur cible.
+Si le capteur dépasse les limites acceptables, remplacer le capteur.
+Répéter la même procédure avec le second capteur.
+Veiller à ce que le boîtier de l'anémomètre pointe vers le sud de la bouée.
+Vérifier que la pointe est fixée avec du silicone ou du ruban isolant et que l'écrou de l'arbre porte-hélice est fixé avec du silicone.
+Remplacer l'ensemble du capteur chaque année par un capteur neuf ou remis en état.
+6.1.1.3 Valeurs d'après saison
+Vérifier et noter les valeurs de la direction du vent mesurée par le capteur et l'étalon de travail à 90o, 180o, 270o, et 355o (ou 0o).
+Vitesse du vent
+6.1.2.1 Inspection préalable à la mise en place
+Vérifier et noter les valeurs de vitesse du vent mesurées par le capteur et l'étalon de travail à trois vitesses différentes (voir les valeurs de vitesse du vent indiquées sur la liste de vérification) afin de vérifier que la vitesse du vent indiquée ne diffère pas de plus de deux nœuds de la valeur cible.
+6.1.2.2 Nettoyage et réparation
+Inspecter le collier de flottaison afin de s'assurer qu'il pointe vers le nord de la bouée. Aligner pour cela l'anémomètre avec la marque présente sur le collier de flottaison.
+Si nécessaire, corriger l'orientation du capteur.
+Vérifier que le nez est fixé avec du silicone ou du ruban isolant et que l'écrou de l'arbre porte-hélice est fixé avec du silicone.
+Remplacer l'ensemble du capteur chaque année par un capteur nouveau ou remis à neuf.
+6.1.2.3 Valeurs d'après saison
+Vérifier et noter les valeurs de vitesse du vent mesurées par le capteur et l'étalon de travail à trois vitesses différentes, comme indiqué dans la liste de vérification.
+Vaisala Ultrasonic WS425
+Attention : Grimper sur la bouée peut être dangereux – consulter le guide des pratiques sécuritaire à ce sujet
+Direction du vent
+6.2.1.1 Inspection préalable à la mise en place
+Veiller à ce que le cavalier soit en bonne position (nº 5 pour le Vaisala Ultrasonic) dans l'unité processeur du capteur, afin que le capteur puisse être installé en position numéro 2.
+(consulter l'annexe B pour voir la bonne position du cavalier)
+S'assurer que les coefficients sont exacts (1,00)
+Comparer les valeurs de direction du vent indiquées par le capteur à celles observées (faire une vérification avec le capteur RM Young si possible).
+Effectuer une inspection visuelle du capteur de vent.
+S'assurer que les transducteurs sont alignés et que leur membrane est intacte.
+Vérifier l'orientation des transducteurs en s'assurant que la flèche pointe vers le nord de la bouée.
+Remplacer l'ensemble du capteur au moins tous les quatre ans par un capteur neuf ou remis en état.
+Vérifier et noter les valeurs de la direction du vent mesurée par le capteur et l'étalon de travail (ou les comparer à celles du capteur RM Young si possible).
+Vitesse du vent
+6.2.2.1 Inspection préalable à la mise en place
+Comparer la vitesse du vent relevée à la vitesse du vent observée et s'assurer qu'elle ne diffère pas de plus de deux nœuds de la valeur cible (la comparer à celle du capteur RM Young si possible). Si le capteur dépasse cette limite, le remplacer.
+Si nécessaire, corriger l'orientation des transducteurs.
+Remplacer l'ensemble du capteur tous les quatre ans par un capteur neuf ou remis à neuf.
+6.2.2.3 Valeurs d'après-saison
+Vérifier et noter les valeurs de vitesse du vent mesurées par le capteur et l'étalon de travail (ou l'autre capteur de vent).
+Vagues
+Noter le numéro de modèle, le numéro de série et la date d'installation du capteur de houle.
+Jewell Accelerometer LCM 100/Columbia Research SA-107B
+Vérification préalable à la mise en place
+À l'aide de Watchman100, observer les données brutes produites par le capteur de houle.
+Celles-ci devraient former un cycle de nombres positifs et négatifs (onde sinusoïdale comme dans l'exemple ci-dessous).
+À bord d'un navire, on peut utiliser un échantillon de vagues de quatre minutes à partir du menu de Watchman100, à des fins de vérification.
+Accéder aux données sur les vagues par l'intermédiaire du menu de tests et noter l'état du capteur sur la liste de vérification.
+Si les données des vagues n'apparaissent pas sous la forme d'une onde sinusoïdale similaire à l'exemple, remplacer le capteur de houle.
+Nettoyage et réparation
+Calibrer le capteur une fois tous les quatre ans.
+À l'aide de Watchman100, observer les données brutes produites par le capteur de houle.
+Celles-ci devraient former un cycle de nombres positifs et négatifs (onde sinusoïdale).
+Noter l'état de fonctionnement du capteur.
+Exemple de données de mesure des vagues
+Batteries
+Noter le modèle, la date de fabrication et la date d'installation des batteries de la charge utile, de la batterie du dispositif ARGOS et de la batterie de l'émetteur HDR.
+Batteries de la charge utile/batterie de l'émetteur HDR/batterie du système ARGOS
+État du matériel
+Les bouées de 6 m comprennent 14 batteries (4x3 chaînes, une pour le dispositif ARGOS, une pour l'émetteur).
+Effectuer un essai de charge sur toutes les batteries (chaînes) pour s'assurer que la tension est adéquate.
+Nettoyage et réparation
+Vérifier qu'il n'y a aucune trace d'oxydation sur les bornes des batteries.
+En cas d'oxydation, nettoyer ou remplacer le matériel.
+S'assurer que les batteries sont bien fixées à leur support.
+Remettre les batteries en état au besoin (si elles ont été entreposées plus de trois mois).
+Remplacer les batteries tous les trois ans.
+Comparaison/vérification
+Vérifier et noter la tension de tous les blocs-batterie nécessaires conformément à la liste de vérification.
+Remplacer la barrette d'accumulateurs si l'intensité du courant électrique au démarrage à froid (ICEDF) est inférieure ou égale à 500 ou si elle a plus de quatre ans.
+Boussole
+Noter le modèle, le numéro de série et la date d'installation de la boussole.
+KVHC100
+Inspection préalable à la mise en place
+Vérifier et noter la direction de la boussole pour l'étalon de travail et la bouée.
+La direction de la boussole de la bouée ne doit pas différer de plus de dix degrés de la valeur indiquée par l'étalon de travail.
+Comparer la valeur de la boussole nº 1 à celle de la boussole nº 2 afin de s'assurer qu'elles ne diffèrent pas de plus de dix degrés.
+Si l'écart entre ces valeurs est plus grand, remplacer la boussole.
+Nettoyage et réparation
+Noter l'état du câble.
+Valeurs d'après-saison
+Vérifier et noter la direction de la boussole pour l'étalon de travail.
+Vérifier et noter la direction indiquée par la boussole de la bouée pour chaque boussole.
+Feu d'obstacle
+Noter le modèle, le numéro de série et la date d'installation du feu d'obstacle.
+Feu à incandescence ML-140
+État du matériel
+Couvrir la cellule photovoltaïque et s'assurer que les six ampoules clignotent.
+Découvrir la cellule photovoltaïque.
+Noter toutes les ampoules grillées à remplacer.
+Vérifier et noter la présence de corrosion.
+S'assurer que la lampe est configurée en Code 48 (cinq éclats par période de 20 sec).
+Nettoyage et réparation
+Mener une inspection visuelle de la cellule photovoltaïque et de la lentille.
+Noter l'état de la cellule photovoltaïque et de la lentille et s'il est nécessaire de les remplacer à la prochaine visite.
+Nettoyer la lentille si nécessaire.
+Remplacer toutes les ampoules grillées.
+Comparaison/vérification
+Veiller à ce que la rotation automatique de chacune des six ampoules fonctionne.
+Vérifier que les quatre premières ampoules consomment 0,55 A et que les deux suivantes consomment 0,77 A.
+Si ce n'est pas le cas, prenez des mesures correctives (ou 0,55 A pour les six ampoules).
+MLED-120
+État du matériel
+Couvrir la cellule photovoltaïque et s'assurer que la lumière clignote.
+Nettoyage et réparation
+Noter l'état de la cellule photovoltaïque et de la lentille et s'il est nécessaire de les remplacer à la prochaine visite.
+S'assurer que la lampe est configurée en code 48.
+Comparaison/vérification
+Vérifier que les deux réseaux d'ampoules fonctionnent correctement.
+Remplacer le réseau ou l'unité au complet si nécessaire.
+CARMANAH
+S'assurer que la lampe fonctionne correctement et produit cinq éclats par période de 20 sec.
+Panneaux solaires
+Noter le modèle, le numéro de série et la date d'installation de chaque panneau solaire.
+État du matériel
+Vérifier qu'aucune des cellules n'a été endommagée.
+Veiller à ce que les boîtes de connexion à l'arrière de chaque panneau soient enrobées et ne présentent pas de corrosion.
+Noter l'état des boîtes de connexion.
+Nettoyage et réparation
+S'assurer que les panneaux solaires sont propres.
+Les nettoyer si nécessaire.
+Comparaison/vérification
+Vérifier la tension de chaque panneau avant l'installation ou la tension totale après l'installation.
+Remplacer tout panneau solaire endommagé ou ayant une tension inférieure à 18 V.
+État des compartiments étanches
+Attention : Suivre les règles de sécurité relatives au travail dans des espaces restreints. (chap. 34 du Safety & Health Manual, Atmospheric Environment Program Operations)
+Attention : Prendre des mesures correctives/de précaution si la limite inférieure d'explosivité (LEI) dépasse 30 %.
+Vérifier les points suivants pour chaque compartiment étanche et les noter dans la liste de vérification.
+Compartiment étanche numéro 1
+Noter les données suivantes relatives à l'étalon de travail utilisé pour effectuer l'essai des gaz :
+la date à laquelle la valeur de l'étalon de travail a été comparée à celle de l'étalon de transfert
+Avant d'ouvrir l'écoutille, vérifier le niveau d'oxygène (O2), qui doit être supérieur à 20 %, et la limite inférieure d'explosivité (LIE de 30 % – ATTENTION, LIE de 50 % – EXPLOSIF).
+Inspecter les ferrures et les joints d'étanchéité de l'écoutille.
+Veiller à ce que les bouchons de visite soient scellés.
+Inspecter les raccords étanches et s'assurer de leur efficacité.
+S'assurer que les chemins de câble sont correctement raccordés.
+Inspecter les cloisons afin de repérer tout flambage ou toute soudure défectueuse.
+Inspecter les barrots et le bordé afin de repérer tout flambage ou toute soudure défectueuse.
+Vérifier que la cale ne contient pas d'eau.
+Vérifier que l'indicateur de niveau d'eau est solidement fixé.
+Inspecter le montage de la charge utile et de l'émetteur.
+S'assurer que les ferrures sont solidement fixées.
+S'assurer qu'aucun câble ne présente d'entaille ou de coupure.
+Vérifier que les raccords de compression de la tige du capteur sont bien serrés.
+Vérifier que le câble est correctement maintenu par une ceinture de câble.
+Vérifier les valves d'évacuation de l'air et s'assurer que les sphères se déplacent librement.
+Faire une vérification visuelle de la buse et des conduites d'évacuation du CO2.
+A-t-on vérifié que le compartiment étanche ne présentait pas de fuite (pression maximum – 1,5 lb/po², la pression ne doit pas descendre en dessous de 1,3 lb/po² après 15 min)?
+Si la pression descend en dessous de 1,3 lb/po², prendre des mesures correctives.
+Compartiment étanche numéro 2
+Avant d'ouvrir l'écoutille, vérifier le niveau d'oxygène (O2), qui doit être supérieur à 20 %, et la LIE (LIE de 30 % – ATTENTION, LIE de 50 % – EXPLOSIF).
+Veiller à ce que les bouchons de visite soient scellés.
+Inspecter les chaînes de batteries.
+S'assurer que les fils de connexion sont solidement fixés à la tige.
+Veiller à ce que les ferrures soient sécuritaires.
+Vérifier l'état des fils de connexion.
+Veiller à ce que les bornes des batteries soient enduites de graisse antirouille.
+Inspecter les montants du capteur de houle et vérifier que leurs joints ne présentent pas de fissures.
+S'assurer qu'aucun câble ne présente d'entaille ou de coupure.
+Compartiment étanche numéro 3
+Vérifier que l'indicateur de température de l'eau est solidement fixé.
+Vérifier l'indicateur de température de l'eau.
+Vérifier les valves d'évacuation de l'air et s'assurer que les billes se déplacent librement.
+Compartiment étanche numéro 4
+Vérifier que le dispositif ARGOS est bien présent et connecté
+Inspecter les supports du dispositif ARGOS et vérifier que leurs joints ne présentent pas de fissures.
+S'assurer que les ferrures de la batterie ARGOS sont solidement fixées.
+Extérieur de la coque et mâts
+Vérifier l'état de la peinture et noter la date à laquelle la bouée a été peinte pour la dernière fois.
+Examiner et noter l'état des défenses.
+Vérifier et noter l'état des élingues de levage, du maillon de fermeture en deux parties, de toutes les manilles et des axes, ainsi que des sangles/harnais certifiés.
+Examiner et noter l'état des quatre anneaux de levage.
+Vérifier et noter l'état du berceau à élingues pour la récupération, en s'assurant notamment qu'aucune soudure n'est endommagée ou fissurée.
+Vérifier l'état des évents à col de cygne afin de s'assurer qu'ils ne sont pas obstrués.
+Inspecter le bordé du pont et de la coque afin de repérer le flambage, les fêlures et les fissures, et noter ces renseignements.
+Inspecter et noter l'état des soudures de la coque et vérifier qu'elles ne présentent pas de fissures et ne sont pas brisées.
+Vérifier que les panneaux solaires sont fixés solidement.
+Vérifier l'état des câbles extérieurs et s'assurer qu'ils sont solidement fixés.
+Inspecter le trinquet et le mât arrière et noter dans quel état ils se trouvent et si les joints d'étanchéité présentent de la graisse de silicone.
+Vérifier le serrage des écrous et des boulons maintenant les brides du trinquet et du mât arrière.
+Inspecter et noter l'état des mains courantes afin de confirmer qu'elles sont sécuritaires.
+Examiner et noter l'état du réflecteur radar et son orientation.
+Vérifier que le bordé de la quille ne présente pas de pliures, de fissures ni de décollements.
+Vérifier que le pied de la béquille ne porte pas de traces de contrainte, de fissures, de déformations ou de trous élargis, et noter ces renseignements.
+Vérifier et noter l'état des ferrures de la béquille.
+S'assurer que la béquille bouge librement et vérifier qu'elle ne présente pas de déformations, de fissures ou de corrosion.
+Vérifier que l'axe est en bon état et qu'il est inséré correctement.
+Vérifier et noter l'état des anodes (proportion restante) en mentionnant s'il nécessaire de les remplacer.
+Vérifier et noter l'état des buses, des tuyaux et des raccords à branchement rapide du système d'évacuation du CO2.
+Vérifier l'état des béquilles de la coque.
+Effectuer des essais non destructifs sur les soudures principales de la coque lorsque la bouée doit être remise en état (au moins tous les quatre ans).
+Ancrage
+Vérifier :
+l'usure de la chaîne, des manilles, des cosses Nylite, des douilles Thordon et des émerillons;
+que les émerillons ne sont pas brisés;
+si la corde présente des salissures ou des traces d'abrasion ou d'étirement;
+que les manilles sont soudées là où c'est nécessaire;
+que les clavettes fendues des manilles sont bien fixées;
+que l'émerillon de portage Crosby est lubrifié;
+que l'ancre en béton n'a pas perdu de masse et qu'elle n'est pas endommagée;
+que l'ancrage est conforme au dessin officiel de l'ancrage.
+Noter les données de base suivantes :
+la profondeur de l'eau en mètres;
+la charge statique (le poids de la chaîne) en kilogrammes;
+le type d'ancrage;
+la longueur de l'ancrage en mètres;
+le rayon de mouvement en mètres.
+Noter les détails suivants sur l'ancrage :
+la date d'installation de l'ancrage;
+la date d'installation de l'ancrage doté d'une chaîne supérieure de seconde génération;
+la date d'installation des cosses Nylite;
+la date d'installation de l'Ultra-ultimate 11/2 po (30 à 50 m).
+Remplir la liste de vérification des pièces d'ancrage et indiquer les numéros de série de la chaîne, des ferrures, de la corde, de l'ancre et des flotteurs en verre Benthos.
+Effectuer une dernière inspection afin de s'assurer que l'ancrage est prêt à être installé.
+Vérifications préalables à la mise en place
+15.1 Noter toutes les métadonnées, y compris les suivantes :
+le nom de la station;
+la date;
+l'identifiant OMM;
+l'emplacement (latitude et longitude).
+15.2 Se connecter à l'unité processeur du capteur conformément au guide d'utilisation de Watchman100 et effectuer les vérifications opérationnelles suivantes, en vérifiant et en notant les valeurs correspondantes :
+l'heure du début de l'acquisition;
+le fonctionnement de l'horloge et de la boussole;
+la déclinaison magnétique;
+les temps d'amorçage de l'émetteur.
+15.3 Indiquer les renseignements suivants sur l'émetteur :
+l'identifiant de la plate-forme GOES;
+l'intervalle de transmission GOES;
+le temps de transmission GOES;
+l'identifiant ZAP;
+la voie de transmission GOES;
+la voie de transmission ZAP;
+le numéro de série de l'émetteur GOES;
+le numéro de série de l'antenne GOES;
+l'identifiant ARGOS;
+la vérification du message ARGOS (position courte uniquement message météorologique long et abrégé).
+15.4 Vérification des capteurs
+Vérifier les deux capteurs de vent à 90°, 180°, 270° et 355°.
+Noter les valeurs indiquées par la charge utile pour ces angles.
+Vérifier le fonctionnement de l'indicateur de vitesse du vent.
+Vérifier que le feu d'obstacle fonctionne correctement.
+Vérifier que l'indicateur de niveau de l'eau affiche zéro.
+Mesurer et noter la température de l'air à l'aide de la thermistance et de l'étalon de travail.
+Mesurer et noter la température de l'eau à l'aide de la thermistance et de l'étalon de travail.
+Mesurer et noter la pression à l'aide des deux capteurs et de l'étalon de travail.
+Noter l'écart entre les deux valeurs s'il y en a un.
+Observer le régime des vagues et noter si les valeurs indiquées sont correctes.
+Noter la profondeur de l'eau et le numéro de compartiment.
+À l'aide de Watchman100, forcer la transmission et noter :
+la puissance incidente (FWD PWR – la valeur devrait être égale à 203 – SEIMAC)
+(FWD PWR – la valeur devrait être égale à xxx- SUTRON)
+la puissance réfléchie (RFLD PWR – la valeur devrait être égale à la moitié de la puissance incidente avec une précision de ± 4)
+le rapport d'ondes stationnaires (SWR – la valeur devrait être comprise entre 73 et 78)
+Raccorder l'essayeur d'antenne et de câble à Watchman100 (wattmètre Bird) et noter les valeurs suivantes s'affichant sur le wattmètre :
+la puissance incidente (FWD PWR – la valeur devrait être comprise entre 8 et 12 W)
+la puissance réfléchie (RFLD PWR – la valeur devrait être inférieure à 1 W)
+le rapport d'ondes stationnaires (SWR – la valeur devrait être comprise entre 1 et 1,5)
+Noter le modèle et les numéros de série de l'équipement d'essai (wattmètre numérique) utilisés pour l'essai de l'émetteur à l'étape 10.
+Vérifier et noter la tension de la chaîne de batteries.
+Faire une inspection visuelle de tous les panneaux solaires afin de repérer les cellules endommagées et d'en évaluer la propreté.
+Noter les heures (ZULU) de prise du premier échantillon et de la transmission forcée.
+Vérifier que le GPS fonctionne.
+Noter le temps nécessaire pour obtenir un signal GPS.
+Noter l'heure de l'échantillonnage et de l'émission forcée.
+15.5 Relever les données d'entretien suivantes :
+la charge solaire;
+les détecteurs d'eau (A1);
+l'intensité du voyant (A2);
+la tension de la batterie à l'émission (hors charge) (A3);
+la tension à l'émission (chargée) (A4);
+le cap compas (A5);
+la puissance d'émission/puissance réfléchie (A6);
+la tension à la sortie (A7);
+le GPS (A9);
+la STHP (A16);
+le temps d'acquisition du GPS (A17);
+le temps d'amorçage (A19);
+la charge du dispositif ARGOS (A20);
+l'erreur acoustique (B1);
+l'erreur de transmission (B2);
+15.6 Vérifications finales
+Noter la date d'installation de la batterie de l'émetteur ARGOS.
+S'assurer que tous les connecteurs sont solidement fixés.
+Réinitialiser les temps d'amorçage.
+Effectuer la maintenance du système de surveillance du matériel.
+Réinitialiser le journal des erreurs de l'émetteur.
+Mettre la charge utile en mode exécution.
+S'assurer que le panneau d’écoutille est étanche et en bonne condition.
+Procédure de serrage (32 pieds-livres) du panneau d’écoutille.
+Serrage croisé (1-4-2-5-3-6) dans le sens des aiguilles d'une montre.
+Vérifier que toutes les décalcomanies sont en place (identifiant OMM, si trouvé ou endommagé, mot-symbole du Canada).
+S'assurer que tous les points d'ancrage sont raccordés.
+Mise en place/récupération
+Récupérer la bouée présente sur le site :
+Le personnel passe du bateau de service à la bouée.
+Préparer la bouée pour la récupération :
+Baisser le mât;
+Retirer l'anémomètre;
+Installer les fiches isolantes;
+Attacher les élingues et le matériel de levage.
+Le personnel retourne de la bouée au bateau de service ou reste sur la vedette de sauvetage de la GCC.
+Le bateau de service récupère la bouée sur le site.
+Installer une bouée remise en état :
+Le bateau de service installe la bouée remise en état;
+Le personnel passe du bateau de service ou de la vedette de sauvetage de la GCC à la bouée;
+Retirer les élingues et le matériel de levage;
+Monter et aligner les anémomètres;
+Lever et fixer le mât arrière;
+Le personnel retourne sur le bateau de service.
+Vérification sur place
+Si possible, rester sur place trois heures après la mise en place de la bouée.
+Effectuer trois comparaisons d'observations météorologiques entre les données de la bouée et celles du navire et noter ces valeurs.
+Vérifier que la force du signal reçu par le dispositif GOES est adéquate (force du signal entre 35 et 45, écart de fréquence ± 5, message du Système d'acquisition et de surveillance – N), si la communication est disponible.
+Voir plus bas pour plus de détails.
+Les unités du Système d'acquisition et de surveillance produisent quatre mesures de la qualité du signal pour chaque message reçu d'une plateforme de collecte de données (PCD) : la puissance isotrope rayonnée équivalente (PIRE) de transmission, le décalage de fréquence de transmission et l'indice de modulation de la PCD et la qualité des données reçues.
+Les valeurs normales des paramètres mesurés sont les suivantes :
+PIRE de transmission – entre 32 et 57 dBm, la fourchette normale se situant généralement entre 35 et 45 pour des émetteurs de 10 W et entre 44 et 49 dBm pour des émetteurs de 40 W.
+L'exactitude absolue de la force du signal indiquée est de ± 2 dB.
+Décalage de fréquence – incrémentations de 550 Hz (± 250 Hz)
+Indice de modulation – le caractère nominal de fonctionnement pour l'indice de modulation est le N et il est exprimé par l'un des trois caractères suivants :
+L (faible, <50o)
+H (élevé, >70o)
+Qualité des données – le caractère nominal utilisé pour la qualité des données est le N et il est exprimé de la façon suivante :
+N (normale, taux d'erreur inférieur à 1 X 10-6)
+F (correct, taux d'erreur entre 1 X 10-4 et 1 X 10-6)
+P (mauvais, taux d'erreur supérieur à 1 X 10-4)
+Si le message du Système d'acquisition et de surveillance message indique F ou P et/ou un écart de fréquence supérieure à 5, l'antenne et/ou le câble et/ou l'émetteur doit être remplacé.
+Effectuer un contrôle visuel de la bouée afin de s'assurer qu'elle est correctement placée sur l'eau.
+Effectuer une comparaison visuelle de la hauteur de la vague avec la mesure du capteur.
+Vérifier les feux d'obstacle si les conditions le permettent.
+Prendre une photographie de la bouée dans l'eau si possible.
+Marque et modèle
+Étalon de transfert
+Temp de l'air
+Thermistance YSI 703
+Visala HMI41 avec sonde HMP 45 (ou 46)
+Temp de l'eau
+Thermistance YSI 44203
+Vaisala série PTB200
+Paroscientific modèle 760-16B Field Barometric Standard
+Vent
+Vitesse : Anemometer Drive (numéro de modèle 18802)
+Direction : Vane Angle Bench standard (numéro de modèle 18112)
+GARMIN GPS 60CXS portatif
+Boussole
+Module de mesure des vagues
+Aucun
+Annexe B – Guides des fabricants
+ATELIER 1 : À la découverte du groupe E=MC³ 4-6 ans
+Rencontre parents
+Objectifs :
+Informer les parents du contenu du groupe E = MC3 et du déroulement des rencontres.
+Permettre aux parents de se rencontrer et d’échanger sur leurs craintes et leurs attentes.
+Donner de l’information sur les impacts possibles de la BSO sur la famille.
+Outiller les parents pour parler des manifestations de la BSO avec leur enfant.
+Thèmes de la rencontre :
+Impacts des manifestations de la BSO sur la famille.
+Comment parler des manifestations de la BSO aux enfants.
+Messages clefs :
+Soyez fier de votre participation au groupe E=MC3.
+Votre rôle de parent est important : N’oubliez jamais que votre enfant est, au sens figuré, comme une plante et que vous êtes son eau!
+Comme parent, vous êtes la meilleure personne pour accompagner votre enfant et lui parler des manifestations de la BSO.
+En tant que parent, vous êtes une équipe.
+Les enfants vivent dans le présent et malgré la BSO, ils continuent de vivre des émotions agréables.
+Les apprentissages faits durant le groupe sont transférables aux autres enfants de la famille.
+Défis de la semaine :
+Aborder les manifestations de la BSO avec votre enfant.
+(Vous pouvez lire avec lui l’histoire « Lulu et Lili ne comprenaient pas la blessure de leur papa! »).
+Parler du groupe E=MC³ avec votre enfant en vue de sa participation.
+Informations de la semaine :
+Si vous avez des questions suite à la rencontre, n’hésitez pas à nous consulter au 418-844-6060.
+Nom des intervenants :
+ATELIER 2 : Ma place de parent dans ma famille
+Favoriser des pratiques parentales optimales.
+Augmenter le sentiment de compétence des parents.
+Normaliser le vécu des parents.
+Permettre aux parents de partager leur vécu familial et d’échanger des trucs.
+Être parent, tout un défi : Situations difficiles que l’on peut vivre avec nos enfants en lien avec la BSO.
+Nos compétences et qualités comme parent.
+Prendre soin de soi comme parent.
+Vous êtes les experts de votre situation.
+Le rôle de parent est difficile, aucun parent n’est parfait.
+Applaudissez votre implication comme parent et cela malgré les difficultés quotidiennes.
+Ne vous culpabilisez pas par rapport aux choses du passé.
+Regardez ce qui peut être fait plutôt que ce qui n’a pas été fait.
+Les enfants apprennent en modélisant leurs parents : vous êtes son exemple.
+Les enfants apprennent et développent de nouvelles compétences par le jeu.
+Afin de modifier le comportement d’un enfant, il est facilitant d’identifier le réel besoin de l’enfant pour permettre de trouver les meilleurs moyens d’y répondre et ainsi favoriser la modification de son comportement.
+Tout n’est pas en lien avec la BSO.
+Ayez des attentes réalistes vis-à-vis de vous et de vos enfants (ex. capacité motrice de l’enfant, durée d’une activité, etc.).
+Soulignez les efforts de chacun.
+Mettre l’emphase sur le positif et chacune de vos « petites » réussites.
+N’oubliez pas que passer du temps de qualité avec son enfant, c’est lui dire « je t’aime ».
+Il est primordial de prendre soin de soi : Si vos batteries sont à plat, il vous sera difficile de donner de l’énergie et du soutien à votre enfant!
+Prendre soin de soi se planifie : Avoir le temps de prendre soin de soi versus se prendre du temps pour prendre soin de soi.
+Les plaisirs peuvent être plus simples que ce que l’on pense (prendre le temps de boire son café CHAUD, etc.).
+Chaque famille, tout comme chaque enfant, est unique et vit les choses différemment. Elle a des besoins différents.
+Prendre quelques minutes pour compléter la fiche « Comme parent je suis compétent ».
+S’autoriser au minimum 4 plaisirs par jour.
+Laisser libre cours à votre imagination, écrire une liste de 25 plaisirs et en piger 4 par jour, au minimum, ou encore vous inspirer de la liste « 100 boutons de plaisirs individuels » (pochette parents, page ?).
+Rappel : Pour la prochaine rencontre, il est important de préparer votre enfant à sa participation au groupe E=MC³ et de lire avec votre enfant l’histoire « Lulu et Lili ne comprenaient pas la blessure de leur papa! ».
+Informations de la semaine :
+Votre enfant doit apporter une photo de famille pour la prochaine rencontre.
+ATELIER 3 : Ensemble au groupe E = MC 3 4-6 ans
+Rencontre enfants / parents
+Permettre aux enfants de se connaitre.
+Comprendre ce qu’est le groupe E=MC³.
+Donner à l’enfant des informations pour faciliter sa compréhension de la BSO.
+Rassurer l’enfant et normaliser sa réalité.
+Favoriser l’interaction positive entre l’enfant et le parent.
+« Moi et ma famille ».
+La blessure de mon parent.
+Activités :
+Activité causerie sur le thème de : La BSO et le fonctionnement du cerveau.
+Ma boîte à outils : J’ai des ressources en moi et autour de moi.
+Messages clefs aux enfants :
+Ce n’est pas de ta faute.
+Il y a des jours plus difficiles, mais il est possible d’aller mieux.
+Ce n’est pas à toi de soigner ton parent, il y a des docteurs pour ça.
+Papa et maman t’aiment.
+On est tous ensemble pour mieux comprendre.
+Papa et maman sont là pour toi.
+Tu as le droit de jouer et d’être heureux même si ton parent est blessé.
+Aider votre enfant à compléter son cahier de participation au groupe E=MC³, section « Moi et ma famille » et «Le cerveau, l’ordinateur de notre corps ».
+Réaliser une activité en famille.
+Le but de cette activité est de passer un moment agréable en famille.
+Il est recommandé de tenir compte des limitations dues aux manifestations de la BSO (ex. Éviter la foule, prévoir une durée limitée, etc.).
+Vous pouvez vous référer au document de la pochette parent page ?
+« Idées d’activités à réaliser pour passer un moment agréable avec vos enfants / votre famille. ».
+ATELIER 4 : Au pays des sentiments
+Initier au langage des émotions.
+Aider l’enfant à mieux reconnaitre les émotions et les normaliser.
+Permettre à l’enfant de faire des liens entre les sentiments et diverses situations familiales en lien avec les manifestations de la BSO.
+Favoriser la communication et faciliter l’expression des émotions au sein de la famille.
+Thème de la rencontre :
+Les émotions (colère, peine, joie, fierté).
+Photos des émotions : reconnaitre et nommer les émotions sur les visages.
+Jeux du miroir : le parent et l’enfant se mettent face à face.
+À tour de rôle, chacun mime une émotion et l’autre imite son expression faciale.
+Jeu de cartes des émotions : Échange sur les émotions que l’on peut vivre en lien avec des situations de la vie quotidienne.
+Roue « la météo des émotions ».
+Il n’y a pas de mauvaises émotions, on a le droit d’être en colère.
+Parfois on peut vivre plusieurs émotions en même temps.
+Chacun peut vivre des émotions différentes.
+Messages clefs aux parents :
+Les enfants ont cette magnifique capacité d’être dans le présent.
+Ils passent d’une émotion à l’autre rapidement.
+Reconnaitre et nommer les émotions en famille : Nommer ses propres émotions et identifier les émotions des autres (vous pouvez par exemple jouer au jeu du miroir avec votre enfant ou utiliser le jeu de cartes des émotions).
+Cahier de participation : L’enfant peut colorier les émotions.
+ATELIER 5 : Gérer et exprimer ses émotions
+Enfants / parents
+Aider les enfants à reconnaitre les signes de la colère.
+Déculpabiliser l’enfant face aux réactions de son parent.
+Permettre aux parents et aux enfants de découvrir des moyens pour mieux communiquer leurs émotions.
+Identifier en famille des moyens de mieux gérer la colère.
+Thème de la rencontre :
+L’émotion de la colère.
+Les signes de la colère dans mon corps.
+Stratégies pour se calmer.
+Visionnement vidéo : « Petit Ours brun est en colère contre maman », YouTube.
+« Je respire pour relaxer ».
+Jeu « Le feu de signalisation ».
+Carton rouge : on s’arrête pour se calmer, carton jaune : on ralentit, carton vert : on continue, tout va bien.
+La colère dans mon corps : Dans quelle partie du corps est-ce que je ressens la colère?
+Feu de signalisation « mon niveau d’humeur ».
+L’objectif est de permettre à chaque membre de la famille d’identifier son propre niveau d’humeur et d’en informer les autres.
+Certificat « Notre engagement familial face à la colère » / Stratégie pour gérer ma colère sainement.
+On a le droit d’être en colère, mais on ne peut pas l’exprimer par la violence.
+Papa et maman ne nous punissent pas parce que l’on vit de la colère, mais parce qu’on a un mauvais comportement (faire une crise, lancer des objets, etc.).
+Sous la colère, il se cache souvent une autre émotion (peine, jalousie, etc.).
+Ce n’est pas ta faute si ton parent se fâche et crie parfois.
+Dis tes sentiments à tes parents.
+Même si parfois ton papa et ta maman crient, ils t’aiment.
+Les enfants apprennent en modélisant, vous êtes son exemple.
+Au besoin, utilisez pour vous-même la stratégie du « Time Out » (pochette parents page ?) afin d’éviter l’éclat avec votre enfant.
+Une fois calmé, il vous sera plus facile d’intervenir auprès de votre enfant.
+Nommer les émotions en famille.
+Identifier les signes de la colère (de soi et des autres).
+Vous pouvez vous référer au cahier de participation : La colère dans mon corps.
+Informer les autres de votre niveau d’humeur (utilisez le feu de signalisation).
+En famille, mettre en place des stratégies pour favoriser une bonne gestion de la colère.
+Pratiquer l’exercice « Respirer pour se calmer » (Cahier de participation).
+Se permettre des activités de détente en famille et individuellement.
+Si vous avez des questions suite à la rencontre, n’hésitez pas à nous consulter au 418-844-6060.
+ATELIER 6 : Amusons-nous en famille
+Rencontre familiale
+Permettre aux familles de se retrouver et de partager un moment agréable.
+Permettre aux participants de réaliser qu’il est encore possible de vivre de bons moments en famille malgré la BSO d’un des parents.
+Valoriser et encourager les enfants.
+Féliciter les participants.
+Activité :
+Jeux en famille.
+Spectacle final.
+Malgré la BSO, il est encore possible d’avoir du plaisir en famille.
+Bravo pour votre implication au groupe E=MC³.
+Utiliser les cartes « Défis en famille ».
+Continuer d’utiliser le matériel du groupe avec vos enfants et laisser libre cours à votre imagination pour en développer des nouveaux en famille.
+Au plaisir de vous revoir lors de la dernière rencontre parentale!
+ATELIER 7 : Bilan du groupe E = MC3
+Les impacts sur les enfants et les familles
+Permettre aux parents de partager leur vécu familial depuis la participation de leur famille au groupe.
+Faire un bilan du groupe et des impacts sur les familles.
+Souligner les réussites et renforcer les acquis des parents.
+Mes réussites comme parent.
+Mes objectifs pour l’avenir en tant que parent.
+Bravo pour votre participation au groupe E = MC3.
+Vous pouvez être fier de vous et de votre enfant.
+Mettre l’emphase sur le positif.
+Nous vous souhaitons une belle réussite dans la poursuite de vos acquis, pour vous et votre famille.
+« Rien à propos de nos comportements n’est jamais permanent, si ce n’est notre conviction qu’ils le sont » Moshe Feldenkrais.
+Au plaisir d’avoir de vos nouvelles lors de l’entrevue post groupe (environ dans un mois).
+Au besoin, n’hésitez pas à nous contacter et à utiliser les différents services du Centre de la famille Valcartier et d’Osiss.
+Si vous avez des questions suite à la rencontre, n’hésitez pas à nous consulter au 418-844-6060.
+information sur le Somaliland, y compris la structure du gouvernement, la sécurité et l’accès pour les personnes déplacées à l’intérieur du territoire somalien
+Le Somaliland, situé dans le nord-ouest de la Somalie, est une république indépendante autoproclamée (Europa World Year Book 2011 2011; HRW 2011).
+Il a officiellement fait sécession de la Somalie en 1991, mais il n’a pas été reconnu par la communauté internationale (MRG 2010, 17; The Guardian 26 août 2011).
+Gouvernement et administration
+Le Somaliland a un président élu au suffrage direct et une législature bicamérale (É.-U. 8 avr.
+2011 sect. 3; HRW juill. 2009, 16-17) composée d’une chambre des représentants et d’une chambre des aînés (ibid.; ACCORD déc. 2009, 5).
+Les observateurs internationaux ont considéré que les élections présidentielles de 2010 ont été généralement libres et équitables (HRW 2011; É.-U. 8 avr. 2011, sect. 3).
+Le Département d’État des États-Unis souligne que même si la constitution de 2002 du Somaliland s’appuie sur des principes démocratiques, la région utilise également des lois adoptées avant 1991 et elle ne reconnaît pas la Charte fédérale transitoire (Transitional Federal Charter) de la Somalie (ibid., sect. 1.e).
+Les institutions administratives du Somaliland sont considérées comme généralement fonctionnelles (ibid., sect. 3; ACCORD déc. 2009, 5; The Guardian 26 août 2011).
+Toutefois, des sources soulèvent également que les revenus limités du gouvernement — en partie parce qu’il n’est pas admissible à l’aide internationale au développement à titre d’État souverain non reconnu — limitent sa capacité à fournir des services publics de base (ibid.; HRW juill. 2009, 12; Freedom House 2011).
+Selon un rapport du Centre autrichien de recherches et de documentation sur les pays d’origine et d’asile (Austrian Centre for Country of Origin and Asylum Research and Documentation — ACCORD), s’appuyant sur une conférence de Joakim Gundel, analyste politique qui se spécialise en études somaliennes, le Somaliland ne se considère pas comme un État fondé sur les clans (ACCORD déc. 2009, 2, 5).
+Le Département d’État des États-Unis note que le gouvernement permet une représentation proportionnelle des clans (8 avr. 2011, sect. 3).
+Toutefois, Freedom House affirme que même si les partis politiques définis par la région et le clan sont [traduction] « techniquement interdits […], les affiliations à un parti et à un clan tendent à coïncider » (2011).
+La Coalition des intervenants de la société civile du Somaliland aux fins de l’Examen périodique universel (EPU) (Somaliland’s Civil Society Stakeholders’ Coalition for the Universal Periodic Review (UPR)), organisme-cadre regroupant huit organisations locales de défense des droits de la personne et de développement, a affirmé que le système judiciaire du Somaliland est un mélange non officiel de droit officiel, de charia et de droit coutumier somalien (1er nov. 2010, 2, 3) ou xeer (ACCORD déc. 2009).
+Toutefois, la constitution du Somaliland prévoit que les lois du Somaliland ne peuvent pas violer les principes du droit islamique (Somaliland’s Civil Society Stakeholders Coalition for the UPR 1er nov. 2010, 3; Freedom House 2011).
+Situation en matière de sécurité
+Human Rights Watch (HRW) a écrit en 2009 que le Somaliland était en grande partie pacifique et qu’il avait généralement évité les [traduction] « conflits internes graves » depuis 1996 (juill. 2009, 10-11).
+Toutefois, le Haut Commissariat des Nations Unies pour les réfugiés (HCR) a relevé des inquiétudes concernant l’émergence de nouveaux mouvements de rebelles ayant des liens avec des milices islamistes dans le centre-sud de la Somalie (Nations Unies 2011).
+Ces groupes s’opposeraient à la sécession du Somaliland de la Somalie (ibid.).
+Les régions de Sool et de Sanaag, situées entre le Somaliland et le Puntland, sont revendiquées par les deux gouvernements, ce qui a fait augmenter l’insécurité dans la région (HRW 2011; É.-U. 8 avr. 2011, sect. 3; Nations Unies 5 mai 2010, 8).
+En 2010, une milice clanique séparatiste connue sous le nom de Sool, Sanaag et Cayn (Sool, Sanaag and Cayn) a fait son apparition; elle chercherait à obtenir l’indépendance de la région tant à l’égard du Somaliland que du Puntland (É.-U. 8 avr. 2011, sect. 3) et elle s’oppose à la présence du gouvernement du Somaliland dans la région de Sool (Garowe Online 15 sept. 2010).
+HRW souligne que les luttes claniques concernant les ressources dans la région ont entraîné le déplacement de milliers de civils en juin 2010 (2011).
+Selon une agence de nouvelles de Mogadiscio, des combats entre les forces du Somaliland et du Puntland ont éclaté dans le Sool en août 2011 et ont fait au moins trois morts et sept blessés (Shabelle Media Network 10 août 2011).
+Situation des droits de la personne
+Plusieurs sources mentionnent que la liberté de presse est restreinte au Somaliland et que des journalistes et d’autres personnes considérées comme étant critiques à l’endroit du gouvernement sont harcelés et détenus (Nations Unies 5 mai 2010, 25; ibid. 21 févr.
+2011, paragr. 42, 45; RSF 23 sept. 2011; HRW 2011).
+Par exemple, des médias soulignent qu’un journaliste du journal indépendant Waheen a été battu et détenu durant 10 heures par l’Unité de protection spéciale (Special Protection Unit) de la Police du Somaliland (Somaliland Police) le 10 septembre 2011, prétendument parce que le journal a critiqué des représentants du gouvernement (RSF 23 sept. 2011; IFEX Clearing House 14 sept. 2011).
+La mutilation génitale féminine (MGF) est interdite au Somaliland, mais des sources affirment que les lois l’interdisant ne sont pas appliquées (R.-U. juill. 2010, 29; É.-U. 8 avr. 2011, sect. 3; Nations Unies 5 mai 2010, 26).
+La Coalition des intervenants de la société civile du Somaliland aux fins de l’EPU précise que 99,5 p. 100 des filles au Somaliland ont subi une MGF (1er nov. 2010, 5).
+En outre, des lois interdisent le viol, mais elles ne seraient pas appliquées (É.-U. 8 avr. 2011, sect. 3; Nations Unies 21 févr. 2011, paragr. 20).
+Même si fréquemment ce crime n’est pas signalé (É.-U. 8 avr. 2011, sect. 3), le Département d’État des États-Unis souligne que quelques cas de viol ont fait l’objet de poursuites judiciaires en 2010 (ibid.).
+Le Département d’État des États-Unis relève également que les viols en bande sont un problème particulier dans les régions urbaines et pauvres peuplées d’immigrants et de personnes déplacées et qu’ils sont en grande partie commis par [traduction] « des gangs de jeunes, des membres des forces policières et des étudiants » (ibid.).
+Les présentations des parties prenantes au Groupe de travail sur l’EPU du Conseil des droits de l’homme (CDH) des Nations Unies en 2011 attestent que les femmes sont exclues des processus décisionnels en raison des structures sociales patriarcales et du fait qu’elles ont un accès limité à la justice; les conflits concernant les femmes sont souvent réglés par des hommes au moyen de mécanismes traditionnels (Nations Unies 21 févr. 2011, paragr. 20, 34; voir aussi Somaliland’s Civil Society Stakeholders Coalition for the UPR 1er nov. 2010, 4).
+Dans certains cas, cela fait en sorte que des victimes de viol sont forcées d’épouser leur agresseur (Nations Unies 21 févr. 2011, paragr.
+20). Selon la présentation d’une partie prenante au CDH des Nations Unies, une Commission des droits de la personne (Human Rights Commission) a été formée au Somaliland, mais son mandat n’est pas clair et elle n’est pas indépendante de toute influence politique (ibid., paragr. 8).
+Minority Rights Group International (MRG) souligne également que les mesures limitées prises par la Commission des droits de la personne ont contribué à la vulnérabilité des groupes minoritaires aux violations des droits de la personne (2010, 17).
+Accès et admission au Somaliland
+Le HCR affirme que 67 000 personnes déplacées à l’intérieur du territoire vivaient au Somaliland à la fin de 2009 (5 mai 2010, 2).
+Des sources mentionnent que les autorités du Somaliland admettent sur le territoire uniquement les personnes originaires du Somaliland ou qui appartiennent à un clan traditionnellement établi dans le territoire (R.-U. juill. 2010, 7; Nations Unies 5 mai 2010, 9).
+L’Agence frontalière du Royaume-Uni (United Kingdom Border Agency) relève que cela comprend généralement les personnes affiliées aux clans Isaaq (R.-U. juill. 2010, 7).
+En outre, le HCR précise que les personnes déplacées incapables de prouver leur affiliation à un clan du Somaliland peuvent être détenues ou expulsées (5 mai 2010, 9).
+La Coalition des intervenants de la société civile du Somaliland aux fins de l’EPU déclare toutefois que le gouvernement du Somaliland ne dispose pas d’une politique officielle sur l’admission des Somaliens déplacés, bien qu’il considère que ce sont des réfugiés et non pas des personnes déplacées à l’intérieur du territoire (1er nov. 2010, 6).
+En septembre 2011, le gouvernement du Somaliland a donné un mois d’avis à des migrants sans papiers pour qu’ils quittent le territoire (Nations Unies 14 sept. 2011; Garowe Online 5 sept. 2011).
+Les quelque 80 000 migrants ciblés à des fins d’expulsion étaient soi-disant principalement d’origine éthiopienne; les autorités ont affirmé que les Somaliens déplacés et les réfugiés enregistrés n’ont pas été ciblés à des fins d’expulsion (Nations Unies 14 sept. 2011).
+En 2010, l’Agence frontalière du Royaume-Uni mentionnait que le camion est le principal moyen de transport entre le Somaliland et le centre-sud de la Somalie, mais qu’il y a aussi des vols entre Mogadiscio et Hargeisa (Somaliland); des taxis et des véhicules tout-terrain circulent également entre les grandes villes du Somaliland et du Puntland (juill. 2010, 7).
+Toutefois, en septembre 2011, le gouvernement fédéral transitoire (Transitional Federal Government — TFG) de la Somalie aurait interdit aux citoyens somaliens d’émigrer illégalement dans d’autres pays (AllAfrica 8 sept. 2011; Radio Shabelle 7 sept. 2011).
+Des médias mentionnent que le TFG a annoncé qu’il avait empêché au moins 21 jeunes somaliens de prendre un vol de Mogadiscio à Boroma, au Somaliland, en route pour le Yémen (ibid.).
+Traitement des étrangers, y compris les Somaliens déplacés
+MRG affirme que le gouvernement du Somaliland considère que les Somaliens du Puntland ou du centre-sud de la Somalie sont des [traduction] « étrangers » (MRG 2010, 17), affirmation que reprend le représentant du secrétaire général pour les droits de l’homme des personnes déplacées dans leur propre pays (Nations Unies 21 janv. 2010, paragr. 47).
+Selon la loi sur la citoyenneté (Citizenship Law) du Somaliland, la citoyenneté est transmise uniquement par le père et elle peut uniquement être acquise par les descendants de ceux qui ont résidé sur le territoire du Somaliland avant 1960 (Somaliland 2002).
+L’ACCORD relève que les personnes déplacées du centre-sud de la Somalie qui n’appartiennent pas à un clan majoritaire au Somaliland ne peuvent obtenir qu’un [traduction] « niveau limité de protection physique » contre les bombardements aveugles et les combats (déc. 2009, 23).
+Des sources montrent cependant que les personnes déplacées et les membres de clans non majoritaires au Somaliland ont un accès limité aux services et aux protections et qu’ils sont particulièrement vulnérables aux violations des droits de la personne (Nations Unies 5 mai 2010; ACCORD déc. 2009, 23; Nations Unies 21 févr. 2011, paragr. 68; ibid. 21 janv. 2010, paragr.
+47, 49). Cette situation est attribuable en partie à une perte ou à un manque de protection clanique traditionnelle (ibid. 21 janv. 2010, paragr.
+48; ibid. 5 mai 2010, 3). Le HCR explique en outre qu’en raison de la prédominance du système xeer, dans les faits, les étrangers ne peuvent pas avoir accès au système de justice au moyen des mécanismes traditionnels (ibid., 25).
+De plus, les gens du sud seraient traités avec suspicion par les gens de la région, qui les considèrent comme des [traduction] « menaces pour la paix » (ACCORD déc. 2009, 24).
+Le représentant du secrétaire général pour les droits de l’homme des personnes déplacées dans leur propre pays affirme que les personnes déplacées vivent principalement dans des installations aux côtés des réfugiés rapatriés, des demandeurs d’asile et des citadins pauvres (Nations Unies 21 janv. 2010, paragr. 20).
+Des sources mentionnent que les personnes déplacées ne peuvent pas acquérir une propriété et qu’elles risquent de payer un loyer exorbitant (ibid., paragr. 47, 49) ou d’être expulsées de force (ibid., paragr. 49; ibid. 5 mai 2010, 35; ibid. 21 févr.
+2011, paragr. 68).
+Elles n’auraient pas accès aux biens et services de base comme la nourriture, l’eau, le logis, les soins de santé et l’éducation (ibid. 21 janv.
+2010, paragr. 49; ibid. 21 févr.
+2011, paragr. 71).
+Les possibilités d’emploi font défaut aux personnes déplacées, car elles sont exclues de la fonction publique (ibid. 21 janv. 2010, paragr. 47).
+De plus, selon le résumé qu’a fait l’ACCORD des commentaires de Joakim Gundel, les Somaliens qui déménagent d’une région à l’autre perdent leur moyen de subsistance et ont de la difficulté à trouver un emploi (ACCORD déc. 2009, 24).
+Un risque de travail forcé (Nations Unies 5 mai 2010, 35) et d’exploitation économique d’enfants a été constaté (ibid. 21 janv. 2010, paragr. 49).
+L’insécurité physique, y compris la vulnérabilité au viol, à la violence sexuelle, à la violence fondée sur le sexe (ibid.), au vol et au harcèlement (ibid. 5 mai 2010, 25) figurent également parmi les inquiétudes.
+8 septembre 2011.
+Décembre 2009.
+Country Reports on Human Rights Practices for 2010. <http://www.state.gov/g/drl/rls/hrrpt/2010/af/154369.htm> [ : 21 oct. 2011]
+Londres : Routledge. <http://www.europaworld.com/entry/EE001865> [ : 21 oct. 2011]
+5 septembre 2011.
+____ 15 septembre 2010.
+The Guardian [Londres].
+26 août 2011.
+Human Rights Watch (HRW). 2011.
+____ Juillet 2009.
+International Freedom of Expression Exchange (IFEX) Clearing House. 14 septembre 2011.
+Nations Unies. 14 septembre 2011.
+Réseaux d’information régionaux intégrés (IRIN).
+« Somalia: Puntland, Somaliland Act on Migrants, IDPs ». <http://www.irinnews.org/report.aspx?
+ReportId=93718> [ : 21 oct. 2011]
+____ 21 février 2011.
+Conseil des droits de l’homme (CDH).
+Summary Prepared by the Office of the High Comissioner for Human Rights in Accordance with Paragraph 15 (c) of the Annex to Human Rights Council Resolution 5/1: Somalia.
+(A/HRC/WG.6/11/SOM/3) <http://lib.ohchr.org/HRBodies/UPR/Documents/Session11/SO/A_HRC_WG.6_11_SOM_3_Somalia_E.pdf> [ : 21 oct. 2011]
+____ 2011. Haut Commissariat pour les réfugiés (HCR). « 2011 UNHCR Country Operations Profile – Somalia ». <http://www.unhcr.org/pages/49e483ad6.html> [ : 21 oct. 2011]
+____ 5 mai 2010.
+Haut Commissariat pour les réfugiés (HCR). UNHCR Eligibility Guidelines for Assessing the International Protection Needs of Asylum-Seekers from Somalia. (HCR/EG/SOM/10/1) <http://www.unhcr.org/refworld/docid/4be3b9142.html> [ : 21 oct. 2011]
+____ 21 janvier 2010.
+Conseil des droits de l’homme (CDH).
+Report of the Representative of the Secretary-General on the Human Rights of Internally Displaced Persons, Walter Kälin. (A/HRC/13/21/Add.2) <http://www2.ohchr.org/english/bodies/hrcouncil/docs/13session/A-HRC-13-21-Add2.pdf> [ : 22 nov. 2011]
+Radio Shabelle.
+7 septembre 2011.
+« Citizens Banned from Migrating from Mogadishu Airport ».
+(AMISOM Daily Media Monitoring) <http://somaliamediamonitoring.org/?p=442> [ : 25 oct. 2011]
+Reporters sans frontières (RSF).
+23 septembre 2011.
+« Somalia: Harassment and Attacks on Journalists in Puntland and Somaliland ». (allAfrica.com) <http://allafrica.com/stories/201109240106.html> [ : 21 oct. 2011]
+Royaume-Uni (R.-U.). Juillet 2010. UK Border Agency. Operational Guidance Note: Somalia. <http://www.ukba.homeoffice.gov.uk/sitecontent/documents/policyandlaw/countryspecificasylumpolicyogns/somaliaogn?view=Binary> [ : 21 oct. 2011]
+Shabelle Media Network.
+10 août 2011.
+« Somalia: Somaliland, Puntland Battle in Norhern Town ». (allAfrica.com) <http://allafrica.com/stories/201108110847.html> [ : 21 oct. 2011]
+Somaliland.
+The Republic of Somaliland Citizenship Law. <http://www.somalilandlaw.com/citizenship_law.htm> [ : 24 oct. 2011]
+Somaliland’s Civil Society Stakeholders’ Coalition for the Universal Periodic Review (UPR).
+1er novembre 2010.
+Somaliland's Civil Society Stakeholders' Coalition Report for the Universal Periodic Review. <http://lib.ohchr.org/HRBodies/UPR/Documents/Session11/SO/JS1_SomalilandCivilSocietyCoalition-eng.pdf> [ : 21 oct. 2011]
+Sites Internet, y compris : AlShahid; Critical Threats; European Country of Origin Information Network; GlobaLex; Government of Somaliland; Nations Unies — Bureau de la coordination des affaires humanitaires (BCAH); Nations Unies — Haut-Commissariat aux droits de l’homme (HCDH); Nations Unies — Refworld; Somaliland Cyberspace; Somaliland Law; Somaliland Press; Women Against Shariah.
+FUNCTIONAL LANGUAGE PROFILE OF TARGET MOSID REQUIRED PRIOR TO COMMENCING QL TRG 10. TRG: TO BE SCHEDULED AND CONFIRMED BY TRG NDHQ HQ DET BORDEN/BTL MGT/NCM//
+Annexe « »
+FRANÇAIS
+F113 — Sigles, termes clés et définitions
+Memo to Associate Assistant Deputy Minister for decision: Proposal for a Labour Market Impact Assessment (LMIA) exemption for film and television productions SPP-14-2146 To Associate Assistant Deputy Minister for approval: Additional Qs&As for ZTBCP (Zero Tolerance for barbaric Cultural Practices) Act (Bill S-7)
+Défense nationale
+On pourrait satisfaire à la plupart des besoins en matière de réobservation avec une fauchée d’imagerie plus étroite que celle indiquée au tableau 1.2-1. Toutefois, la fauchée d’imagerie doit avoir une largeur de plusieurs centaines de kilomètres pour couvrir toutes les régions présentant un intérêt.
+Les ventes au détail en valeur nominale ont baissé de 0,1 % en mars (taux mensuel), après un gain de 0,7 % en février. Compte non tenu de l’effet des changements de prix, les ventes au détail réelles ont baissé de 0,2 % en mars, après une augmentation de 0,2 % en février.
+Terre-Neuve
+Mots d’ouverture et de bienvenue
+*Les produits et services de correspondance comprennent des dossiers, des notes d’information, des notes pour la période de questions, des présentations, des rapports, des tableaux de bord, des réponses à des demandes de renseignements et autres demandes ministérielles, des demandes d’accès à l’information, des demandes de renseignements du public et des rapports sur les incidents.
+>EAP 4.3.2, au degré 3 - Connaissance des théories, concepts et techniques économiques et socioéconomiques, permettant d'effectuer des analyses des tendances, de préparer des résumés de constatations et d'examiner des études, données et méthodes économiques à l'appui des conclusions des études.
+PROGRAMME DE RÉFORME DES PORCS REPRODUCTEURS
+Plus de 13 M de personnes
+Le contenu de cette publication ou de ce produit peut être reproduit en tout ou en partie, et par quelque moyen que ce soit, à des fins personnelles ou publiques, mais non commerciales, et ce, sans frais ni autre autorisation, à moins d’avis contraire.
+Elles contreviennent aux obligations de la Russie en vertu de la Charte de l'Organisation des Nations Unies (ONU) et de son accord de base de 1997 avec l’Ukraine. Nous demandons à la Russie de rappeler immédiatement ses forces militaires à leurs bases et de s’abstenir de commettre tout autre acte provocateur ou dangereux en Ukraine.
+Martin and Phillippe for Economic Development & Innovation;
+BOP Bases d’opérations principales
+OU b) lorsqu’il y a un nouvel exploitant, un changement relatif aux opérations ou au lieu d’exploitation, ou des modifications à l’installation qui pourraient avoir une incidence sur la sûreté - article 351(2)b) du RSTM.
+Train and Truck Unloading
+Activités traditionnelles telles que les cours et ateliers donnés en classe, qui dispensent un enseignement et des connaissances valables dans un format en grande partie structuré, uniformisé et prévisible.
+Gestion des systèmes
+Cette exigence est uniquement assujettis à l'Accord sur le commerce intérieur (ACI).
+Document du participant (à remettre à la fin de la séance)
+Soutenir l’émigration des résidents.
+Pour les fins de la production du Manuel des procédures d'enquête et dans un souci d'uniformité pour quiconque participe aux enquêtes, nous avons adopté les termes et définitions qui suivent.
+"La région géographique de Benaadir englobe la côte sud de la Somalie, depuis environ Warsheikh, au nord de Mogadishu, jusqu'à Kismayu, près de la frontière du Kenya, et les personnes originaires de cette région se disent elles-mêmes Banaadiri ([traduction] « ""le peuple des ports"" »)."
+Menaces
+To deliver a national awareness campagn using busboards and bus shelter posters. Campagne nationale de sensibilisation par affichage dans les autobus et les abribus
+des étangs
+En plus de nous permettre d’apprendre et de nous améliorer, de tels contrôles nous donnent l’occasion de mettre à contribution nos points forts en diffusant nos connaissances dans l’industrie.
+(1) Intention du commandant.
+Il est important de noter que la promotion de l'énergie atomique ne fait pas partie du mandant de la CCSN.
+Élaborer et appliquer des procédures, des calendriers, des échéances et des normes pour le Secteur en vue de la réception, du traitement et de la gestion de dossiers, de l’élaboration de réponses à des demandes de renseignements ministérielles et provenant du public (p. ex. : demandes d’accès à l’information, notes pour la période de questions, présentations, rapports d’incidents et notes d’information) et du traitement d’enjeux transmis au directeur.
+Un nouveau conseil consultatif sur la planification de l’investissement en matière de sécurité, qui relève du Cadre de sécurité mondial du Ministère, a été mis sur pied pour assurer l’intégration et la hiérarchisation des investissements ministériels en matière de sécurité en s’appuyant sur un modèle de risque pour la sécurité fondé sur des éléments probants.
+Données récentes tirées de la littérature
+Des chercheurs travaillant dans cet État ont mis en évidence des cas où le vagin avait été gratté et incisé, ainsi que des cas où le clitoris avait été excisé (ibid.).
+L’une des premières priorités de l’Agence canadienne d’inspection des aliments (ACIA) est de protéger les Canadiens contre les risques évitables pour la santé comme ceux qui sont associés à des aliments altérés.
+1.1.5 Le CGM se réunit aux deux semaines, ou au besoin, et il est composé de tous les GP.
+Décret
+Bureau de l’entretien
+Télécopieur : 709 722-9904
+Bien que les deux lasers aient été éprouvés en vol, un système combinant les deux présente un risque technique beaucoup plus élevé puisqu’il n’a jamais été fabriqué et qu’il n’a pas d’antécédents de vol dans l'espace lointain.
+3 Contexte : Faire place à l’innovation
+A safety check list was recommended to assist in inspections.
+À ce moment­là, elle ne savait pas qu'elle aurait pu être mutée parce que sa superviseure ne la soutenait pas. Elle a postulé un autre emploi avant de quitter celui qu'elle occupait, mais elle n'a pas obtenu le poste. Enfin, elle n'a pas demandé de congé autorisé ni de vacances parce qu'elle était en période d'essai pour un an et qu'elle n'avait pas [encore] accumulé de journées de vacances (pièces 2.7, 2.8 et 5.1).
+Type de mise en liberté
+How much training are CFIA employees receiving? The graph to the right (new this year) shows that a significant majority of employees in all branches are receiving some training.
+Autres secteurs
+Afin d’accueillir La course contre la drogue, une collectivité doit avoir l’appui du détachement de la GRC de sa localité.
+Ed Fast, ministre du Commerce international
+Côte A large adult eel found in Dickson Brook during park monitoring program. Grosse anguille adulte trouvée dans le ruisseau Dickson, dans le cadre du programme de surveillance du parc
+Les rejets directs au sol ont augmenté de 3 641 tonnes, notamment à cause d’une augmentation des rejets d’éthylène glycol, qui est employé comme agent de déglaçage par le secteur du transport aérien et donc directement influencés par les conditions climatiques saisonnières.
+Signet non défini. 5.2.3 Soutien continu de la production
+1re Division aérienne du Canada
+D:\FTP_MEM_TRANS\9388810_NET_M_333-10-31\FR_001_001.ppt
+À l’appui de l’ITSC, le Secrétariat du Conseil du Trésor a établi une norme sur la gestion des services de courriel.
+Naviguer jusqu’aux vues du champ Afficher
+« Flop-flop! » Parks intro
+Sous-ministre
+EXERCICE 3 – Analyser la cause fondamentale d’un problème
+Pierre Legault and François Daigle
+(Statement of Requirement) Essais de mise au point et évaluation (EMPE).
+All documents created for the President and the Minister responsible for the CFIA from May 10 to June 16, 2015. Tous les documents qui ont été créés pour le président de l’ACIA et le ministre responsable, du 10 mai au 16 juin 2015.
+A6.3.3
+Alimentations électriques diversifiées
+Une récente étude réalisée par le Bureau de la responsabilité gouvernementale (BRG) indique que la CPSC jouit de vastes pouvoirs lui permettant de cerner et d’évaluer les risques associés aux produits et de prendre des mesures à cet égard.
+La FOI doit être en mesure d’opérer dans un cadre MN, d’y contribuer et d’en tirer profit.
+Objectifs de l’audit
+L’évaluation efficace des niveaux de risque et de la gestion des risques grâce à l’application des contrôles garantira un niveau acceptable de risque lié à la mission et un environnement de travail sécuritaire à chacun.
+the Supervisor/Financial
+Nota : les trois valeurs doivent être présentes afin que le message réponde au critère « diffusion immédiate »
+Tableau XI Séroprévalence apparente de l’anaplasmose par province d’origine
+Donner le nom du responsable du système
+En outre, l'Agence déploie des agents en affectation temporaire pour aider aux activités d’interception ou pour effectuer des tâches particulières, par exemple, les évacuations d’urgence.
+Définition
+Les 94 cas concernent 220 victimes et 122 individus déclarés coupables de plusieurs infractions. Le Plan d’action national de lutte contre la traite de personnes de 2012 du gouvernement du Canada précise les efforts nationaux et internationaux déployés par le Canada pour lutter contre ces crimes.
+Nécessitent un degré acceptable d’oxygène
+4500-1(A7 Instr)
+To be determined based on baseline results Improvements in subsequent years
+SYSTÈME D’APPEL D’URGENCE DE LA PM
+Le technicien choisit au hasard 15 boîtes sur chaque palette, ouvre chacune et y prend quatre cœurs/boîte qu’il place sur une surface d’échantillonnage assainie.
+La téfluthrine est une substance d’une volatilité intermédiaire à élevée.
+PSN
+Le CEMD a souscrit en partie à la recommandation du Comité d'accueillir le grief.
+Selon mon opinion professionnelle à titre de dirigeant principal de la vérification, la vérification est conforme aux Normes relatives à la vérification interne au sein du gouvernement du Canada, comme en témoignent les résultats d’une évaluation externe au titre du programme d’assurance et d’amélioration de la qualité du BCP.
+5.1 Objectif de la politique
+2.0 Affaires courantes 2.1 Examen du procès-verbal de la réunion du Comité national de santé et de sécurité au travail Puisque le Comité national d'orientation en santé et sécurité ne s'est pas rencontré depuis la dernière réunion du CRSST, il n'y a rien à signaler.
+Accords commerciaux
+NOTE / BUDGET SUPPLÉMENTAIRE DES DÉPENSES B
+PRINCIPES
+Octobre 2010
+3.2 Avant­projet de conception – Exigences relatives au rapport technique
+Andrew Namiesniowski
+Table des matières
+An expectation is a prediction of a recorded amount or ratio.
+Déclin de la santé des sols (pH, NPK, oligoéléments)
+Elle remercie aussi Marie-Gorethie pour son apport dans l’organisation de cette activité.
+Appendice 1 de l’ANNEXE A
+De plus, le Canada demandera aux provinces et aux territoires d’exprimer leur point de vue sur ces politiques financières.
