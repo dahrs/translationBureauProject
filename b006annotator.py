@@ -8,12 +8,37 @@ import b000path, utilsOs
 from b003heuristics import *
 from b004localUtils import *
 
+
+########################################################################
+# SEARCH FUNCTION
+########################################################################
+
+def getPathWhereWeFind(stringToBeFound):
+    srcTrgtFiles = utilsOs.goDeepGetFiles(b000path.getBtFolderPath(flagFolder=u'a'), format=u'.tmx')
+    for filePath in srcTrgtFiles:
+        srcFilePath = u'{0}.en'.format(filePath) if u'en-fr' in filePath else u'{0}.fr'.format(filePath)
+        trgtFilePath = u'{0}.fr'.format(filePath) if u'en-fr' in filePath else u'{0}.en'.format(filePath)
+        # open line by line and apply extractors
+        try:
+            with open(srcFilePath) as srcFile:
+                with open(trgtFilePath) as trgtFile:
+                    srcLines = srcFile.readlines()
+                    trgtLines = trgtFile.readlines()
+                    for srcLnIndex, srcLn in enumerate(srcLines):
+                        trgtLn = trgtLines[srcLnIndex]
+                        if stringToBeFound in srcLn or stringToBeFound in trgtLn:
+                            print(filePath)
+        except FileNotFoundError:
+            pass
+
+
 ########################################################################
 # ANNOTATION
 ########################################################################
 
 
-def annotateFirstSP(beforeSentSource, duringSentSource, beforeSentTarget, duringSentTarget, listOfAnnotations, lineLength):
+def annotateFirstSP(beforeSentSource, duringSentSource, beforeSentTarget,
+                    duringSentTarget, listOfAnnotations, lineLength):
     """ """
     # color in red the during lines
     redBeforeSource = u'\033[1;31m{0}\033[0m'.format(beforeSentSource)
@@ -30,7 +55,7 @@ def annotateFirstSP(beforeSentSource, duringSentSource, beforeSentTarget, during
     annotatorGeneralInput = input(u'Aligned-Misaligned annotation: ')
     # make sure to have the right general annotation
     while True:
-        if annotatorGeneralInput in [u'0', u'1', u'0.0', u'0.1', u'0.2', u'0.3', u'1.0', u'1.1']:
+        if annotatorGeneralInput in [u'0', u'1', u'0.0', u'0.1', u'0.2', u'1.0', u'1.1', u'1.2', u'1.3', u'1.4']:
             break
         else:
             utilsOs.moveUpAndLeftNLines(1, slowly=False)
@@ -40,7 +65,7 @@ def annotateFirstSP(beforeSentSource, duringSentSource, beforeSentTarget, during
         utilsOs.moveUpAndLeftNLines(1, slowly=False)
         # get the second part of the annotation (aligned or not)
         annotatorSpecificInput = input(u'Specific type annotation: ')
-        typeAnswers = [u'0', u'1', u'2', u'3'] if annotatorGeneralInput == 0 else [u'0', u'1']
+        typeAnswers = [u'0', u'1', u'2'] if annotatorGeneralInput == 0 else [u'0', u'1', u'2', u'3', u'4']
         # make sure to have the right specific annotation
         while True:
             if annotatorSpecificInput in typeAnswers:
@@ -84,7 +109,7 @@ def correctionToAnnotation(listOfAnnotations):
     annotatorGeneralInput = input(u"Old annotation is '{0}'. Give new annotation : ".format(listOfAnnotations[indexAnnotation]))
     # make sure to have the right general annotation
     while True:
-        if annotatorGeneralInput in [u'0', u'1', u'0.0', u'0.1', u'0.2', u'0.3', u'1.0', u'1.1']:
+        if annotatorGeneralInput in [u'0', u'1', u'0.0', u'0.1', u'0.2', u'1.0', u'1.1', u'1.2', u'1.3', u'1.4']:
             break
         else:
             utilsOs.moveUpAndLeftNLines(1, slowly=False)
@@ -94,7 +119,7 @@ def correctionToAnnotation(listOfAnnotations):
         utilsOs.moveUpAndLeftNLines(1, slowly=False)
         # get the second part of the annotation (aligned or not)
         annotatorSpecificInput = input(u'Specific type annotation: ')
-        typeAnswers = [u'0', u'1', u'2', u'3'] if annotatorGeneralInput == 0 else [u'0', u'1']
+        typeAnswers = [u'0', u'1', u'2'] if annotatorGeneralInput == 0 else [u'0', u'1', u'2', u'3', u'4']
         # make sure to have the right specific annotation
         while True:
             if annotatorSpecificInput in typeAnswers:
@@ -114,6 +139,19 @@ def correctionToAnnotation(listOfAnnotations):
     if annotatorGeneralInput in [u'c', u'correct']:
         annotatorGeneralInput, listOfAnnotations = correctionToAnnotation(listOfAnnotations)
     return annotatorGeneralInput, listOfAnnotations
+
+
+def printCheatSheet():
+    print(""""0 - badly aligned
+        \n\t0.0 - AMPLIFICATION: compensation, description, repetition or lang tendency to hypergraphy
+        \n\t0.1 - ELISION: absence, omission, reduction or lang tendency to micrography
+        \n\t0.2 - DISPLACEMENT: modification of the line order showing no translation relation between the SP.
+        \n1 - well aligned
+        \n\t1.0 - ALIGNED and GOOD QUALITY: is aligned and shows no evident sing of translation imperfections 
+        \n\t1.1 - ORTHOGRAPHIC/MORPHOSYNTAXTIC ERROR: imperfection in the translation quality 
+        \n\t1.2 - MONOLINGUAL: no translation made in the target sentence
+        \n\t1.3 - GIBBERISH: encoding or other problem rendering the SP unreadeable
+        \n\t1.4 - OTHER: impossible to determine the nature of the error""")
 
 
 def annotateFiles(listOfFilesPath=None, annotatedOutputFolder=u'./002manuallyAnnotated/', dumpSP=True):
@@ -136,14 +174,7 @@ def annotateFiles(listOfFilesPath=None, annotatedOutputFolder=u'./002manuallyAnn
         annotatedFiles = set([line.split(u'\t')[0] for line in refLines])
         listOfFilesPath = [file for file in listOfFilesPath if file not in annotatedFiles]
     # print the annotator cheat sheet
-    print(""""0 - badly aligned
-        \n\t0.0 - AMPLIFICATION: compensation, description, repetition or lang tendency to hypergraphy
-        \n\t0.1 - ELISION: absence, omission, reduction or lang tendency to micrography
-        \n\t0.2 - DISPLACEMENT: modification of the line order also modifying the order of the following lines
-        \n\t0.3 - MISALIGNED and FOIBLE: alignment and quality errors
-        \n1 - well aligned
-        \n\t1.0 - ALIGNED and GOOD QUALITY: is aligned and shows no evident sing of translation imperfections 
-        \n\t1.1 - FOIBLE: imperfection in the translation quality""")
+    printCheatSheet()
     # open each file in EN and FR and show it in the terminal
     for filePath in listOfFilesPath:
         print(u'############# {0} ##############'.format(filePath.replace(u'/data/rali8/Tmp/rali/bt/burtrad/corpus_renamed/', u'')))
@@ -201,7 +232,8 @@ def annotateFiles(listOfFilesPath=None, annotatedOutputFolder=u'./002manuallyAnn
                     annotatorGeneralInput = input(u'Aligned-Misaligned annotation: ')
                     # make sure to have the right general annotation
                     while True:
-                        if annotatorGeneralInput in [u'0', u'1', u'0.0', u'0.1', u'0.2', u'0.3', u'1.0', u'1.1', u'c', u'correct']:
+                        if annotatorGeneralInput in [u'0', u'1', u'0.0', u'0.1', u'0.2',
+                                                     u'1.0', u'1.1', u'1.2', u'1.3', u'1.4', u'c', u'correction']:
                             break
                         else:
                             utilsOs.moveUpAndLeftNLines(1, slowly=False)
@@ -213,7 +245,7 @@ def annotateFiles(listOfFilesPath=None, annotatedOutputFolder=u'./002manuallyAnn
                         utilsOs.moveUpAndLeftNLines(1, slowly=False)
                         # get the second part of the annotation (aligned or not)
                         annotatorSpecificInput = input(u'Specific type annotation: ')
-                        typeAnswers = [u'0', u'1', u'2', u'3'] if annotatorGeneralInput == 0 else [u'0', u'1']
+                        typeAnswers = [u'0', u'1', u'2'] if annotatorGeneralInput == 0 else [u'0', u'1', u'2', u'3', u'4']
                         # make sure to have the right specific annotation
                         while True:
                             if annotatorSpecificInput in typeAnswers:
@@ -306,9 +338,146 @@ def mergeAnnotatedFiles(pathToPrimary, pathOrListOfPathsToSecondary):
     utilsOs.dumpDataFrame(primaryRefDf, primaryRefPath, header=False)
     utilsOs.dumpDataFrame(primaryEnDf, primaryEnPath, header=False)
     utilsOs.dumpDataFrame(primaryFrDf, primaryFrPath, header=False)
+    # bug fix to avoid the 1.0 and 0.0 transforming into 1 and 0
+    with open(pathToPrimary) as annotFile:
+        annotLines = annotFile.readlines()
+        for aIndex, aLine in enumerate(annotLines):
+            if u'1\n' == aLine:
+                annotLines[aIndex] = aLine.replace(u'1\n', u'1.0\n')
+            elif u'0\n' == aLine:
+                annotLines[aIndex] = aLine.replace(u'0\n', u'0.0\n')
+    utilsOs.dumpRawLines(annotLines, pathToPrimary, addNewline=False)
+
+
+def extractLineData(sentEnPath, sentFrPath, sentRefPath, sentAnnotPath,
+                      enList=[], frList=[], refList=[], annotList=[]):
+    """ open the files, extract the lines into lists """
+    # get the sentences and annotations
+    with open(sentEnPath) as enFile:
+        enList = enList + [s.replace(u'\n', u'') for s in enFile.readlines()]
+    with open(sentFrPath) as frFile:
+        frList = frList + [s.replace(u'\n', u'') for s in frFile.readlines()]
+    with open(sentRefPath) as refFile:
+        refList = refList + [s.replace(u'\n', u'') for s in refFile.readlines()]
+    with open(sentAnnotPath) as annotFile:
+        sentAnnotList = annotFile.readlines()
+        dic = {u'0\n': u'0.0', u'1\n': u'1.0', u'1.1.0\n': u'1.1', u'0.1.0\n': u'0.1'}
+        tempList = []
+        for annot in sentAnnotList:
+            if annot in dic:
+                tempList.append(dic[annot])
+            else:
+                tempList.append(annot.replace(u'\n', u''))
+        annotList = annotList + tempList
+    return enList, frList, refList, annotList
+
+
+def getAnnotationData(annotatedFolderPathList):
+    """ given a list of paths where the annotations are, return a liost of each type of data """
+    enList, frList, refList, annotList = [], [], [], []
+    # be sure the format is right
+    if type(annotatedFolderPathList) is str:
+        annotatedFolderPathList = [annotatedFolderPathList]
+    # get the lists of annotations and sentences
+    for path in annotatedFolderPathList:
+        sentEnPath = u'{0}sample.en'.format(path)
+        sentFrPath = u'{0}sample.fr'.format(path)
+        sentAnnotPath = u'{0}sampleAnnotation.tsv'.format(path)
+        sentRefPath = u'{0}sampleReference.tsv'.format(path)
+        enList, frList, refList, annotList = extractLineData(sentEnPath, sentFrPath, sentRefPath, sentAnnotPath,
+                                                             enList, frList, refList, annotList)
+    return enList, frList, refList, annotList
+
+
+def changeAnnotations(folderPathToReannotate, annotationTochange=[u'0.3', u'1.1']):
+    """ given a path where to find the annotation files, change the annotation (new)
+    for the with a specific annotation (old) """
+    # transform the annotation into a list if need be
+    if type(annotationTochange) is str:
+        annotationTochange = [annotationTochange]
+    # get the annotation data
+    sentEnList, sentFrList, sentRefList, sentAnnotList = getAnnotationData(folderPathToReannotate)
+    # print the annotator cheat sheet
+    printCheatSheet()
+    # annotate only when we find the problematic old annotation
+    for indexAnnot, oldAnnot in enumerate(list(sentAnnotList)):
+        if oldAnnot in annotationTochange:
+            src = sentEnList[indexAnnot] if u'en-fr' in sentRefList[indexAnnot] else sentFrList[indexAnnot]
+            trgt = sentFrList[indexAnnot] if u'en-fr' in sentRefList[indexAnnot] else sentEnList[indexAnnot]
+            print(u'{0} - {1}'.format(indexAnnot+1, src))
+            print(u'{0} - {1}'.format(indexAnnot+1, trgt))
+            # get the first part of the annotation (aligned or not)
+            annotatorGeneralInput = input(u'Old annotation is {0}, what is the new one: '.format(oldAnnot))
+            # make sure to have the right general annotation
+            while True:
+                if annotatorGeneralInput in [u'0', u'1', u'0.0', u'0.1', u'0.2',
+                                             u'1.0', u'1.1', u'1.2', u'1.3', u'1.4', u'c', u'correction']:
+                    break
+                else:
+                    utilsOs.moveUpAndLeftNLines(1, slowly=False)
+                    annotatorGeneralInput = input(u'Repeat annotation: ')
+            if annotatorGeneralInput in [u'c', u'correct']:
+                annotatorGeneralInput, sentAnnotList = correctionToAnnotation(sentAnnotList)
+            # if we still need to specify what type of alignment or misalignment
+            if annotatorGeneralInput in [u'0', u'1']:
+                utilsOs.moveUpAndLeftNLines(1, slowly=False)
+                # get the second part of the annotation (aligned or not)
+                annotatorSpecificInput = input(u'Specific type annotation: ')
+                typeAnswers = [u'0', u'1', u'2'] if annotatorGeneralInput == 0 else [u'0', u'1', u'2', u'3', u'4']
+                # make sure to have the right specific annotation
+                while True:
+                    if annotatorSpecificInput in typeAnswers:
+                        break
+                    else:
+                        utilsOs.moveUpAndLeftNLines(1, slowly=False)
+                        annotatorSpecificInput = input(u'Repeat type annotation: ')
+                # save to the list of annotations
+                sentAnnotList[indexAnnot] = u'{0}.{1}'.format(annotatorGeneralInput, annotatorSpecificInput)
+            # if the right answer was given in the right format right away
+            else:
+                # save to the list of annotations
+                sentAnnotList[indexAnnot] = str(annotatorGeneralInput)
+            # remove the lines from the terminal before getting to the next pair
+            utilsOs.moveUpAndLeftNLines(3, slowly=False)
+            # erase all remainder of the previous sentences and go back up again
+            for e in range(2):
+                print(u' ' * (max([len(src), len(trgt)]) + 6))
+            utilsOs.moveUpAndLeftNLines(2, slowly=False)
+    # remove format problematic annotations
+    sentAnnotList = [annot if annot != u'1.1.0' else u'1.1' for annot in sentAnnotList]
+    sentAnnotList = [annot if annot != u'0.1.0' else u'0.1' for annot in sentAnnotList ]
+    # dump new annotation
+    sentAnnotPath = u'{0}sampleAnnotation.tsv'.format(folderPathToReannotate)
+    utilsOs.dumpRawLines(sentAnnotList, sentAnnotPath, addNewline=True, rewrite=True)
+
+
+def showAnnotationsExamples(annotation=1.0, showTotalOnly=False):
+    """ given an annotation, shows one by one all the manually annotated elements corresponding to said annotation """
+    total = 0
+    # get the right annotation
+    if type(annotation) is float:
+        annotation = str(annotation)
+    # get the lists of annotations and sentences
+    annotatedFolderPathList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtractors/000manualAnnotation/']
+    enList, frList, refList, annotList = getAnnotationData(annotatedFolderPathList)
+    # print one by one the SP corresponding to the searched annotation
+    for indexAnnot, annot in enumerate(annotList):
+        if annot == annotation:
+            src = enList[indexAnnot] if u'en-fr' in refList[indexAnnot] else frList[indexAnnot]
+            trgt = frList[indexAnnot] if u'en-fr' in refList[indexAnnot] else enList[indexAnnot]
+            total += 1
+            if showTotalOnly is False:
+                print(u'{0} - {1}'.format(indexAnnot + 1, src))
+                print(u'{0} - {1}'.format(indexAnnot + 1, trgt))
+                print()
+    print('TOTAL : ', total)
+    return
+
 
 
 # count the time the algorithm takes to run
+
+
 startTime = utilsOs.countTime()
 
 # annotate the SP
@@ -318,17 +487,32 @@ startTime = utilsOs.countTime()
 
 # annotate the randomly extracted misaligned SPs
 # listOfPaths = [u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/MISALIGNED',
-#                u'./003negativeNaiveExtractors/fewTokens/random100few/MISALIGNED',
-#                u'./003negativeNaiveExtractors/cognates/random100cog/MISALIGNED',
-#                u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/QUALITY',
-#                u'./003negativeNaiveExtractors/fewTokens/random100few/QUALITY',
-#                u'./003negativeNaiveExtractors/cognates/random100cog/QUALITY',
-#                u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/ALIGNMENT-QUALITY',
-#                u'./003negativeNaiveExtractors/fewTokens/random100few/ALIGNMENT-QUALITY',
-#                u'./003negativeNaiveExtractors/cognates/random100cog/ALIGNMENT-QUALITY']
+#               u'./003negativeNaiveExtractors/fewTokens/random100few/MISALIGNED',
+#               u'./003negativeNaiveExtractors/cognates/random100cog/MISALIGNED',
+#               u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/QUALITY',
+#               u'./003negativeNaiveExtractors/fewTokens/random100few/QUALITY',
+#               u'./003negativeNaiveExtractors/cognates/random100cog/QUALITY',
+#               u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/ALIGNMENT-QUALITY',
+#               u'./003negativeNaiveExtractors/fewTokens/random100few/ALIGNMENT-QUALITY',
+#               u'./003negativeNaiveExtractors/cognates/random100cog/ALIGNMENT-QUALITY']
+listOfPaths = [u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/ALIGNMENT-QUALITY',
+               u'./003negativeNaiveExtractors/fewTokens/random100few/ALIGNMENT-QUALITY',
+               u'./003negativeNaiveExtractors/cognates/random100cog/ALIGNMENT-QUALITY']
+
 # annotateFiles(listOfFilesPath=listOfPaths, annotatedOutputFolder=u'./003negativeNaiveExtractors/')
 
 # mergeAnnotatedFiles(u'./002manuallyAnnotated/sampleAnnotation.tsv', u'./003negativeNaiveExtractors/')
+
+
+# change one type of annotation
+# listOfFolderPathsToReannotate = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtractors/000manualAnnotation/']
+# for folderPath in listOfFolderPathsToReannotate:
+#     changeAnnotations(folderPath, [u'1.1', u'0.3'])
+
+
+#look at the sentences annotated with a specific annotation
+annotation = 0.0
+showAnnotationsExamples(annotation)
 
 
 # print the time the algorithm took to run

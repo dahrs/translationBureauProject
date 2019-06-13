@@ -1,10 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-import re, math
 from random import randint
-import pandas as pd
-import numpy as np
 
 import sys
 sys.path.append(u'../utils')
@@ -162,9 +159,9 @@ def extractMisalignedSP(pathToSrcTrgtFiles, extractionSize=100, typeOfExtractors
             pass
     print(u'TOTAL LINES : ', totalLines)
     # dump the extracted sp dict into a json file
-    utilsOs.dumpDictToJsonFile(extractedSp, pathOutputFile=u'./003negativeNaiveExtractors/000extractedSp.json', overwrite=True)
+    utilsOs.dumpDictToJsonFile(extractedSp, pathOutputFile=u'./003negativeNaiveExtractors/005extractedSp{0}.json'.format(subsetName), overwrite=False)
     # randomly extract and dump the file path and the line index for the extracted SP
-    randomlyExtractAndDump(extractedSp, 100, subsetName)
+    randomlyExtractAndDump(extractedSp, extractionSize, subsetName)
 
 
 def changeStructure():
@@ -197,10 +194,14 @@ startTime = utilsOs.countTime()
 
 # extract naive heuristic detected random SPs
 # extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'a'), extractionSize=100, typeOfExtractors=[0,1,2])
-extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'aq'), extractionSize=100, typeOfExtractors=[0,1,2])
+# extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'aq'), extractionSize=100, typeOfExtractors=[0,1,2])
 # extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'q'), extractionSize=100, typeOfExtractors=[0,1,2])
-# extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'n'), extractionSize=100, typeOfExtractors=[0,1,2])
+### extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'n'), extractionSize=100, typeOfExtractors=[0,1,2])
 
+# if we have already detected the SP, we just load them and randomly extract and dump
+for subsetName in [u'MISALIGNED', u'QUALITY', u'ALIGNMENT-QUALITY']:
+    extractedSp = utilsOs.openJsonFileAsDict(u'./003negativeNaiveExtractors/005extractedSp{0}.json'.format(subsetName))
+    randomlyExtractAndDump(extractedSp, extractionSize=100, subsetName=subsetName)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

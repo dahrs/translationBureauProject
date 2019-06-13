@@ -486,5 +486,5 @@ def getIntersectionOfAlignmentScores(shivScorePath):
 # Once we have the output result of yasa, we can see for which sentences it went wrong #####
 
 # get intersection between the shiv and yasa score per domain
-getIntersectionOfAlignmentScores(u'/u/bhardwas/bt/')
+# getIntersectionOfAlignmentScores(u'/u/bhardwas/bt/')
 

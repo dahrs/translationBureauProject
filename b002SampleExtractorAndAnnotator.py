@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-import re, math
+import re, math, os
 from random import randint
 import pandas as pd
 import numpy as np
@@ -15,6 +15,7 @@ import b000path, utilsOs, utilsString
 ########################################################################
 # GENERAL TOOLS
 ########################################################################
+
 
 def getRandomIntNeverseenBefore(listLength, dejaVus=[]):
     """  """
@@ -760,6 +761,7 @@ def getAnnotationScore(manualAnnotationString, focus=u'qa'):
         - q: good quality
         - qa: good alignment and quality
         - qora: good alignment OR good quality"""
+    manualAnnotationString = manualAnnotationString.replace(u'\n', u'')
     # verify the string nature of the annotation
     if type(manualAnnotationString) is float:
         manualAnnotationString = str(manualAnnotationString)
@@ -767,6 +769,7 @@ def getAnnotationScore(manualAnnotationString, focus=u'qa'):
         manualAnnotationString = str(int(manualAnnotationString))
     # if there was a formatting error and the 1.0 became 1
     elif type(manualAnnotationString) is str and manualAnnotationString == u'1':
+        print(2222222)
         manualAnnotationString = u'1.0'
     # get the right score
     if focus == u'qa':
