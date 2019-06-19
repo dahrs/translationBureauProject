@@ -13,23 +13,29 @@ from b004localUtils import *
 # SEARCH FUNCTION
 ########################################################################
 
-def getPathWhereWeFind(stringToBeFound):
+def getPathWhereWeFind(stringToBeFound, verbose=True):
     srcTrgtFiles = utilsOs.goDeepGetFiles(b000path.getBtFolderPath(flagFolder=u'a'), format=u'.tmx')
+    srcLinesContaining = set()
+    pathsContaining = set()
     for filePath in srcTrgtFiles:
         srcFilePath = u'{0}.en'.format(filePath) if u'en-fr' in filePath else u'{0}.fr'.format(filePath)
         trgtFilePath = u'{0}.fr'.format(filePath) if u'en-fr' in filePath else u'{0}.en'.format(filePath)
         # open line by line and apply extractors
         try:
             with open(srcFilePath) as srcFile:
-                with open(trgtFilePath) as trgtFile:
-                    srcLines = srcFile.readlines()
-                    trgtLines = trgtFile.readlines()
-                    for srcLnIndex, srcLn in enumerate(srcLines):
-                        trgtLn = trgtLines[srcLnIndex]
-                        if stringToBeFound in srcLn or stringToBeFound in trgtLn:
-                            print(filePath)
+                srcLines = srcFile.readlines()
+            with open(trgtFilePath) as trgtFile:
+                trgtLines = trgtFile.readlines()
+            for srcLnIndex, srcLn in enumerate(srcLines):
+                trgtLn = trgtLines[srcLnIndex]
+                if stringToBeFound in srcLn or stringToBeFound in trgtLn:
+                    if verbose == True:
+                        print(filePath)
+                    srcLinesContaining.add(srcLn)
+                    pathsContaining.add(filePath)
         except FileNotFoundError:
             pass
+    print(len(srcLinesContaining), len(pathsContaining))
 
 
 ########################################################################
@@ -510,10 +516,12 @@ listOfPaths = [u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/ALIG
 #     changeAnnotations(folderPath, [u'1.1', u'0.3'])
 
 
-#look at the sentences annotated with a specific annotation
-annotation = 0.0
-showAnnotationsExamples(annotation)
+# look at the sentences annotated with a specific annotation
+# annotation = 0.0
+# showAnnotationsExamples(annotation)
 
+# find the paths containing a specific string
+# getPathWhereWeFind(u'0', verbose=True)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))
