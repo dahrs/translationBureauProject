@@ -15,7 +15,13 @@ import utilsOs, utilsString
 
 outputPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/'
 tempPath = u'{0}tmp/'.format(outputPath)
-dejaVu = set([])
+outputDejaVusDocs = u'{0}json/dejaVusDocs.json'.format(outputPath)
+outputDejaVusRequestId = u'{0}json/dejaVusRequests.json'.format(outputPath)
+
+if utilsOs.theFileExists(outputDejaVusRequestId) is True:
+    dejaVu = utilsOs.openJsonFileAsDict(outputDejaVusRequestId)
+else:
+    dejaVu = set([])
 
 # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
@@ -79,7 +85,10 @@ clientNames = clientSelection.text.split(u'\n')
 quitXpath = '/html/body/div[1]/div/div[6]/div/div/form[1]/div[1]/fieldset/div/div[4]/fieldset/div[1]/div/ul/li[1]/a'
 for indexClient, clntName in enumerate(clientNames):
     # make a list of deja vus documents
-    dejavuDocs = set([])
+    if utilsOs.theFileExists(outputDejaVusDocs) is True:
+        dejavuDocs
+    else:
+        dejavuDocs = set([])
     # click on the query case
     clientCase[0].click()
     clientCase[0].send_keys(u'{0}{1}'.format(clntName, Keys.RETURN))
@@ -96,6 +105,7 @@ for indexClient, clntName in enumerate(clientNames):
         # look at each row
         for row in rows:
             # look at the id column
+            time.sleep(1)
             columns = row.find_elements(By.TAG_NAME, "td")
             idCol = columns[4]
             id = idCol.text
@@ -111,13 +121,17 @@ for indexClient, clntName in enumerate(clientNames):
                 contextDirection = driver.find_elements_by_xpath(u'//*[@id="context-direction"]')[0]
                 contextDirection = u'en-fr' if contextDirection.text == u'eng ► fra' else u'fr-en'
                 # open the documents tab
+                time.sleep(1)
                 docsTab = driver.find_elements_by_xpath(u'//*[@id="documents-view-tab"]')[0]
                 docsTab.click()
                 # get the list of the docs names
+                time.sleep(1)
                 archivedDocs = driver.find_elements_by_xpath(u'//*[@id="documents-view"]')[0]
+                time.sleep(1)
                 listOfNames = archivedDocs.find_elements(By.TAG_NAME, u'h5')
                 #prepare the list of names so we can change the name of the file
                 for indexLine, nameLine in enumerate(listOfNames):
+                    time.sleep(0.5)
                     if u' english' in nameLine.text:
                         addLang = u'en'
                     elif u' french' in nameLine.text:
@@ -128,12 +142,14 @@ for indexClient, clntName in enumerate(clientNames):
                     # save to the list
                     listOfNames[indexLine] = [originalName, nameAndLang]
                 # get the list of download lines
+                time.sleep(1)
                 listOfDwnldNames = archivedDocs.find_elements(By.TAG_NAME, u'h6')
                 # download each element if we haven't already
                 for indexLine, dwnldLine in enumerate(listOfDwnldNames):
                     # if we haven't sen the file already
                     if listOfNames[indexLine][1] not in dejavuDocs:
                         # find the download button
+                        time.sleep(1)
                         dwnldButton = dwnldLine.find_elements(By.TAG_NAME, u'a')[0]
                         time.sleep(0.8)
                         dwnldButton.click()
@@ -173,6 +189,8 @@ for indexClient, clntName in enumerate(clientNames):
             '/html/body/div[1]/div/div[6]/div/div/div[4]/div[6]/div[1]/div[5]/span/input')[0].get_attribute('value')
         lastPage = driver.find_elements_by_xpath(
             '/html/body/div[1]/div/div[6]/div/div/div[4]/div[6]/div[1]/div[5]/span/span')[0].text
+        # after scrapping every new page, dump the deja vu files
+
         # if it's the last, break the loop
         if actualPage == lastPage:
             break
