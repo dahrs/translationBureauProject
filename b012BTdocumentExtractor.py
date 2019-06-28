@@ -62,9 +62,12 @@ def scrapLookingGlassForUrls(reqJson, session):
     }
     req = session.post(u'https://recherchebitexte-bitextsearch.btb.gc.ca/site/bitext',
                        data=lookingGlassPanelData, verify=False)
-    urlEn = u'https://recherchebitexte-bitextsearch.btb.gc.ca/{0}'.format(req.json()['meta_en'])
-    urlFr = u'https://recherchebitexte-bitextsearch.btb.gc.ca/{0}'.format(req.json()['meta_fr'])
-    return urlEn, urlFr
+    try:
+        urlEn = u'https://recherchebitexte-bitextsearch.btb.gc.ca/{0}'.format(req.json()['meta_en'])
+        urlFr = u'https://recherchebitexte-bitextsearch.btb.gc.ca/{0}'.format(req.json()['meta_fr'])
+        return urlEn, urlFr
+    except KeyError:
+        return None, None
 
 
 def getLongerSentence(fPath, lang):
@@ -78,6 +81,21 @@ def getLongerSentence(fPath, lang):
             elif len(ln) > longerSent[1]:
                 longerSent = [ln, len(ln)]
     return longerSent
+
+
+def getLongerSentences(fPath, lang):
+    eachSent = [u'', 0]
+    longerSents = [list(eachSent)]
+    with open(u'{0}.{1}'.format(fPath, lang)) as langFile:
+        # look for the longer sentence or at least one with more than 100 char
+        for ln in langFile.readlines():
+            if len(ln) > 100 :
+                longerSents = [[ln, len(ln)]] + longerSents[:2]
+                if len(longerSents) == 3 and longerSents[-1][1] > 30:
+                    break
+            elif len(ln) > longerSents[0][1]:
+                longerSents = [[ln, len(ln)]] + longerSents[:2]
+    return longerSents
 
 
 def getClientName(fPath):
@@ -383,45 +401,88 @@ def getClientName(fPath):
     return clientDict[clientNb]
 
 
-def searchAndDumpOriginalDocsUrls():
-    # get path to all files
-    allFilePaths = b000path.getBtFilePaths(fileFormat=u'tmx', folders=[u'ALIGNMENT-QUALITY'])
+def dumpPathsToNotFlaggedFiles():
+    notFlaggedFilePaths = b000path.getBtFilePaths(fileFormat=u'tmx', folders=[u'NOT-FLAGGED'])
+    notFlaggedFilePaths = [b000path.anonymizePath(filePath) for filePath in notFlaggedFilePaths]
+    utilsOs.dumpRawLines(notFlaggedFilePaths,
+                         '/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/notFlaggedPaths.txt',
+                         addNewline=True, rewrite=True)
+
+
+def getNotFlaggedPaths():
+    pathToFile = '/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/notFlaggedPaths.txt'
+    with open(pathToFile) as notFlaggedFile:
+        notFlaggedFilePaths = [filePath.replace(u'\n', u'') for filePath in notFlaggedFile.readlines()]
+    notFlaggedFilePaths = [b000path.desAnonymizePath(filePath) for filePath in notFlaggedFilePaths]
+    return notFlaggedFilePaths
+
+
+def searchAndDumpOriginalDocsUrls(allFilePaths=None, session=None):
+    # get path to all files [u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY', u'NOT-FLAGGED']
+    if allFilePaths is None:
+        allFilePaths = b000path.getBtFilePaths(fileFormat=u'tmx',
+                                               folders=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY'])
+    # open the reference paths file in order to check if we already found that file's url
+    with open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/reference.paths') as refs:
+        refsPaths = refs.readlines()
+    with open(
+            u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/unindexedReference.paths') as unindRefs:
+        unindPaths = unindRefs.readlines()
+    dejaVusRefPaths = set([b000path.desAnonymizePath(ln.replace(u'\n', u'')) for ln in refsPaths + unindPaths])
     # prepare the files to append the lines
     fileLoc = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/reference.paths', u'a')
+    unindexedLoc = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/unindexedReference.paths', u'a')
     enDocsUrls = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/docsUrl.en', u'a')
     frDocsUrls = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/docsUrl.fr', u'a')
+    # scrap the web to get the get the document's url where the sentence appears
+    if session is None:
+        session, reqA = authentificateBtUseRequests()
+        time.sleep(5)
     # open each path to the original file
     for indFpath, fPath in tqdm(enumerate(allFilePaths)):
         # take a couple of seconds off every n queries
-        if indFpath % 19 == 0:
-            time.sleep(4)
-        elif indFpath % 100 == 0:
-            time.sleep(8)
-        # open the french file as default
-        lang = u'en'
-        longerSent = getLongerSentence(fPath, lang)
-        # if there is no long line in the french file, open the english file
-        if longerSent[1] < 5:
-            print(7777, 'small sent in english : ', longerSent, fPath)
-            lang = u'fr'
-            longerSent = getLongerSentence(fPath, lang)
-            print(888888, 'longer sent in french (final) : ', longerSent)
-        # get the name of the client
-        clientCodeName = getClientName(fPath)
-        # scrap the web to get the get the document's url where the sentence appears
-        session, req = authentificateBtUseRequests()
-        tableJson = fillForm(clientCodeName, longerSent[0].replace(u'\n', u''), session, lang)
-        if tableJson != []: #########################################################################3
-            urlEn, urlFr = scrapLookingGlassForUrls(tableJson, session)
-            # dump to the files
-            fileLoc.write(u'{0}\n'.format(b000path.anonymizePath(fPath)))
-            enDocsUrls.write(u'{0}\n'.format(urlEn))
-            frDocsUrls.write(u'{0}\n'.format(urlFr))
-        else: print(lang, clientCodeName, longerSent[0])###################################################3
+        # if indFpath % 19 == 0:
+        #     time.sleep(1.5)
+        # elif indFpath % 100 == 0:
+        #     time.sleep(2)
+        # if we haven't already scrapped that file's urls
+        if fPath not in dejaVusRefPaths:
+            # open the french file as default
+            lang = u'en'
+            longerSents = getLongerSentences(fPath, lang)
+            # if there is no long line in the french file, open the english file
+            if longerSents[0][1] < 5:
+                # print(7777, 'small sent in english : ', longerSents, fPath)
+                lang = u'fr'
+                longerSents = getLongerSentences(fPath, lang)
+                if longerSents[0][1] < 10:
+                    print(888888, 'longer sent in french (final) but still short : ', longerSents)
+            # get the name of the client
+            clientCodeName = getClientName(fPath)
+            tableJson = fillForm(clientCodeName, longerSents[0][0].replace(u'\n', u''), session, lang)
+            if tableJson != []:
+                for ind in [1, 2]:
+                    tableJson = fillForm(clientCodeName, longerSents[ind][0].replace(u'\n', u''), session, lang)
+                    if tableJson != []:
+                        break
+            if tableJson != []: #########################################################################3
+                urlEn, urlFr = scrapLookingGlassForUrls(tableJson, session)
+                if urlEn is None:
+                    # print(999999, 'UNABLE to get to the looking glass tab for file : ', fPath)
+                    unindexedLoc.write(u'{0}\n'.format(b000path.anonymizePath(fPath)))
+                else:
+                    # dump to the files
+                    fileLoc.write(u'{0}\n'.format(b000path.anonymizePath(fPath)))
+                    enDocsUrls.write(u'{0}\n'.format(urlEn))
+                    frDocsUrls.write(u'{0}\n'.format(urlFr))
+            else:
+                unindexedLoc.write(u'{0}\n'.format(b000path.anonymizePath(fPath)))
     # close the opened files
     fileLoc.close()
     enDocsUrls.close()
     frDocsUrls.close()
+    # close the session
+    session.close()
 
 
 # disable the warnings
@@ -430,7 +491,13 @@ requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
 
-searchAndDumpOriginalDocsUrls()
+
+# the not flagged corpus takes too much time to get extracted
+# from the directories so we have previously saved the paths in a doc
+notFlaggedFilePaths = getNotFlaggedPaths()
+# search and dump the original docs for the not flagged documents alone
+searchAndDumpOriginalDocsUrls(notFlaggedFilePaths)
+
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

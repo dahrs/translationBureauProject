@@ -60,6 +60,29 @@ def heuristTokenize(string1, string2, addSeparators=[u'.', u'?', u'!', u',', u':
     return string1, string2
 
 
+def tableOfContentStart(aString, separateNbAndSymbScores=False):
+    # if there is a number or a symbol indicating a table of contents at the start of the string
+    extractedNmbrs = utilsString.extractNumbersFromString(aString[:3])
+    if separateNbAndSymbScores is False:
+        strStart = aString[:3]
+        if len(extractedNmbrs) != 0 or u'-' in strStart or u'.' in strStart or u'*' in strStart or u'•' in strStart:
+            return [0]
+        else:
+            return [1]
+    # separate the number and the symbol appearance scores
+    strStart = aString[:5]
+    scrs = []
+    if len(extractedNmbrs) != 0 :
+        scrs.append(0)
+    else:
+        scrs.append(1)
+    if u'-' in strStart or u'.' in strStart or u'*' in strStart or u'•' in strStart:
+        scrs.append(0)
+    else:
+        scrs.append(1)
+    return scrs
+
+
 ########################################################################
 # HEURISTICS
 ########################################################################
@@ -125,15 +148,18 @@ def nbMismatch(stringSrc, stringTrgt, includeNumberNames=True, useEditDistance=T
         return sc, len(nbIntersection), len(stringSrcList), len(stringTrgtList)
 
 
-def tooFewTokens(stringSrc, stringTrgt, nTokens=4):
+def tooFewTokens(stringSrc, stringTrgt=None, nTokens=4):
     """ given a string sentence pair return 0 if there are less
     than N tokens on either the src or the trgt and return 1 otherwise """
     # if it's not already tokenized
     stringSrc, stringTrgt = heuristTokenize(stringSrc, stringTrgt)
     # count the tokens
-    if len(stringSrc) <= nTokens or len(stringTrgt) <= nTokens:
-        return 0
-    return 1
+    if stringTrgt != None:
+        if len(stringSrc) <= nTokens or len(stringTrgt) <= nTokens:
+            return 0
+        return 1
+    score = 0 if len(stringSrc) <= nTokens else 1
+    return score
 
 
 def tableOfContents(stringSrc, stringTrgt, nTokens=4, contextScores=None, placeInDocument=None, addInfo=False):
@@ -145,14 +171,11 @@ def tableOfContents(stringSrc, stringTrgt, nTokens=4, contextScores=None, placeI
     scores = [tooFewTokens(stringSrc, stringTrgt, nTokens)]
     # re make the token list a string so we can check the first characters
     origSrcString = u' '.join(stringSrc)
+    origTrgtString = u' '.join(stringTrgt)
+    # if the string is longer than 4 char
     if len(origSrcString) > 4:
         # if there is a number or a symbol indicating a table of contents at the start of the string
-        extractedNmbrs = utilsString.extractNumbersFromString(origSrcString[:3])
-        srcStart = origSrcString[:3]
-        if len(extractedNmbrs) != 0 or u'-' in srcStart or u'.' in srcStart or u'*' in srcStart:
-            scores.append(0)
-        else:
-            scores.append(1)
+        scores += tableOfContentStart(origSrcString)
     # add the context to the current scores
     if contextScores is not None:
         scores = scores + contextScores
@@ -164,6 +187,35 @@ def tableOfContents(stringSrc, stringTrgt, nTokens=4, contextScores=None, placeI
     if addInfo == False:
         return sum(scores) / len(scores)
     return sum(scores)/len(scores), sum(scores), len(scores)
+
+
+def tableOfContentsMismatch(stringSrc, stringTrgt, nTokens=4, addInfo=False):
+    """ given a string sentence pair return a score of the probability
+    that one of the sentences is a table of content and the other not
+    0.0 : one is and the other not
+    1.0 : they are both table of contents of neither of them are"""
+    # if it's not already tokenized
+    stringSrc, stringTrgt = heuristTokenize(stringSrc, stringTrgt)
+    # get scores
+    scoresSrc = [tooFewTokens(stringSrc, nTokens=nTokens)]
+    scoresTrgt = [tooFewTokens(stringTrgt, nTokens=nTokens)]
+    # re make the token list a string so we can check the first characters
+    origSrcString = u' '.join(stringSrc)
+    origTrgtString = u' '.join(stringTrgt)
+    # if the string is longer than 4 char
+    if len(origSrcString) > 4:
+        # if there is a number or a symbol indicating a table of contents at the start of the string
+        scoresSrc += tableOfContentStart(origSrcString, separateNbAndSymbScores=True)
+    if len(origTrgtString) > 4:
+        # if there is a number or a symbol indicating a table of contents at the start of the string
+        scoresTrgt += tableOfContentStart(origTrgtString, separateNbAndSymbScores=True)
+    # calculate the difference between the src and target scores
+    scSrc = float(sum(scoresSrc)) / float(len(scoresSrc))
+    scTrgt = float(sum(scoresTrgt)) / float(len(scoresTrgt))
+    # if return the score difference between them, 0.0 = they are very different and 1.0 = they are exactly alike
+    if addInfo == False:
+        return 1.0 - abs(scSrc-scTrgt)
+    return 1.0 - abs(scSrc-scTrgt), sum(scoresSrc), sum(scoresTrgt), len(scoresSrc), len(scoresTrgt)
 
 
 def cognateCoincidence(stringSrc, stringTrgt, cognateSize=4, addInfo=False):
@@ -228,8 +280,8 @@ def compareLengths(stringSrc, stringTrgt, useCharInsteadOfTokens=False, addInfo=
 def fauxAmis(stringEn, stringFr, addInfo=False):
     """ given the SP separated in english and french, returns a score between 0 and 1 representing the quality of the
     translation according to the presence or absence of faux amis (false cognates), 0.0 being bad and 1.0 being good"""
-    fauxAmisEn = utilsString.openFauxAmisDict(enToFr=True, withDescription=False)
-    fauxAmisFr = utilsString.openFauxAmisDict(enToFr=False, withDescription=False).keys()
+    fauxAmisEn = utilsString.openFauxAmisDict(enToFr=True, withDescription=False, reducedVersion=True)
+    fauxAmisFr = utilsString.openFauxAmisDict(enToFr=False, withDescription=False, reducedVersion=True)
     # tokenize if not already
     stringEn, stringFr = heuristTokenize(stringEn, stringFr)
     # get the singulars too
@@ -261,8 +313,8 @@ def fauxAmis(stringEn, stringFr, addInfo=False):
             return None
         return None, 0, len(englishFA), len(frenchFA)
     # otherwise return the score and metadata
-    avgFaLen = (float(len(englishFA)) + float(len(englishFA))) / 2.0
-    scFa = float(len(totalFA)) / avgFaLen
+    avgFaLen = (float(len(englishFA)) + float(len(frenchFA))) / 2.0
+    scFa = 1.0 - (float(len(totalFA)) / avgFaLen)
     if addInfo is False:
         return scFa
     return scFa, len(totalFA), len(englishFA), len(frenchFA)
@@ -354,10 +406,10 @@ def spellingCheck(stringEn, stringFr, addInfo=False):
     return scSpell, sumScEn, sumScFr, len(tokenScoreEn), len(tokenScoreFr)
 
 
-def hasUrl(stringSrc, stringTrgt, addInfo=False):
-    """ 1.0 = has no url
-     0.5 = half the tokens are urls
-     0.0 = the string is one big url"""
+def urlMismatch(stringSrc, stringTrgt, addInfo=False):
+    """ 1.0 = has the same number of url in src and trgt
+     0.5 = has twice as many urls in one side
+     0.0 = has urls on one side and not the other"""
     # if the src and trgt strings are tokenized, join them in order to get the urls
     if type(stringSrc) is list:
         tokensSrc = list(stringSrc)
@@ -372,13 +424,15 @@ def hasUrl(stringSrc, stringTrgt, addInfo=False):
     # get the urls
     srcContainsUrl, srcUrlList = utilsString.detectUrlAndFolderPaths(stringSrc)
     trgtContainsUrl, trgtUrlList = utilsString.detectUrlAndFolderPaths(stringTrgt)
-    # if there is no url, there is no problem
+    # if there is no url, we return the silence
     if srcContainsUrl is False and trgtContainsUrl is False:
         if addInfo is False:
             return None
         return None, 0, 0, len(tokensSrc), len(tokensTrgt)
-    # the more the url englobes the totality of the sentence, the more its probability of being an error
-    scUrl = 1.0 - float(len(srcUrlList)+len(trgtUrlList))/float(len(tokensSrc)+len(tokensTrgt))
+    # score the mismatch of urls on each side
+    smallest = min([len(srcUrlList), len(trgtUrlList)])
+    greatest = max([len(srcUrlList), len(trgtUrlList)])
+    scUrl = float(smallest)/float(greatest)
     if addInfo is False:
         return scUrl
     return scUrl, len(srcUrlList), len(trgtUrlList), len(tokensSrc), len(tokensTrgt)
@@ -421,6 +475,63 @@ def monoling(stringSrc, stringTrgt, addInfo=False):
         if addInfo is False:
             return None
         return None, len(stringSrc), len(stringTrgt)
+
+
+def starbucksTranslationMismatch(stringEn, stringFr, addInfo=False, starbucksExprDict=None, starbucksWordDict=None):
+    """ given the english and french sentences, it returns a score of how close
+    is the english sentence to its word-by-word french translation,
+     - 0.0 : the french sentence has no token in common with the english sentence
+     - 1.0 : the french sentence is very similar to the english sentence """
+    tokensEn, intersectionTokens = set([]), set([])
+    if starbucksExprDict is None or starbucksWordDict is None:
+        starbucksExprDict, starbucksWordDict = utilsString.openEn2FrStarbucksDict()
+    # untokenize the english string if needed
+    if type(stringEn) is list:
+        stringEn, stringFr = u' '.join(stringEn.lower()), u' '.join(stringFr.lower())
+    # the expressions first
+    for starbExpr in starbucksExprDict:
+        starbExprLw = starbExpr.lower()
+        # search for the expression in the english sentence
+        if starbExprLw in stringEn:
+            # remove from the english string
+            stringEn = stringEn.replace(starbExprLw, u'')
+            # add to the english tokens set
+            tokensEn.add(starbExprLw)
+            # add to the intersection if the expression translation appears also in the french string
+            for frencExpr in starbucksExprDict[starbExpr]:
+                if frencExpr.lower() in stringFr:
+                    # remove from the french string
+                    stringFr = stringFr.replace(frencExpr.lower(), u'')
+                    # add to the intersection token set
+                    intersectionTokens.add(frencExpr.lower())
+    # tokenize
+    stringEn, stringFr = heuristTokenize(stringEn, stringFr)
+    # lowercase all the word keys
+    for wordKey in dict(starbucksWordDict):
+        if wordKey.lower() != wordKey:
+            starbucksWordDict[wordKey.lower()] = starbucksWordDict[wordKey]
+    # the words
+    for enTok in stringEn:
+        if enTok in starbucksWordDict:
+            # add to the english token set
+            tokensEn.add(enTok)
+            # if it also appears in french
+            for possibleTranslation in starbucksWordDict[enTok]:
+                if possibleTranslation in stringFr:
+                    # add it to the french token set
+                    intersectionTokens.add(possibleTranslation)
+                    # remove it from the french
+                    stringFr.remove(possibleTranslation)
+    # take the silence into account
+    if len(tokensEn) + len(intersectionTokens) == 0:
+        if addInfo is False:
+            return None
+        return None, 0, 0
+    # we use the english as the base because of its lack of genre liaison and lexic simplicity
+    scSB = float(len(intersectionTokens)) / float(len(tokensEn))
+    if addInfo is False:
+        return scSB
+    return scSB, len(tokensEn), len(intersectionTokens)
 
 
 ########################################################################

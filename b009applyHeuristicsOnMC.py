@@ -4,7 +4,7 @@
 import sys, argparse, time, json
 sys.path.append(u'../utils')
 sys.path.append(u'./utils')
-import utilsOs
+import utilsOs, utilsString
 import b000path
 from b003heuristics import *
 from tqdm import tqdm
@@ -45,7 +45,7 @@ def getRightCorpus(corpusString):
 
 def getRightHeuristic(heuristicString):
     if heuristicString == u'all':
-        corpus = [u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl']
+        corpus = [u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl', u'strBcks']
     else:
         corpus = heuristicString.split(u'*')
     return corpus
@@ -74,7 +74,8 @@ def getFlag(tmxPath):
             return flag
 
 
-def getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn, placeInDocument=None):
+def getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn,
+                 placeInDocument=None, starbucksExprDict=None, starbucksWordDict=None):
     # nb match heuristic
     if heurName == u'nb':
         score, totalIntersect, totalSrc, totalTrgt = nbMismatch(srcLn, trgtLn, includeNumberNames=False, addInfo=True)
@@ -102,13 +103,20 @@ def getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn, placeInDocument=None):
         score, totalScSrc, totalScTrgt, totalSrc, totalTrgt = spellingCheck(enLn, frLn, addInfo=True)
     # url and folder paths detector heuristic
     elif heurName == u'url':
-        score, totalUrlsSrc, totalUrlsTrgt, totalSrc, totalTrgt = hasUrl(srcLn, trgtLn, addInfo=True)
+        score, totalUrlsSrc, totalUrlsTrgt, totalSrc, totalTrgt = urlMismatch(srcLn, trgtLn, addInfo=True)
     # monolinguistic presence heuristic
     elif heurName == u'mono':
         score, totalSrc, totalTrgt = monoling(srcLn, trgtLn, addInfo=True)
     # content table heuristic
     elif heurName == u'tabl':
-        score, totalSrc, totalTrgt = tableOfContents(srcLn, trgtLn, addInfo=True, placeInDocument=placeInDocument)
+        score, totalScSrc, totalScTrgt, totalSrc, totalTrgt = tableOfContentsMismatch(srcLn, trgtLn, addInfo=True)
+    # starbucks word by word translation
+    elif heurName == u'strBcks':
+        score, totalSrc, totalTrgt = starbucksTranslationMismatch(enLn, frLn, addInfo=True,
+                                                                  starbucksExprDict=starbucksExprDict,
+                                                                  starbucksWordDict=starbucksWordDict)
+    else:
+        raise TypeError('wrong heuristic code name given in the argument')
     # get the silence
     score = u'na' if score is None else score
     # dump to files
@@ -118,21 +126,22 @@ def getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn, placeInDocument=None):
     elif heurName == u'len':
         return (u'{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(score, scCh, totalSrc,
                                                                  totalTrgt, ttSrcCh, ttTrgtCh))
-    elif heurName == u'spell':
+    elif heurName in [u'spell', u'tabl']:
         return u'{0}\t{1}\t{2}\t{3}\t{4}\n'.format(score, totalScSrc, totalScTrgt, totalSrc, totalTrgt)
     elif heurName == u'url':
         return u'{0}\t{1}\t{2}\t{3}\t{4}\n'.format(score, totalUrlsSrc, totalUrlsTrgt, totalSrc, totalTrgt)
-    elif heurName == u'mono' or heurName == u'sw' or heurName == u'ion' or heurName == u'tabl':
+    elif heurName in [u'mono', u'sw', u'ion', u'strBcks']:
         return u'{0}\t{1}\t{2}\n'.format(score, totalSrc, totalTrgt)
     else:
         return u'{0}\t{1}\t{2}\t{3}\n'.format(score, totalIntersect, totalSrc, totalTrgt)
 
 
 def applyHeuristicOnCorpus(corpus=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY'],
-                           heuristic=[u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl']):
+                           heuristic=[u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl', u'strBcks']):
     """ given a corpus and heuristic indication, it applies the heuristic to that corpus and dumps the result """
     out = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/'
     filePathList = getFilePathsLists(corpus)
+    starbucksExprDict, starbucksWordDict = utilsString.openEn2FrStarbucksDict()
     for tmxFilePath in tqdm(filePathList):
         flag = getFlag(tmxFilePath)
         # get the list of lines
@@ -153,7 +162,9 @@ def applyHeuristicOnCorpus(corpus=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALIT
                     outputScorePath = u'{0}{1}/{2}/score.tsv'.format(out, flag, heurName)
                     with open(outputScorePath, u'a') as scoreFile:
                         scoreFile.write(getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn,
-                                                     placeInDocument=float(i)/float(len(enLines))))
+                                                     placeInDocument=float(i)/float(len(enLines)),
+                                                     starbucksExprDict=starbucksExprDict,
+                                                     starbucksWordDict=starbucksWordDict))
                 # dump to ref file
                 refFile.write(u'{0}\t{1}\n'.format(b000path.anonymizePath(tmxFilePath), i))
     return None
@@ -191,49 +202,75 @@ def rewriteFileIfExists(path):
             file.write(u'')
 
 
-def applyHeuristicsOnNotFlaggedCorpus(filesIndexes, launchId, deletePrevious=False):
+def applyHeuristicsOnNotFlaggedCorpus(filesIndexes, launchId, deletePrevious=False,
+                                      heuristicsList=[u'nb', u'cog', u'len', u'fa', u'ion', u'sw',
+                                                      u'spell', u'url', u'mono', u'tabl', u'strBcks']):
     """ given a corpus and heuristic indication, it applies the heuristic to that corpus and dumps the result """
     out = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/NOT-FLAGGED/{0}/'.format(launchId)
-    # delete the contents of the previous folder if needed
-    if deletePrevious != False:
-        try:
-            utilsOs.removeFolderAndContent(out)
-        except FileNotFoundError:
-            pass
+    starbucksExprDict, starbucksWordDict = utilsString.openEn2FrStarbucksDict()
     # make the folder
     utilsOs.createEmptyFolder(out)
-    filePathList, subsetIndexes = getSubsetOfFiles(filesIndexes)
+    # reference file
+    outputRefPath = u'{0}reference.tsv'.format(out)
+    # open the reference file
+    if utilsOs.theFileExists(outputRefPath) is not True:
+        refFile = open(outputRefPath, u'a')
+        filePathList, subsetIndexes = getSubsetOfFiles(filesIndexes)
+    # if it already exists, then use that list
+    else:
+        with open(outputRefPath) as existingRefFile:
+            tempPathList = [refLn.split(u'\t')[0] for refLn in existingRefFile.readlines()]
+            filePathList = []
+            for refPath in tempPathList:
+                if refPath not in filePathList:
+                    filePathList.append(refPath)
+    # for each tmx file
     for indexTmx, tmxFilePath in tqdm(enumerate(filePathList)):
         tmxFilePath = b000path.desAnonymizePath(tmxFilePath)
+        fileNotFound = False
         # get the list of lines
         try:
             with open(u'{0}.en'.format(tmxFilePath)) as enFile:
                 enLines = enFile.readlines()
             with open(u'{0}.fr'.format(tmxFilePath)) as frFile:
                 frLines = frFile.readlines()
+        except FileNotFoundError:
+            print(u'FILE NOT FOUND IN : {0}'.format(tmxFilePath))
+            fileNotFound = True
+        if fileNotFound is False:
             # get each line
             for i in range(len(enLines)):
                 srcLn, trgtLn, enLn, frLn = getLines(i, enLines, frLines, tmxFilePath)
-                # reference file
-                outputRefPath = u'{0}reference.tsv'.format(out)
-                # erase content of file if it already exists
-                rewriteFileIfExists(outputRefPath)
-                with open(outputRefPath, u'a') as refFile:
-                    # apply the heuristics
-                    for heurName in [u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl']: # [u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl']
-                        # make the folder
-                        utilsOs.createEmptyFolder(u'{0}{1}/'.format(out, heurName))
-                        # make the output files
-                        outputScorePath = u'{0}{1}/score.tsv'.format(out, heurName)
-                        # erase content of file if it already exists
-                        rewriteFileIfExists(outputScorePath)
-                        # add the scores to the files
-                        with open(outputScorePath, u'a') as scoreFile:
-                            scoreFile.write(getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn,
-                                                         placeInDocument=float(i)/float(len(enLines))))
+
+                # # erase content of file if it already exists
+                # rewriteFileIfExists(outputRefPath)
+
+                # apply the heuristics
+                for heurName in heuristicsList:
+                    heurFolder = u'{0}{1}/'.format(out, heurName)
+                    # delete the contents of the previous folder if needed
+                    if deletePrevious != False:
+                        try:
+                            utilsOs.removeFolderAndContent(heurFolder)
+                        except FileNotFoundError:
+                            pass
+                    # make the folder
+                    utilsOs.createEmptyFolder(heurFolder)
+                    # make the output files
+                    outputScorePath = u'{0}score.tsv'.format(heurFolder)
+                    # erase content of file if it already exists
+                    rewriteFileIfExists(outputScorePath)
+                    # add the scores to the files
+                    with open(outputScorePath, u'a') as scoreFile:
+                        scoreFile.write(getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn,
+                                                     placeInDocument=float(i)/float(len(enLines)),
+                                                     starbucksExprDict=starbucksExprDict,
+                                                     starbucksWordDict=starbucksWordDict))
+                # write the ref line if it doesn't already exists
+                if utilsOs.theFileExists(outputRefPath) is not True:
                     refFile.write(u'{0}\t{1}\n'.format(b000path.anonymizePath(tmxFilePath), i))
-        except FileNotFoundError:
-            pass
+    if utilsOs.theFileExists(outputRefPath) is not True:
+        refFile.close()
     return None
 
 
@@ -279,7 +316,8 @@ def applyOnSpecificId(idList, deletePrevious=False):
         try:
             indexesToApply = scheduleDict[nId]
             # apply
-            applyHeuristicsOnNotFlaggedCorpus(indexesToApply, nId, deletePrevious)
+            applyHeuristicsOnNotFlaggedCorpus(indexesToApply, nId, deletePrevious,
+                                          heuristicsList=[u'nb', u'cog', u'len', u'fa', u'url', u'tabl', u'strBcks'])
 
             ######################################## TEST not to save the progress
             # # reopen the dict in case it changed since last time
@@ -325,50 +363,79 @@ def generateCmd(nHours=1, machineList=None):
 def joinNotFlaggedFolder(notFlaggedPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/NOT-FLAGGED/'):
     """ given a path to the separated not-flagged corpus, joins it in single score and ref files """
     tot = 0
-    # make the output paths
+    notFound = 0
+    # make the output path
     refPathOut = u'{0}reference.tsv'.format(notFlaggedPath)
-    nbPathOut = u'{0}nb/score.tsv'.format(notFlaggedPath)
-    lenPathOut = u'{0}len/score.tsv'.format(notFlaggedPath)
-    cogPathOut = u'{0}cog/score.tsv'.format(notFlaggedPath)
-    for n in range(3500):
+    for n in range(3013):
+        theresRef = True
         # make the input paths
         refPath = u'{0}{1}/reference.tsv'.format(notFlaggedPath, n)
-        nbPath = u'{0}{1}/nb/score.tsv'.format(notFlaggedPath, n)
-        lenPath = u'{0}{1}/len/score.tsv'.format(notFlaggedPath, n)
-        cogPath = u'{0}{1}/cog/score.tsv'.format(notFlaggedPath, n)
         try:
             with open(refPath) as refFile:
                 refLns = refFile.readlines()
+                # pass each line into a single output file
+                with open(refPathOut, u'a') as refOut:
+                    for refLn in refLns:
+                        refOut.write(refLn)
+                # count the total
                 tot += len(refLns)
-            with open(nbPath) as nbFile:
-                nbLns = nbFile.readlines()
-            with open(lenPath) as lenFile:
-                lenLns = lenFile.readlines()
-            with open(cogPath) as cogFile:
-                cogLns = cogFile.readlines()
-            # pass each lino into a single output file
-            with open(refPathOut, u'a') as refOut:
-                for refLn in refLns:
-                    refOut.write(refLn)
-            with open(nbPathOut, u'a') as nbOut:
-                for nbLn in nbLns:
-                    nbOut.write(nbLn)
-            with open(lenPathOut, u'a') as lenOut:
-                for lenLn in lenLns:
-                    lenOut.write(lenLn)
-            with open(cogPathOut, u'a') as cogOut:
-                for cogLn in cogLns:
-                    cogOut.write(cogLn)
+        # if there is no reference file
         except FileNotFoundError:
-            pass
-    print(tot)
+            theresRef = False
+            print(u'NO REFERENCE FILE IN THE FOLDER ', n)
+        # get the lines for each heuristic
+        if theresRef is True:
+            # fill the heuristic score files
+            for hName in [u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl', u'strBcks']:
+                # make the paths
+                heurPath = u'{0}{1}/{2}/score.tsv'.format(notFlaggedPath, n, hName)
+                # make the folder
+                utilsOs.createEmptyFolder(u'{0}{1}/'.format(notFlaggedPath, hName))
+                heurPathOut = u'{0}{1}/score.tsv'.format(notFlaggedPath, hName)
+                # open the input files
+                try:
+                    with open(heurPath) as heurFile:
+                        heurLns = heurFile.readlines()
+                    with open(heurPathOut, u'a') as heurOut:
+                        for heurLn in heurLns:
+                            heurOut.write(heurLn)
+                except FileNotFoundError:
+                    # fill the heuristic file with NA, so the heuristics and reference indexes correspond
+                    with open(heurPathOut, u'a') as heurOut:
+                        for nb in range(len(refLns)):
+                            heurOut.write(u'NA\n')
+                    notFound += 1
+                    pass
+    print(u'TOTAL SPs : ', tot)
+    print(u'total not found files : ', notFound)
+
+
+def changeHeuristicsScore(heuristicName, corpus=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY', u'NOT-FLAGGED']):
+    """ rewrite the score in order to correct some problems
+    u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl', 'strBcks' """
+    basePath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/'
+    for name in corpus:
+        scorePath = u'{0}{1}/{2}/score.tsv'.format(basePath, name, heuristicName)
+        with open(scorePath) as scoreFile:
+            scoreLines = scoreFile.readlines()
+        # line by line
+        for lnIndex, scoreLn in enumerate(scoreLines):
+            scoreList = scoreLn.replace(u'\n', u'').split(u'\t')
+            # change depending on heuristic
+            if heuristicName == u'url':
+                if int(scoreList[1]) + int(scoreList[2]) != 0:
+                    smallest = min([int(scoreList[1]), int(scoreList[2])])
+                    greatest = max([int(scoreList[1]), int(scoreList[2])])
+                    scoreList[0] = str(float(smallest) / float(greatest))
+                    scoreLines[lnIndex] = u'{0}\n'.format(u'\t'.join(scoreList))
+        utilsOs.dumpRawLines(scoreLines, scorePath, addNewline=False, rewrite=True)
 
 
 # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
 
 # apply on the problematic corpus
-# applyHeuristicOnCorpus(heuristic=[u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl'])
+# applyHeuristicOnCorpus()
 # applyHeuristicOnCorpus(getRightCorpus(args.corpus), getRightHeuristic(args.heuristic))
 
 # apply on the non problematic corpus
@@ -376,11 +443,11 @@ startTime = utilsOs.countTime()
 
 if args.apply is False:
     # makeHourlyIndexDict()
-    generateCmd(nHours=50,
-                machineList=[u'octal06', u'octal03', u'bart2', u'bart3', u'bart4', u'bart5', u'bart6', u'bart7',
-                             u'bart10', u'octal04', u'octal05', u'octal07', u'octal17', u'octal10', u'ilar01',
-                             u'ilar02', u'kakia1', u'kakia2', u'kakib1', u'kakib2', u'kakic2', u'kakid1', u'kakid2',
-                             u'kakie2', u'kakif1', u'kakif2'])
+    generateCmd(nHours=40,
+                machineList=[ u'octal03', u'octal10', u'bart2', u'bart3', u'bart4', u'bart5', u'bart6',
+                             u'bart7', u'bart10', u'kakia1', u'kakia2', u'kakib1', u'kakib2', u'kakic2', u'kakid1',
+                             u'kakid2', u'kakie2', u'kakif1', u'kakif2',
+                             u'ilar01', u'ilar02', u'octal04', u'octal05', u'octal07', u'octal06', u'octal17'])
 else:
     time.sleep(args.wait)
     applyOnSpecificId(args.listIds.split(u'*'), deletePrevious=True)

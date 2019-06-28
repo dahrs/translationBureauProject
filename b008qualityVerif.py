@@ -170,10 +170,10 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
     """ given the path to an annotated corpus, it checks if the extractors correspond to the annotation """
     confMatrix0, confMatrix1, confMatrix2, confMatrix0and1, confMatrixAll = [], [], [], [], []
     confMatrix3, confMatrix4, confMatrix5, confMatrix6, confMatrix7, confMatrix8 = [], [], [], [], [], []
-    confMatrix99 = []
+    confMatrix9, confMatrix99 = [], []
     validLine = True
     totalSpAnalyzed = 0
-    silenceRate = {0: 0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0,  7:0,  8:0, 99:0,  'all':0}
+    silenceRate = {0: 0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0,  7:0,  8:0, 9:0, 99:0,  'all':0}
     # if there is only one annotation path, put it in a list
     if type(annotationFolderPath) is str:
         annotationFolderPath = [annotationFolderPath]
@@ -255,15 +255,19 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
                                                                                 annotScore, silenceRate, confMatrix6,
                                                                                 fcThreshold=0.25)
                             # url detection #######################
-                            confMatrix7, silenceRate, score6, binSc7 = countAndPopulate(hasUrl, 7, srcLn, trgtLn,
+                            confMatrix7, silenceRate, score7, binSc7 = countAndPopulate(urlMismatch, 7, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix7,
                                                                                 fcThreshold=0.85)
                             # monolingual sentences detection #######################
-                            confMatrix8, silenceRate, score6, binSc8 = countAndPopulate(monoling, 8, srcLn, trgtLn,
+                            confMatrix8, silenceRate, score8, binSc8 = countAndPopulate(monoling, 8, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix8,
                                                                                 fcThreshold=1.0)
-                            # table of contents detector #######################
-                            confMatrix99, silenceRate, score99, binSc99 = countAndPopulate(tableOfContents, 99, srcLn, trgtLn,
+                            # starbucks word by words translation mismatch #######################
+                            confMatrix9, silenceRate, score9, binSc9 = countAndPopulate(starbucksTranslationMismatch, 9, enLn, frLn,
+                                                                                annotScore, silenceRate, confMatrix9,
+                                                                                fcThreshold=1.0)
+                            # table of contents mismatch detector #######################
+                            confMatrix99, silenceRate, score99, binSc99 = countAndPopulate(tableOfContentsMismatch, 99, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix99,
                                                                                 fcThreshold=0.2)
                             # all together #######################
@@ -356,6 +360,12 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
     if inverseScores is False:
         getPrecisionRecallAccuracy(confMatrix8)
     else: getInversePrecisionRecallAccuracy(confMatrix8)
+    print()
+    print(u'STARBUCKS W-by-W TRANSLATION MISMATCH')
+    print(confMatrix9)
+    if inverseScores is False:
+        getPrecisionRecallAccuracy(confMatrix9)
+    else: getInversePrecisionRecallAccuracy(confMatrix9)
     print()
     print(u'TABLE OF CONTENTS')
     print(confMatrix99)
@@ -452,16 +462,18 @@ def checkOneHeuristicQualAgainstManEval(annotFolderPathList, heuristicId, discar
                         score = spellingCheck(enLn, frLn)
                     # url presence
                     if heuristicId == 7:
-                        score = hasUrl(srcLn, trgtLn)
+                        score = urlMismatch(srcLn, trgtLn)
                     # monolinguistic content
                     if heuristicId == 8:
                         score = monoling(srcLn, trgtLn)
+                    # monolinguistic content
+                    if heuristicId == 9:
+                        score = starbucksTranslationMismatch(enLn, frLn)
                     # table of content
                     if heuristicId == 99:
                         cntxtScores = getContextScores(refIndex, srcLines, trgtLines)
                         docLoc = refIndex / len(srcLines)
-                        score = tableOfContents(srcLn, trgtLn, nTokens=4,
-                                                contextScores=cntxtScores, placeInDocument=docLoc)
+                        score = tableOfContentsMismatch(srcLn, trgtLn, nTokens=4)
                     # count the silence rate
                     if score is None:
                         silenceRate += 1
@@ -484,13 +496,13 @@ def checkOneHeuristicQualAgainstManEval(annotFolderPathList, heuristicId, discar
 startTime = utilsOs.countTime()
 
 # check for potential usable clues to make heuristics
-# annotatedFolderPathList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtractors/000manualAnnotation/']
-# for threshold in np.arange(0.05, 1.05, 0.05):
-#     checkOneHeuristicQualAgainstManEval(annotatedFolderPathList, 1, False, threshold, focus=u'all', inverseScores=True)
+annotatedFolderPathList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtractors/000manualAnnotation/']
+for threshold in np.arange(0.05, 1.05, 0.05):
+    checkOneHeuristicQualAgainstManEval(annotatedFolderPathList, 99, False, threshold, focus=u'all', inverseScores=True)
 
 # check the extractors on the annotated corpus
-annotList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtractors/000manualAnnotation/']
-checkHeuristicsAgainstAnnotatedCorpusFile(annotList, discardTableOfContent=True, inverseScores=True)
+# annotList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtractors/000manualAnnotation/']
+# checkHeuristicsAgainstAnnotatedCorpusFile(annotList, discardTableOfContent=True, inverseScores=True)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))
