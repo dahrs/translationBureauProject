@@ -13,7 +13,7 @@ from tqdm import tqdm
 parser = argparse.ArgumentParser()
 
 parser.add_argument(u'-c', u'--corpus', type=str,
-                    default=u'all',
+                    default=u'NOT-FLAGGED',
                     help=u'corpus where to apply the heuristic : ALIGNMENT-QUALITY, MISALIGNED, QUALITY, NOT-FLAGGED')
 parser.add_argument(u'-heur', u'--heuristic', type=str,
                     default=u'all',
@@ -36,8 +36,16 @@ args = parser.parse_args()
 def getRightCorpus(corpusString):
     if corpusString == u'all':
         corpus = [u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY', u'NOT-FLAGGED']
-    elif corpusString == u'problematic' or args.corpus == u'probl':
+    elif corpusString == u'p' or args.corpus == u'probl':
         corpus = [u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY']
+    elif corpusString == u'nf' or args.corpus == u'np' or args.corpus == u'n':
+        corpus = [u'NOT-FLAGGED']
+    elif corpusString == u'aq' or args.corpus == u'qa':
+        corpus = [u'ALIGNMENT-QUALITY']
+    elif corpusString == u'q':
+        corpus = [u'QUALITY']
+    elif corpusString == u'm' or args.corpus == u'a':
+        corpus = [u'MISALIGNED']
     else:
         corpus = [corpusString]
     return corpus
@@ -75,7 +83,8 @@ def getFlag(tmxPath):
 
 
 def getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn,
-                 placeInDocument=None, starbucksExprDict=None, starbucksWordDict=None):
+                 placeInDocument=None, stopWordsEnFrDict=None, enLex=None, frLex=None, fauxAmisEn=None,
+                 fauxAmisFr=None, starbucksExprDict=None, starbucksWordDict=None):
     # nb match heuristic
     if heurName == u'nb':
         score, totalIntersect, totalSrc, totalTrgt = nbMismatch(srcLn, trgtLn, includeNumberNames=False, addInfo=True)
@@ -91,22 +100,24 @@ def getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn,
         scCh = u'na' if scCh is None else scCh
     # faux amis heuristic
     elif heurName == u'fa':
-        score, totalIntersect, totalSrc, totalTrgt = fauxAmis(enLn, frLn, addInfo=True)
+        score, totalIntersect, totalSrc, totalTrgt = fauxAmis(enLn, frLn, addInfo=True,
+                                                              fauxAmisEn=fauxAmisEn, fauxAmisFr=fauxAmisFr)
     # ion suffix heuristic
     elif heurName == u'ion':
         score, totalSrc, totalTrgt = ionSuffixMismatch(srcLn, trgtLn, addInfo=True)
     # stop words heuristic
     elif heurName == u'sw':
-        score, totalSrc, totalTrgt = stopWordsMismatch(enLn, frLn, addInfo=True)
+        score, totalSrc, totalTrgt = stopWordsMismatch(enLn, frLn, addInfo=True, stopWordsEnFrDict=stopWordsEnFrDict)
     # spelling check heuristic
     elif heurName == u'spell':
-        score, totalScSrc, totalScTrgt, totalSrc, totalTrgt = spellingCheck(enLn, frLn, addInfo=True)
+        score, totalScSrc, totalScTrgt, totalSrc, totalTrgt = spellingCheck(enLn, frLn, addInfo=True,
+                                                                            enLexicon=enLex, frLexicon=frLex)
     # url and folder paths detector heuristic
     elif heurName == u'url':
         score, totalUrlsSrc, totalUrlsTrgt, totalSrc, totalTrgt = urlMismatch(srcLn, trgtLn, addInfo=True)
     # monolinguistic presence heuristic
     elif heurName == u'mono':
-        score, totalSrc, totalTrgt = monoling(srcLn, trgtLn, addInfo=True)
+        score, ttSrcCh, ttTrgtCh, totalSrc, totalTrgt = monoling(srcLn, trgtLn, addInfo=True)
     # content table heuristic
     elif heurName == u'tabl':
         score, totalScSrc, totalScTrgt, totalSrc, totalTrgt = tableOfContentsMismatch(srcLn, trgtLn, addInfo=True)
@@ -123,25 +134,38 @@ def getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn,
     if heurName == u'nb':
         return u'{0}\t{1}\t{2}\t{3}\t{4}\t{5}\t{6}\t{7}\n'.format(score, scAb, totalIntersect, totalSrc, totalTrgt,
                                                                ttInterAb, ttSrcAb, ttTrgtAb)
-    elif heurName == u'len':
+    elif heurName in [u'len']:
         return (u'{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(score, scCh, totalSrc,
                                                                  totalTrgt, ttSrcCh, ttTrgtCh))
+    elif heurName in [u'mono']:
+        return u'{0}\t{1}\t{2}\t{3}\t{4}\n'.format(score, totalSrc, totalTrgt, ttSrcCh, ttTrgtCh)
     elif heurName in [u'spell', u'tabl']:
         return u'{0}\t{1}\t{2}\t{3}\t{4}\n'.format(score, totalScSrc, totalScTrgt, totalSrc, totalTrgt)
     elif heurName == u'url':
         return u'{0}\t{1}\t{2}\t{3}\t{4}\n'.format(score, totalUrlsSrc, totalUrlsTrgt, totalSrc, totalTrgt)
-    elif heurName in [u'mono', u'sw', u'ion', u'strBcks']:
+    elif heurName in [u'sw', u'ion', u'strBcks']:
         return u'{0}\t{1}\t{2}\n'.format(score, totalSrc, totalTrgt)
     else:
         return u'{0}\t{1}\t{2}\t{3}\n'.format(score, totalIntersect, totalSrc, totalTrgt)
 
 
-def applyHeuristicOnCorpus(corpus=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY'],
-                           heuristic=[u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl', u'strBcks']):
+def applyHeuristicOnCorpus(corpus=None, heuristic=None):
     """ given a corpus and heuristic indication, it applies the heuristic to that corpus and dumps the result """
+    if corpus is None:
+        corpus = [u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY']
+    if heuristic is None:
+        heuristic = [u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl', u'strBcks']
     out = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/'
-    filePathList = getFilePathsLists(corpus)
+    # get the heuristic needed objects
     starbucksExprDict, starbucksWordDict = utilsString.openEn2FrStarbucksDict()
+    fauxAmisEn = utilsString.openFauxAmisDict(enToFr=True, withDescription=False, reducedVersion=True)
+    fauxAmisFr = utilsString.openFauxAmisDict(enToFr=False, withDescription=False, reducedVersion=True)
+    stopWordsEnFrDict = utilsString.openEn2FrStopWordsDict()
+    enLexicon = utilsString.getWiki1000MostCommonLexicon(u'en')
+    frLexicon = utilsString.getWiki1000MostCommonLexicon(u'fr')
+    # get the file paths and get sure we don't take into account the file we have already seen
+    filePathList = getFilePathsLists(corpus)
+    # for each file in the list
     for tmxFilePath in tqdm(filePathList):
         flag = getFlag(tmxFilePath)
         # get the list of lines
@@ -164,7 +188,10 @@ def applyHeuristicOnCorpus(corpus=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALIT
                         scoreFile.write(getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn,
                                                      placeInDocument=float(i)/float(len(enLines)),
                                                      starbucksExprDict=starbucksExprDict,
-                                                     starbucksWordDict=starbucksWordDict))
+                                                     starbucksWordDict=starbucksWordDict,
+                                                     fauxAmisEn=fauxAmisEn, fauxAmisFr=fauxAmisFr,
+                                                     stopWordsEnFrDict=stopWordsEnFrDict,
+                                                     enLex=enLexicon, frLex=frLexicon))
                 # dump to ref file
                 refFile.write(u'{0}\t{1}\n'.format(b000path.anonymizePath(tmxFilePath), i))
     return None
@@ -202,21 +229,20 @@ def rewriteFileIfExists(path):
             file.write(u'')
 
 
-def applyHeuristicsOnNotFlaggedCorpus(filesIndexes, launchId, deletePrevious=False,
-                                      heuristicsList=[u'nb', u'cog', u'len', u'fa', u'ion', u'sw',
-                                                      u'spell', u'url', u'mono', u'tabl', u'strBcks']):
+def applyHeuristicsOnNotFlaggedCorpus(filesIndexes, launchId, deletePrevious=False, heuristicsList=None):
     """ given a corpus and heuristic indication, it applies the heuristic to that corpus and dumps the result """
     out = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/NOT-FLAGGED/{0}/'.format(launchId)
+    if heuristicsList is None:
+        heuristicsList = [u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl', u'strBcks']
     starbucksExprDict, starbucksWordDict = utilsString.openEn2FrStarbucksDict()
     # make the folder
     utilsOs.createEmptyFolder(out)
     # reference file
     outputRefPath = u'{0}reference.tsv'.format(out)
-    # open the reference file
+    # if there is no reference file, we get the list of ALL the file paths
     if utilsOs.theFileExists(outputRefPath) is not True:
-        refFile = open(outputRefPath, u'a')
         filePathList, subsetIndexes = getSubsetOfFiles(filesIndexes)
-    # if it already exists, then use that list
+    # if it already exists, then limit the file paths to those who do not already appear in the ref file
     else:
         with open(outputRefPath) as existingRefFile:
             tempPathList = [refLn.split(u'\t')[0] for refLn in existingRefFile.readlines()]
@@ -224,6 +250,8 @@ def applyHeuristicsOnNotFlaggedCorpus(filesIndexes, launchId, deletePrevious=Fal
             for refPath in tempPathList:
                 if refPath not in filePathList:
                     filePathList.append(refPath)
+    # open the reference files
+    refFile = open(outputRefPath, u'a')
     # for each tmx file
     for indexTmx, tmxFilePath in tqdm(enumerate(filePathList)):
         tmxFilePath = b000path.desAnonymizePath(tmxFilePath)
@@ -269,8 +297,7 @@ def applyHeuristicsOnNotFlaggedCorpus(filesIndexes, launchId, deletePrevious=Fal
                 # write the ref line if it doesn't already exists
                 if utilsOs.theFileExists(outputRefPath) is not True:
                     refFile.write(u'{0}\t{1}\n'.format(b000path.anonymizePath(tmxFilePath), i))
-    if utilsOs.theFileExists(outputRefPath) is not True:
-        refFile.close()
+    refFile.close()
     return None
 
 
@@ -421,38 +448,47 @@ def changeHeuristicsScore(heuristicName, corpus=[u'ALIGNMENT-QUALITY', u'MISALIG
         # line by line
         for lnIndex, scoreLn in enumerate(scoreLines):
             scoreList = scoreLn.replace(u'\n', u'').split(u'\t')
-            # change depending on heuristic
-            if heuristicName == u'url':
-                if int(scoreList[1]) + int(scoreList[2]) != 0:
+            if scoreList[0] != u'na':
+                # change depending on heuristic
+                if heuristicName in [u'url']:
+                    smallest = min([int(scoreList[3]), int(scoreList[4])])
+                    greatest = max([int(scoreList[3]), int(scoreList[4])])
+                    if int(scoreList[3]) + int(scoreList[4]) != 0:
+                        scoreList[0] = str(float(smallest) / float(greatest))
+                        scoreLines[lnIndex] = u'{0}\n'.format(u'\t'.join(scoreList))
+                elif heuristicName in [u'mono']:
                     smallest = min([int(scoreList[1]), int(scoreList[2])])
                     greatest = max([int(scoreList[1]), int(scoreList[2])])
-                    scoreList[0] = str(float(smallest) / float(greatest))
-                    scoreLines[lnIndex] = u'{0}\n'.format(u'\t'.join(scoreList))
+                    if int(scoreList[1]) + int(scoreList[2]) != 0:
+                        scoreList[0] = str(float(smallest) / float(greatest))
+                        scoreLines[lnIndex] = u'{0}\n'.format(u'\t'.join(scoreList))
         utilsOs.dumpRawLines(scoreLines, scorePath, addNewline=False, rewrite=True)
 
 
 # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
 
+##################################### TO BE LAUCHED ##########################
+# changeHeuristicsScore(u'mono', corpus=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY'])
+
 # apply on the problematic corpus
-# applyHeuristicOnCorpus()
-# applyHeuristicOnCorpus(getRightCorpus(args.corpus), getRightHeuristic(args.heuristic))
+applyHeuristicOnCorpus(getRightCorpus(args.corpus), getRightHeuristic(args.heuristic))
 
 # apply on the non problematic corpus
 # applyOnNotFlaggedForNHours(args.nhours)
 
-if args.apply is False:
-    # makeHourlyIndexDict()
-    generateCmd(nHours=40,
-                machineList=[ u'octal03', u'octal10', u'bart2', u'bart3', u'bart4', u'bart5', u'bart6',
-                             u'bart7', u'bart10', u'kakia1', u'kakia2', u'kakib1', u'kakib2', u'kakic2', u'kakid1',
-                             u'kakid2', u'kakie2', u'kakif1', u'kakif2',
-                             u'ilar01', u'ilar02', u'octal04', u'octal05', u'octal07', u'octal06', u'octal17'])
-else:
-    time.sleep(args.wait)
-    applyOnSpecificId(args.listIds.split(u'*'), deletePrevious=True)
+# if args.apply is False:
+#     # makeHourlyIndexDict()
+#     generateCmd(nHours=40,
+#                 machineList=[ u'octal03', u'octal10', u'bart2', u'bart3', u'bart4', u'bart5', u'bart6',
+#                              u'bart7', u'bart10', u'kakia1', u'kakia2', u'kakib1', u'kakib2', u'kakic2', u'kakid1',
+#                              u'kakid2', u'kakie2', u'kakif1', u'kakif2',
+#                              u'ilar01', u'ilar02', u'octal04', u'octal05', u'octal07', u'octal06', u'octal17'])
+# else:
+#     time.sleep(args.wait)
+#     applyOnSpecificId(args.listIds.split(u'*'), deletePrevious=True)
 
-## join the divided files of the not-flagged corpus
+# # join the divided files of the not-flagged corpus
 # joinNotFlaggedFolder()
 
 

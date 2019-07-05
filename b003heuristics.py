@@ -232,7 +232,7 @@ def cognateCoincidence(stringSrc, stringTrgt, cognateSize=4, addInfo=False):
     # get intersection of cognates
     intersection = [cog for cog in srcCognates if cog in trgtCognates]
     # if there is nothing in the intersection, return silence, we can't infer anything
-    if len(intersection) == 0:
+    if len(intersection) == 0 :
         if addInfo is False:
             return None
         return None, len(intersection), len(srcCognates), len(trgtCognates)
@@ -255,6 +255,8 @@ def compareLengths(stringSrc, stringTrgt, useCharInsteadOfTokens=False, addInfo=
     # use the token size instead of the char size
     if useCharInsteadOfTokens == False:
         stringSrc, stringTrgt = heuristTokenize(stringSrc, stringTrgt)
+    elif type(stringSrc) is list and type(stringTrgt) is list:
+        stringSrc, stringTrgt = u' '.join(stringSrc), u' '.join(stringTrgt)
     # get the lengths
     srcLength = len(stringSrc)
     trgtLength = len(stringTrgt)
@@ -277,11 +279,13 @@ def compareLengths(stringSrc, stringTrgt, useCharInsteadOfTokens=False, addInfo=
     return sc, int(diff), srcLength, trgtLength
 
 
-def fauxAmis(stringEn, stringFr, addInfo=False):
+def fauxAmis(stringEn, stringFr, addInfo=False, fauxAmisEn=None, fauxAmisFr=None):
     """ given the SP separated in english and french, returns a score between 0 and 1 representing the quality of the
     translation according to the presence or absence of faux amis (false cognates), 0.0 being bad and 1.0 being good"""
-    fauxAmisEn = utilsString.openFauxAmisDict(enToFr=True, withDescription=False, reducedVersion=True)
-    fauxAmisFr = utilsString.openFauxAmisDict(enToFr=False, withDescription=False, reducedVersion=True)
+    if fauxAmisEn is None:
+        fauxAmisEn = utilsString.openFauxAmisDict(enToFr=True, withDescription=False, reducedVersion=True)
+    if fauxAmisFr is None:
+        fauxAmisFr = utilsString.openFauxAmisDict(enToFr=False, withDescription=False, reducedVersion=True)
     # tokenize if not already
     stringEn, stringFr = heuristTokenize(stringEn, stringFr)
     # get the singulars too
@@ -308,7 +312,7 @@ def fauxAmis(stringEn, stringFr, addInfo=False):
             # add it to the english faux amis
             frenchFA.append(frTok)
     # if there were no FA, return silence
-    if len(englishFA) == 0 or len(frenchFA) == 0:
+    if len(englishFA) == 0 or len(frenchFA) == 0 :
         if addInfo is False:
             return None
         return None, 0, len(englishFA), len(frenchFA)
@@ -350,11 +354,12 @@ def ionSuffixMismatch(stringSrc, stringTrgt, addInfo=False):
     return scIon, len(ionInSrc), len(ionInTrgt)
 
 
-def stopWordsMismatch(stringEn, stringFr, addInfo=False):
+def stopWordsMismatch(stringEn, stringFr, addInfo=False, stopWordsEnFrDict=None):
     """ given the english and french sentences, it returns a score of how many the presence of
      english stopwords is reflected in the french sentence """
     stopWEn, stopWEnFr = [], []
-    stopWordsEnFrDict = utilsString.openEn2FrStopWordsDict()
+    if stopWordsEnFrDict is None:
+        stopWordsEnFrDict = utilsString.openEn2FrStopWordsDict()
     # tokenize if not already
     stringEn, stringFr = heuristTokenize(stringEn, stringFr)
     # search for the stopwords in english
@@ -377,14 +382,14 @@ def stopWordsMismatch(stringEn, stringFr, addInfo=False):
     return scSW, len(stopWEn), len(stopWEnFr)
 
 
-def spellingCheck(stringEn, stringFr, addInfo=False):
+def spellingCheck(stringEn, stringFr, addInfo=False, enLexicon=None, frLexicon=None):
     """ returns a score of the general spelling of both sentences (mean of both),
      0.0 being awful spelling, 1.0 being perfect spelling """
     # tokenize if not already
     stringEn, stringFr = heuristTokenize(stringEn, stringFr)
     # get the score for each token in english and french
-    tokenScoreEn = utilsString.detectBadSpelling(stringEn, lang=u'en')
-    tokenScoreFr = utilsString.detectBadSpelling(stringFr, lang=u'fr')
+    tokenScoreEn = utilsString.detectBadSpelling(stringEn, lang=u'en', orthDictOrSet=enLexicon)
+    tokenScoreFr = utilsString.detectBadSpelling(stringFr, lang=u'fr', orthDictOrSet=frLexicon)
     # get one score for the whole sentence pair
     sumScEn = 0
     sumScFr = 0
@@ -452,29 +457,31 @@ def monoling(stringSrc, stringTrgt, addInfo=False):
     else:
         tokensSrc, tokensTrgt = heuristTokenize(stringSrc, stringTrgt)
     # take the silence into account
-    if len(tokensSrc) <= 10:
+    if len(tokensSrc) <= 10 or len(tokensTrgt) <= 10:
         if addInfo is False:
             return None
-        return None, len(stringSrc), len(stringTrgt)
-    scMono = float(len(stringSrc)) / float(len(stringTrgt))
+        return None, len(stringSrc), len(stringTrgt), len(tokensSrc), len(tokensTrgt)
+    smallest = min([len(stringSrc), len(stringTrgt)])
+    greatest = max([len(stringSrc), len(stringTrgt)])
+    scMono = float(smallest) / float(greatest)
     # compare
     if stringSrc == stringTrgt:
         if addInfo is False:
             return 0.0
-        return 0.0, len(stringSrc), len(stringTrgt)
+        return 0.0, len(stringSrc), len(stringTrgt), len(tokensSrc), len(tokensTrgt)
     elif stringSrc in stringTrgt:
         if addInfo is False:
             return scMono
-        return scMono, len(stringSrc), len(stringTrgt)
+        return scMono, len(stringSrc), len(stringTrgt), len(tokensSrc), len(tokensTrgt)
     elif stringTrgt in stringSrc:
         if addInfo is False:
             return scMono
-        return scMono, len(stringSrc), len(stringTrgt)
+        return scMono, len(stringSrc), len(stringTrgt), len(tokensSrc), len(tokensTrgt)
     # if there is no exact similarity return silence (could be perfected by measuring the edit distance)
     else:
         if addInfo is False:
             return None
-        return None, len(stringSrc), len(stringTrgt)
+        return None, len(stringSrc), len(stringTrgt), len(tokensSrc), len(tokensTrgt)
 
 
 def starbucksTranslationMismatch(stringEn, stringFr, addInfo=False, starbucksExprDict=None, starbucksWordDict=None):
@@ -523,7 +530,7 @@ def starbucksTranslationMismatch(stringEn, stringFr, addInfo=False, starbucksExp
                     # remove it from the french
                     stringFr.remove(possibleTranslation)
     # take the silence into account
-    if len(tokensEn) + len(intersectionTokens) == 0:
+    if len(tokensEn) + len(intersectionTokens) == 0 or len(stringEn) <= 10 or len(stringFr) <= 10:
         if addInfo is False:
             return None
         return None, 0, 0

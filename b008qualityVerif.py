@@ -457,9 +457,6 @@ def checkOneHeuristicQualAgainstManEval(annotFolderPathList, heuristicId, discar
                     # spelling check
                     if heuristicId == 6:
                         score = spellingCheck(enLn, frLn)
-                    # spelling check
-                    if heuristicId == 6:
-                        score = spellingCheck(enLn, frLn)
                     # url presence
                     if heuristicId == 7:
                         score = urlMismatch(srcLn, trgtLn)
@@ -498,7 +495,7 @@ startTime = utilsOs.countTime()
 # check for potential usable clues to make heuristics
 annotatedFolderPathList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtractors/000manualAnnotation/']
 for threshold in np.arange(0.05, 1.05, 0.05):
-    checkOneHeuristicQualAgainstManEval(annotatedFolderPathList, 99, False, threshold, focus=u'all', inverseScores=True)
+    checkOneHeuristicQualAgainstManEval(annotatedFolderPathList, 9, False, threshold, focus=u'all', inverseScores=True)
 
 # check the extractors on the annotated corpus
 # annotList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtractors/000manualAnnotation/']
