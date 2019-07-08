@@ -220,15 +220,15 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
                             # number coincidence #######################
                             confMatrix0, silenceRate, score0, binSc0 = countAndPopulate(nbMismatch, 0, srcLn, trgtLn,
                                                                         annotScore, silenceRate, confMatrix0,
-                                                                        fcThreshold=0.25)
+                                                                        fcThreshold=0.5)
                             # disproportionate length #######################
                             confMatrix1, silenceRate, score1, binSc1 = countAndPopulate(compareLengths, 1, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix1,
-                                                                                fcThreshold=0.45)
+                                                                                fcThreshold=0.35)
                             # cognates #######################
                             confMatrix2, silenceRate, score2, binSc2 = countAndPopulate(cognateCoincidence, 2, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix2,
-                                                                                fcThreshold=0.05)
+                                                                                fcThreshold=0.1)
                             # nb mismatch and length #######################
                             scores = [score0, score1]
                             absolute = len(scores)
@@ -241,7 +241,7 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
                             # faux-amis coincidence #######################
                             confMatrix3, silenceRate, score3, binSc3 = countAndPopulate(fauxAmis, 3, enLn, frLn,
                                                                                 annotScore, silenceRate, confMatrix3,
-                                                                                fcThreshold=0.5)
+                                                                                fcThreshold=0.3)
                             # ion suffixes mismatch #######################
                             confMatrix4, silenceRate, score4, binSc4 = countAndPopulate(ionSuffixMismatch, 4, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix4,
@@ -257,38 +257,38 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
                             # url detection #######################
                             confMatrix7, silenceRate, score7, binSc7 = countAndPopulate(urlMismatch, 7, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix7,
-                                                                                fcThreshold=0.85)
+                                                                                fcThreshold=0.9)
                             # monolingual sentences detection #######################
                             confMatrix8, silenceRate, score8, binSc8 = countAndPopulate(monoling, 8, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix8,
-                                                                                fcThreshold=1.0)
+                                                                                fcThreshold=0.95)
                             # starbucks word by words translation mismatch #######################
                             confMatrix9, silenceRate, score9, binSc9 = countAndPopulate(starbucksTranslationMismatch, 9, enLn, frLn,
                                                                                 annotScore, silenceRate, confMatrix9,
-                                                                                fcThreshold=1.0)
+                                                                                fcThreshold=0.25)
                             # table of contents mismatch detector #######################
                             confMatrix99, silenceRate, score99, binSc99 = countAndPopulate(tableOfContentsMismatch, 99, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix99,
-                                                                                fcThreshold=0.2)
+                                                                                fcThreshold=0.65)
                             # all together #######################
-                            mostPreciseScores = [bSc for bSc in [binSc2, binSc1, binSc8] if bSc is not None]
-                            highPreciseScores = [bSc for bSc in [binSc0, binSc5, binSc6, binSc7] if bSc is not None]
-                            lowPreciseScores = [bSc for bSc in [binSc3, binSc4, binSc99] if bSc is not None]
+                            mostPreciseScores = [bSc for bSc in [binSc1, binSc3, binSc8] if bSc is not None]
+                            highPreciseScores = [bSc for bSc in [binSc0, binSc5, binSc6, binSc7, binSc9, binSc99] if bSc is not None]
+                            lowPreciseScores = [bSc for bSc in [binSc2, binSc4] if bSc is not None]
                             # this is problematic SP oriented
                             nbFalseInHighScores = sum([1 if sc is False else 0 for sc in highPreciseScores])
                             nbFalseInLowScores = sum([1 if sc is False else 0 for sc in lowPreciseScores])
+                            # one most-precise is enough
                             if False in mostPreciseScores:
                                 scoreAll = False
                                 # print('most precise alone', annotScore)
-                            elif nbFalseInHighScores >= 2:
+                            # three or more high-scores
+                            elif nbFalseInHighScores >= 3:
                                 scoreAll = False
-                                # print('two high', annotScore)
-                            elif nbFalseInHighScores == 1 and nbFalseInLowScores >= 1:
+                                # print('three high', annotScore)
+                            # two high-score and one or more low-scores
+                            elif nbFalseInHighScores == 2 and nbFalseInLowScores >= 1:
                                 scoreAll = False
-                                # print('one high, one low', annotScore)
-                            elif nbFalseInLowScores == 3:
-                                scoreAll = False
-                                # print('three low', annotScore)
+                                # print('two high, one low', annotScore)
                             # if no heuristic helps, add to the silence
                             elif nbFalseInHighScores+nbFalseInLowScores == 0:
                                 silenceRate['all'] += 1
@@ -492,14 +492,14 @@ def checkOneHeuristicQualAgainstManEval(annotFolderPathList, heuristicId, discar
 # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
 
-# check for potential usable clues to make heuristics
 annotatedFolderPathList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtractors/000manualAnnotation/']
-for threshold in np.arange(0.05, 1.05, 0.05):
-    checkOneHeuristicQualAgainstManEval(annotatedFolderPathList, 9, False, threshold, focus=u'all', inverseScores=True)
+
+# check for potential usable clues to make heuristics
+# for threshold in np.arange(0.05, 1.05, 0.05):
+#     checkOneHeuristicQualAgainstManEval(annotatedFolderPathList, 9, False, threshold, focus=u'all', inverseScores=True)
 
 # check the extractors on the annotated corpus
-# annotList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtractors/000manualAnnotation/']
-# checkHeuristicsAgainstAnnotatedCorpusFile(annotList, discardTableOfContent=True, inverseScores=True)
+checkHeuristicsAgainstAnnotatedCorpusFile(annotatedFolderPathList, discardTableOfContent=True, inverseScores=True)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))
