@@ -305,6 +305,101 @@ def annotateFiles(listOfFilesPath=None, annotatedOutputFolder=u'./002manuallyAnn
         utilsOs.moveUpAndLeftNLines(2, slowly=False)
 
 
+def annotateFilesAfterHeurAndSelection(inputFolderPath, outputFolderPath, dumpSP=True):
+    """ given a folder path, where the reference, en line and fr line are alreade selected, annotate the SPs """
+    # add a slash if needed
+    if inputFolderPath[-1] != u'/':
+        inputFolderPath = u'{0}/'.format(inputFolderPath)
+    if outputFolderPath[-1] != u'/':
+        outputFolderPath = u'{0}/'.format(outputFolderPath)
+    # get the selected reference file lines
+    with open(u'{0}sampleReference.Paths'.format(inputFolderPath)) as refPathsFile:
+        referenceLines = refPathsFile.readlines()
+    # get the en and fr input lines
+    with open(u'{0}sample.en'.format(inputFolderPath)) as enFile:
+        enLns = enFile.readlines()
+    with open(u'{0}sample.fr'.format(inputFolderPath)) as frFile:
+        frLns = frFile.readlines()
+    with open(u'{0}scores.tsv'.format(inputFolderPath)) as scFile:
+        scLns = scFile.readlines()
+    # get rid of the files we have already annotated
+    if utilsOs.theFileExists(u'{0}sampleReference.tsv'.format(outputFolderPath)):
+        # get the already seen lines
+        referencePathLine = utilsOs.readAllLinesFromFile(u'{0}sampleReference.tsv'.format(outputFolderPath),
+                                                         noNewLineChar=True)
+        listOfAnnotations = utilsOs.readAllLinesFromFile(u'{0}sampleAnnotation.tsv'.format(outputFolderPath),
+                                                         noNewLineChar=True)
+        # maintain only what we haven't saw
+        annotatedFiles = set(referencePathLine)
+        newRefLines = []
+        for ind, file in enumerate(referenceLines):
+            if file.replace(u'\n', u'') not in annotatedFiles:
+                newRefLines.append( [ind, file.replace(u'\n', u'')] )
+        referenceLines = newRefLines
+        print(referenceLines)
+    else:
+        referencePathLine = []
+        listOfAnnotations = []
+        referenceLines = [(ind, file.replace(u'\n', u'')) for ind, file in enumerate(referenceLines)]
+    # print the annotator cheat sheet
+    printCheatSheet()
+    # open each file in EN and FR and show it in the terminal
+    for tupleRef in referenceLines:
+        indRef, refLn = tupleRef[0], tupleRef[1]
+        print(u'############# {0} ##############'.format(refLn.replace(u'\n', u'')))
+        # get the path for the source and target
+        lnsSource = enLns if u'en-fr' in refLn else frLns
+        lnsTarget = frLns if u'en-fr' in refLn else enLns
+        # get the correct terminal line length
+        lineLength = 137-len(str(len(listOfAnnotations)+1))
+        # color in red the during lines
+        redDuringSource = u'\033[1;31m{0}\033[0m'.format(lnsSource[indRef])
+        # print the sentences
+        print(u'{0} - {1}'.format(len(listOfAnnotations), redDuringSource))
+        print(u'{0} - {1}'.format(len(listOfAnnotations), lnsTarget[indRef]))
+        print()
+        # count the lines that take the space of 2 lines
+        longLines = getNbLongLines([lnsSource[indRef], lnsTarget[indRef]], lineLength)
+        # get the first part of the annotation (aligned or not)
+        annotatorGeneralInput = input(u'Aligned-Misaligned annotation: ')
+        # make sure to have the right general annotation
+        while True:
+            if annotatorGeneralInput in [u'0', u'1', u'0.0', u'0.1', u'0.2',
+                                         u'1.0', u'1.1', u'1.2', u'1.3', u'1.4', u'c', u'correction']:
+                break
+            else:
+                utilsOs.moveUpAndLeftNLines(1, slowly=False)
+                annotatorGeneralInput = input(u'Repeat annotation: ')
+        if annotatorGeneralInput in [u'c', u'correct']:
+            annotatorGeneralInput, listOfAnnotations = correctionToAnnotation(listOfAnnotations)
+        # save to the list of annotations
+        listOfAnnotations.append(float(annotatorGeneralInput))
+        # remove the lines from the terminal before getting to the next pair
+        utilsOs.moveUpAndLeftNLines(7+longLines, slowly=False)
+        # erase all remainder of the previous sentences and go back up again
+        for e in range(14+longLines):
+            print(u' '*(lineLength+4))
+        utilsOs.moveUpAndLeftNLines(7 + longLines, slowly=False)
+        # append the reference to the file
+        referencePathLine.append(refLn)
+        # dump the file line by line, to be sure in case of error
+        # dump the reference
+        utilsOs.dumpRawLines(referencePathLine, u'{0}sampleReference.tsv'.format(outputFolderPath),
+                             addNewline=True, rewrite=True)
+        # dump the annotation
+        utilsOs.dumpRawLines(listOfAnnotations, u'{0}sampleAnnotation.tsv'.format(outputFolderPath),
+                             addNewline=True, rewrite=True)
+        # dump the SP
+        if dumpSP is True:
+            enSent = lnsSource[indRef] if u'en-fr' in refLn else lnsTarget[indRef]
+            frSent = lnsTarget[indRef] if u'en-fr' in refLn else lnsSource[indRef]
+            utilsOs.appendLineToFile(enSent, u'{0}sample.en'.format(outputFolderPath), addNewLine=False)
+            utilsOs.appendLineToFile(frSent, u'{0}sample.fr'.format(outputFolderPath), addNewLine=False)
+            utilsOs.appendLineToFile(scLns[indRef], u'{0}scores.tsv'.format(outputFolderPath), addNewLine=False)
+        # clear part of terminal
+        utilsOs.moveUpAndLeftNLines(7, slowly=False)
+
+
 def mergeAnnotatedFiles(pathToPrimary, pathOrListOfPathsToSecondary):
     # get the path to the primary folder
     def dividePaths(pathAnnotFile):
@@ -486,12 +581,12 @@ def showAnnotationsExamples(annotation=1.0, showTotalOnly=False):
 
 startTime = utilsOs.countTime()
 
-# annotate the SP
+# annotate the randomly extracted files
 # listOfFilesPath = u'./randomSelected100MISALIGNED.json'
 # annotateFiles(listOfFilesPath, anotatedOutputFolder=u'./002manuallyAnnotated/')
 
 
-# annotate the randomly extracted misaligned SPs
+# annotate the randomly extracted SPs
 # listOfPaths = [u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/MISALIGNED',
 #               u'./003negativeNaiveExtractors/fewTokens/random100few/MISALIGNED',
 #               u'./003negativeNaiveExtractors/cognates/random100cog/MISALIGNED',
@@ -501,13 +596,24 @@ startTime = utilsOs.countTime()
 #               u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/ALIGNMENT-QUALITY',
 #               u'./003negativeNaiveExtractors/fewTokens/random100few/ALIGNMENT-QUALITY',
 #               u'./003negativeNaiveExtractors/cognates/random100cog/ALIGNMENT-QUALITY']
-listOfPaths = [u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/ALIGNMENT-QUALITY',
-               u'./003negativeNaiveExtractors/fewTokens/random100few/ALIGNMENT-QUALITY',
-               u'./003negativeNaiveExtractors/cognates/random100cog/ALIGNMENT-QUALITY']
+
+# listOfPaths = [u'./003negativeNaiveExtractors/numberCoincidence/random100Nb/ALIGNMENT-QUALITY',
+#                u'./003negativeNaiveExtractors/fewTokens/random100few/ALIGNMENT-QUALITY',
+#                u'./003negativeNaiveExtractors/cognates/random100cog/ALIGNMENT-QUALITY']
 
 # annotateFiles(listOfFilesPath=listOfPaths, annotatedOutputFolder=u'./003negativeNaiveExtractors/')
 
 # mergeAnnotatedFiles(u'./002manuallyAnnotated/sampleAnnotation.tsv', u'./003negativeNaiveExtractors/')
+
+
+# annotate the sample of already selected lines post-heuristic-application-and-extraction
+inputFolderPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/problematic/'
+outputFolderPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/problematic/'
+annotateFilesAfterHeurAndSelection(inputFolderPrblm, outputFolderPrblm)
+
+# inputFolderNoPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/noProblematic/'
+# outputFolderNoPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/'
+# annotateFilesAfterHeurAndSelection(inputFolderNoPrblm, outputFolderNoPrblm)
 
 
 # change one type of annotation

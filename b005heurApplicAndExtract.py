@@ -42,20 +42,35 @@ def dumpReferenceToLangFiles(listOfRef, outputGeneralFilePath):
         utilsOs.appendLineToFile(frLine, frOutputPath, addNewLine=True)
 
 
-def getRandomIndex(iterableObj):
+def getRandomIndex(iterableObjOrLength):
+    # get the total length
+    if type(iterableObjOrLength) is int:
+        lenIter = iterableObjOrLength
+    else:
+        lenIter = len(iterableObjOrLength)
     # if there is no element in the dict
-    if len(iterableObj) == 0:
+    if lenIter == 0:
         return None
     # if there is only one element in the dict
-    elif len(iterableObj) == 1:
+    elif lenIter == 1:
         rdmIndex = 0
     else:
         # randomly select an index
-        rdmIndex = randint(0, len(iterableObj) - 1)
+        rdmIndex = randint(0, lenIter - 1)
     return rdmIndex
 
 
-def randomlyExtractAndDump(extractedSp, extractionSize, subsetName):
+def getQuasiRandomIndexForcingOnSpecificRange(lenIter, rangeMin=0, rangeMax=None):
+    """ returns a random index but forcing on the appearance of and index in a specific range 1/4 of the time """
+    if rangeMax is None:
+        rangeMax = int(lenIter/2)
+    decision = randint(0, 4)
+    if decision == 0:
+        return randint(rangeMin, rangeMax)
+    return getRandomIndex(lenIter)
+
+
+def randomlyExtractAndDumpHeuristicallyExtracted(extractedSp, extractionSize, subsetName):
     """ given a dict with all the heuristically extracted """
     outputDict = {0: u'./003negativeNaiveExtractors/numberCoincidence/random100Nb{0}.tsv'.format(subsetName),
                     1: u'./003negativeNaiveExtractors/fewTokens/random100few{0}.tsv'.format(subsetName),
@@ -161,7 +176,7 @@ def extractMisalignedSP(pathToSrcTrgtFiles, extractionSize=100, typeOfExtractors
     # dump the extracted sp dict into a json file
     utilsOs.dumpDictToJsonFile(extractedSp, pathOutputFile=u'./003negativeNaiveExtractors/005extractedSp{0}.json'.format(subsetName), overwrite=False)
     # randomly extract and dump the file path and the line index for the extracted SP
-    randomlyExtractAndDump(extractedSp, extractionSize, subsetName)
+    randomlyExtractAndDumpHeuristicallyExtracted(extractedSp, extractionSize, subsetName)
 
 
 def changeStructure():
@@ -189,19 +204,107 @@ def changeStructure():
             utilsOs.appendLineToFile(tgrtLn, u'./002manuallyAnnotated/sampleFr.tsv', addNewLine=False)
 
 
-# count the time the algorithm takes to run
+def getEnFrLnsForIndex(index, refPath, enPath, frPath, scPath):
+    # open the en and fr files
+    refFile = open(refPath, u'r')
+    enFile = open(enPath, u'r')
+    frFile = open(frPath, u'r')
+    scFile = open(scPath, u'r')
+    # get the ref
+    refLn = refFile.readline()
+    refI = 0
+    while refI != index:
+        refLn = refFile.readline()
+        refI += 1
+    # get the en line
+    enLn = enFile.readline()
+    enI = 0
+    while enI != index:
+        enLn = enFile.readline()
+        enI += 1
+    # get the fr line
+    frLn = frFile.readline()
+    frI = 0
+    while frI != index:
+        frLn = frFile.readline()
+        frI += 1
+    # get the score line
+    scLn = scFile.readline()
+    scI = 0
+    while scI != index:
+        scLn = scFile.readline()
+        scI += 1
+    # close the en and fr files
+    enFile.close()
+    frFile.close()
+    scFile.close()
+    return refLn, enLn, frLn, scLn
+
+
+def randomSPselectionForAnnotation(enPath, frPath, refPath, scPath, outputFolderPath, nbSp=150):
+    """ given a path to the tsv files in english, french and reference (probably where the heur. were applied),
+    selects randomly and extracts to an output folder, ready to be annotated """
+    dejavus = set([])
+    if outputFolderPath[-1] != u'/':
+        outputFolderPath = u'{0}/'.format(outputFolderPath)
+    # open the output Files, overwrite previous if it already exists
+    utilsOs.deleteAFile(u'{0}sample.en'.format(outputFolderPath))
+    utilsOs.deleteAFile(u'{0}sample.fr'.format(outputFolderPath))
+    utilsOs.deleteAFile(u'{0}sampleReference.Paths'.format(outputFolderPath))
+    utilsOs.deleteAFile(u'{0}scores.tsv'.format(outputFolderPath))
+    # get the reference lines
+    with open(refPath) as refFile:
+        refLns = refFile.readlines()
+        lengthRef = len(refLns)
+        refLns = None
+    for n in range(nbSp):
+        # select a random index that is not yet in dejavus
+        rdmInd = getQuasiRandomIndexForcingOnSpecificRange(lengthRef, rangeMin=0, rangeMax=200000)
+        while rdmInd in dejavus:
+            rdmInd = getQuasiRandomIndexForcingOnSpecificRange(lengthRef, rangeMin=0, rangeMax=200000)
+        dejavus.add(rdmInd)
+        # search for that index in the en files
+        refLn, enLn, frLn, scLn = getEnFrLnsForIndex(rdmInd, refPath, enPath, frPath, scPath)
+        # dump in the output folder path
+        utilsOs.appendLineToFile(enLn, u'{0}sample.en'.format(outputFolderPath), addNewLine=False)
+        utilsOs.appendLineToFile(frLn, u'{0}sample.fr'.format(outputFolderPath), addNewLine=False)
+        utilsOs.appendLineToFile(refLn, u'{0}sampleReference.Paths'.format(outputFolderPath), addNewLine=False)
+        utilsOs.appendLineToFile(scLn, u'{0}scores.tsv'.format(outputFolderPath), addNewLine=False)
+        print(1000000, rdmInd)
+        print(11111111, scLn)
+        print(enLn)
+        print(frLn)
+        print(refLn)
+    return None
+
+    # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
 
-# extract naive heuristic detected random SPs
+## extract naive heuristic detected random SPs
 # extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'a'), extractionSize=100, typeOfExtractors=[0,1,2])
 # extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'aq'), extractionSize=100, typeOfExtractors=[0,1,2])
 # extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'q'), extractionSize=100, typeOfExtractors=[0,1,2])
 ### extractMisalignedSP(b000path.getBtFolderPath(flagFolder=u'n'), extractionSize=100, typeOfExtractors=[0,1,2])
 
-# if we have already detected the SP, we just load them and randomly extract and dump
-for subsetName in [u'MISALIGNED', u'QUALITY', u'ALIGNMENT-QUALITY']:
-    extractedSp = utilsOs.openJsonFileAsDict(u'./003negativeNaiveExtractors/005extractedSp{0}.json'.format(subsetName))
-    randomlyExtractAndDump(extractedSp, extractionSize=100, subsetName=subsetName)
+
+## if we have already detected the SP, we just load them and randomly extract and dump
+# for subsetName in [u'MISALIGNED', u'QUALITY', u'ALIGNMENT-QUALITY']:
+#     extractedSp = utilsOs.openJsonFileAsDict(u'./003negativeNaiveExtractors/005extractedSp{0}.json'.format(subsetName))
+#     randomlyExtractAndDumpHeuristicallyExtracted(extractedSp, extractionSize=100, subsetName=subsetName)
+
+
+# if we already tuned the heuristics, applied them to the MC and now we wish to select random SPs to annotate them
+paths = [u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/problematic/',
+         u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/noProblematic/']
+outFoldPaths = [u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/problematic/',
+                u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/noProblematic/']
+randomSPselectionForAnnotation(u'{0}extracted.en'.format(paths[0]), u'{0}extracted.fr'.format(paths[0]),
+                               u'{0}reference.tsv'.format(paths[0]), u'{0}scores.tsv'.format(paths[0]),
+                               outFoldPaths[0], nbSp=150)
+
+# randomSPselectionForAnnotation(u'{0}extracted.en'.format(paths[1]), u'{0}extracted.fr'.format(paths[1]),
+#                                u'{0}reference.tsv'.format(paths[1]), u'{0}scores.tsv'.format(paths[1]),
+#                                outFoldPaths[1], nbSp=150)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

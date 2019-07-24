@@ -3,7 +3,7 @@
 
 import requests, urllib3, ssl, certifi, getpass
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
-import sys, time, os, shutil
+import sys, time, os, shutil, json
 from tqdm import tqdm
 import b000path
 sys.path.append(u'../utils')
@@ -66,7 +66,11 @@ def scrapLookingGlassForUrls(reqJson, session):
         urlEn = u'https://recherchebitexte-bitextsearch.btb.gc.ca/{0}'.format(req.json()['meta_en'])
         urlFr = u'https://recherchebitexte-bitextsearch.btb.gc.ca/{0}'.format(req.json()['meta_fr'])
         return urlEn, urlFr
+    # if there is no metadata-en/fr
     except KeyError:
+        return None, None
+    # if we cannot click on the looking glass (ie: {'page': None, 'total': '1', 'totalFormatted': '1', 'time': '0,1299', 'rows': [{'id': '153291498', 'cell': [1, 'En 2016, les exportations d’huile et de graines de canola canadien représentaient presque 15 pour 100 des exportations totales de produits agricoles et alimentaires, estimées à 9,2 milliards de dollars.', 'In 2016, Canadian canola seed and oil exports accounted for almost 15 per cent of total agriculture and food exports, valued at $9.2 billion.', '351 - ', '9896427', 'eng &#9658; fra', {'brn': '9896427', 'id': '153291498', 'docname': '9896426_001_EN_180829-26 - AAFCAAC-#104278255-v3-News_Release_-_Canola_Cluster_-_MB__;243908 - E.docx', 'memoryID': '1240675'}, None, '1240675', '2019-01-30 18:32:38', '2019-01-30 18:32:38', None]}]})
+    except json.decoder.JSONDecodeError:
         return None, None
 
 
@@ -455,28 +459,32 @@ def searchAndDumpOriginalDocsUrls(allFilePaths=None, session=None):
                 # print(7777, 'small sent in english : ', longerSents, fPath)
                 lang = u'fr'
                 longerSents = getLongerSentences(fPath, lang)
-                if longerSents[0][1] < 10:
+                # if it's still too short, write it with the unindexed
+                if longerSents[0][1] < 3:
                     print(888888, 'longer sent in french (final) but still short : ', longerSents)
-            # get the name of the client
-            clientCodeName = getClientName(fPath)
-            tableJson = fillForm(clientCodeName, longerSents[0][0].replace(u'\n', u''), session, lang)
-            if tableJson != []:
-                for ind in [1, 2]:
-                    tableJson = fillForm(clientCodeName, longerSents[ind][0].replace(u'\n', u''), session, lang)
-                    if tableJson != []:
-                        break
-            if tableJson != []: #########################################################################3
-                urlEn, urlFr = scrapLookingGlassForUrls(tableJson, session)
-                if urlEn is None:
-                    # print(999999, 'UNABLE to get to the looking glass tab for file : ', fPath)
                     unindexedLoc.write(u'{0}\n'.format(b000path.anonymizePath(fPath)))
+                    fPath = None
+            # get the name of the client
+            if fPath is not None:
+                clientCodeName = getClientName(fPath)
+                tableJson = fillForm(clientCodeName, longerSents[0][0].replace(u'\n', u''), session, lang)
+                if tableJson != []:
+                    for ind in [1, 2]:
+                        tableJson = fillForm(clientCodeName, longerSents[ind][0].replace(u'\n', u''), session, lang)
+                        if tableJson != []:
+                            break
+                if tableJson != []: #########################################################################3
+                    urlEn, urlFr = scrapLookingGlassForUrls(tableJson, session)
+                    if urlEn is None:
+                        # print(999999, 'UNABLE to get to the looking glass tab for file : ', fPath)
+                        unindexedLoc.write(u'{0}\n'.format(b000path.anonymizePath(fPath)))
+                    else:
+                        # dump to the files
+                        fileLoc.write(u'{0}\n'.format(b000path.anonymizePath(fPath)))
+                        enDocsUrls.write(u'{0}\n'.format(urlEn))
+                        frDocsUrls.write(u'{0}\n'.format(urlFr))
                 else:
-                    # dump to the files
-                    fileLoc.write(u'{0}\n'.format(b000path.anonymizePath(fPath)))
-                    enDocsUrls.write(u'{0}\n'.format(urlEn))
-                    frDocsUrls.write(u'{0}\n'.format(urlFr))
-            else:
-                unindexedLoc.write(u'{0}\n'.format(b000path.anonymizePath(fPath)))
+                    unindexedLoc.write(u'{0}\n'.format(b000path.anonymizePath(fPath)))
     # close the opened files
     fileLoc.close()
     enDocsUrls.close()

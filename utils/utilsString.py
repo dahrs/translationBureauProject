@@ -138,6 +138,16 @@ def detectNbChar(string):
     return True
 
 
+def detectUrlAndFolderPaths(string):
+    """ given a string detects if there is an url or folder path
+    in the string and returns in a list the parts of the string with the urls """
+    urlAndFolderPaths = re.compile(r'((?!\s)((([A-Z]:|\/|(~|\.)\/|http:\/\/|https:\/\/|www\.)(.(?!\s))+.)|(((?!\s)[a-z](\/|\\|\.)*)+\.([a-z]{2,4})(\/)*)))')
+    allUrlsAndPaths = re.findall(urlAndFolderPaths, string)
+    if len(allUrlsAndPaths) == 0:
+        return False, []
+    return True, allUrlsAndPaths
+
+
 def extractNumbersFromString(string, digitByDigit=False):
     """ given a string, extract all the digit characters in the string in list form as integrals """
     if digitByDigit == False:
@@ -153,7 +163,7 @@ def transformNbNameToNb(stringOrStringList):
 	 (function to be perfected) """
     nbToNbName = {0.5: {u'half', u'demi', u'moitié', u'semi', u'mid', u'mi'},
                   0: {u'zero', u'zéro', u'null', u'none'},
-                  1: {u'one', u'un', u'january', u'janvier', 'first', u'premier', u'première', u'1rst', u'1st', u'1er',
+                  1: {u'january', u'janvier', 'first', u'premier', u'première', u'1rst', u'1st', u'1er',
                       u'1ere', u'1ère', u'ist', u'ier'},
                   2: {u'two', u'deux', u'february', u'février', u'square', u'carré', u'second', u'seconde',
                       u'deuxième', u'ii', u'2nd', u'2nd', u'2nde', u'2eme', u'2ème', u'iind', u'iinde', u'iième'},
@@ -161,21 +171,21 @@ def transformNbNameToNb(stringOrStringList):
                       u'1pm', u'11pm', u'iii', u'3rd', u'3eme', u'3ieme', u'3ième', u'3ème', u'iiird', u'iiieme',
                       u'iième'},
                   4: {u'four', u'quatre', u'fourty', u'quarante', u'april', u'avril', u'fourth', u'quart',
-                      u'quatrième', u'iiii', u'iv', u'4th', u'4eme', u'4ieme', u'4ième', u'4ème', u'ivth', u'iveme',
+                      u'quatrième', u'iiii', u'4th', u'4eme', u'4ieme', u'4ième', u'4ème', u'ivth', u'iveme',
                       u'ivème', u'ivième'},
-                  5: {u'five', u'cinq', u'fifty', u'cinquante', u'may', u'mai', u'fifth',
-                      u'cinquième', u'v', u'5th', u'5eme', u'5ieme', u'5ième', u'5ème', u'vth', u'veme', u'vème'},
-                  6: {u'six', u'sixty', u'soixante', u'sixtieth', u'sixième', u'june', u'juin', u'vi', u'6th', u'6eme',
+                  5: {u'five', u'cinq', u'fifty', u'cinquante', u'mai', u'fifth',
+                      u'cinquième', u'5th', u'5eme', u'5ieme', u'5ième', u'5ème', u'vth', u'veme', u'vème'},
+                  6: {u'six', u'sixty', u'soixante', u'sixtieth', u'sixième', u'june', u'juin', u'6th', u'6eme',
                       u'6ieme', u'6ième', u'6ème', u'vith', u'vieme', u'vième'},
                   7: {u'seven', u'sept', u'seventy', u'septante', u'seventh', u'septième', u'july', u'juillet', u'vii',
                       u'7th', u'7eme', u'7ieme', u'7ième', u'7ème', u'viith', u'viieme', u'viième'},
                   8: {u'eight', u'huit', u'eighty', u'octante', u'eighth', u'huitième', u'august', u'aout', u'août',
                       u'viii', u'8th', u'8eme', u'8ieme', u'8ième', u'8ème', u'viiith', u'viiieme', u'viiième'},
-                  9: {u'nine', u'neuf', u'ninety', u'nonante', u'ninth', u'neuvième', u'september', u'septembre', u'ix',
+                  9: {u'nine', u'neuf', u'ninety', u'nonante', u'ninth', u'neuvième', u'september', u'septembre',
                       u'9th', u'9eme', u'9ieme', u'9ième', u'9ème', u'ixth', u'ixeme', u'ixème', u'ixième'},
-                  10: {u'ten', u'dix', u'october', u'octobre', u'tenth', u'dixième', u'x', u'10th', u'10eme', u'10ieme',
+                  10: {u'ten', u'dix', u'october', u'octobre', u'tenth', u'dixième', u'10th', u'10eme', u'10ieme',
                        u'10ième', u'10ème', u'xth', u'xeme', u'xème'},
-                  11: {u'eleven', u'onze', u'november', u'novembre', u'xi', u'11th', u'11eme', u'11ieme', u'11ième',
+                  11: {u'eleven', u'onze', u'november', u'novembre', u'11th', u'11eme', u'11ieme', u'11ième',
                        u'11ème', u'xith', u'xieme', u'xième', u'xième'},
                   12: {u'twelve', u'douze', u'december', u'decembre', u'décembre', u'midday', u'noon', u'midi', u'dozen',
                        u'douzaine', u'xii', u'12th', u'12eme', u'12ieme', u'12ième', u'12ème', u'xiith', u'xiieme',
@@ -184,7 +194,7 @@ def transformNbNameToNb(stringOrStringList):
                        u'xiiith', u'xiiieme', u'xiiième'},
                   14: {u'fourteen', u'quatorze', u'2pm', u'xiv', u'14th', u'14eme', u'14ieme', u'14ième', u'14ème',
                        u'xivth', u'xiveme', u'xivème', u'xivième'},
-                  15: {u'fifteen', u'quinze', u'3pm', u'xv', u'15th', u'15eme', u'15ieme', u'15ième', u'15ème',
+                  15: {u'fifteen', u'quinze', u'3pm', u'15th', u'15eme', u'15ieme', u'15ième', u'15ème',
                        u'xvth', u'xveme', u'xvème'},
                   16: {u'sixteen', u'seize', u'4pm', u'xvi', u'16th', u'16eme', u'16ieme', u'16ième', u'16ème',
                        u'xvith', u'xvieme', u'xvième'},
@@ -212,14 +222,15 @@ def transformNbNameToNb(stringOrStringList):
                   60: {u'sixty', u'soixante'}, 70: {u'seventy'}, 80: {u'eighty'}, 90: {u'ninety'},
                   100: {u'hundred', u'cent'}, 1000: {u'thousand', u'mille', u'mil'},
                   1000000: {u'million', u'millions'}, 1000000000: {u'billion', u'milliard', u'billions', u'milliards'}
-                  }  # (eliminated because of ambiguity mismatches) u'uni', u'mono', u'bi', u'score'
+                  }
+    # (eliminated because of ambiguity mismatches) u'uni', u'mono', u'bi', u'score', u'one', u'un', u'may',
+    #                                              u'i', u'v', u'x', u'iv', u'vi', u'xv', u'ix', u'xi',
     # get a set containing all the number names
     def fromDict(aDict):
         for v in aDict.values():
             for elem in v:
                 yield elem
     allNbNames = set(fromDict(nbToNbName))
-    mustReplace = False
     # if the stringOrStringList arg is a string
     if type(stringOrStringList) is str:
         stringOrStringList = stringOrStringList.lower()
@@ -292,6 +303,14 @@ def indicator3SameLetters(string):
     if len(re.findall(threeCharRepetition, string.lower())) != 0:
         return True
     return False
+
+
+def isItAlphaNumeric(char):
+    """ given a character, returns True if it's alphanumeric ( ASCII alone: [a-zA-Z0-1] ), False otherwise """
+    alphaNumericDecimalCodes = set([32] + list(range(48, 58)) + list(range(65, 91)) + list(range(97, 123)))
+    if ord(char) not in alphaNumericDecimalCodes:
+        return False
+    return True
 
 
 def isItGibberish(string, gibberishTreshold=0.49, exoticCharSensitive=False):
@@ -445,13 +464,13 @@ def englishOrFrench(string):
     if len(unkTokendict) == 0 or len(unkNgramDict) == 0:
         return u'unknown'
     # token scores
-    frenchTokScore = langDictComparison(unkTokendict, utilsOs.openJsonFileAsDict(u'./utilsString/tokDict/frTok.json'))
-    englishTokScore = langDictComparison(unkTokendict, utilsOs.openJsonFileAsDict(u'./utilsString/tokDict/enTok.json'))
+    frenchTokScore = langDictComparison(unkTokendict, utilsOs.openJsonFileAsDict(u'./resources/tokDict/frTok.json'))
+    englishTokScore = langDictComparison(unkTokendict, utilsOs.openJsonFileAsDict(u'./resources/tokDict/enTok.json'))
     # ngram scores
     frenchNgramScore = langDictComparison(unkNgramDict,
-                                          utilsOs.openJsonFileAsDict(u'./utilsString/charDict/frChar3gram.json'))
+                                          utilsOs.openJsonFileAsDict(u'./resources/charDict/frChar3gram.json'))
     englishNgramScore = langDictComparison(unkNgramDict,
-                                           utilsOs.openJsonFileAsDict(u'./utilsString/charDict/enChar3gram.json'))
+                                           utilsOs.openJsonFileAsDict(u'./resources/charDict/enChar3gram.json'))
     # the smaller the string (in tokens), the more we want to prioritize the token score instead of the ngram score
     if len(unkTokendict) < 5:
         ratioNgram = float(len(unkTokendict)) / 10.0
@@ -568,7 +587,7 @@ def spacyTokenizer(string, spacyModel):
 
 def ngrams(string, n=3):
     '''
-	given a string, tokenizes and groups by n-grams
+	given a string, tokenizes and groups by token n-grams
 	it returns a list of ngrams, each in string format 
 	separated by a space
 	'''
@@ -584,6 +603,14 @@ def ngrams(string, n=3):
                 stringedNgram += u' {0}'.format(tokens[startIndex + subN])
         # add to the ngram list
         ngramList.append(stringedNgram)
+    return ngramList
+
+
+def charNgramArray(string, n=3):
+    ''' given a string, returns a list containing the character ngrams '''
+    ngramList = []
+    for i in range(len(string) - (n-1)):
+        ngramList.append(string[i:i + n])
     return ngramList
 
 
@@ -707,7 +734,7 @@ def correction(word, lang=u'en', returnProbabilityScore=False, wordCountDict=Non
 	'''
     if wordCountDict != None:
         wordCountDict = utilsOs.openJsonFileAsDict(
-            u'./utilsString/tokDict/{0}TokReducedLessThan100Instances.json'.format(lang))
+            u'/u/alfonsda/Documents/workRALI/utils/resources/tokDict/{0}TokReducedLessThan100Instances.json'.format(lang))
     cadidatesList = candidates(word, wordCountDict)
     maxValWord = (word, 0)
     # evaluate for all candidates wich is most probable
@@ -725,6 +752,39 @@ def correction(word, lang=u'en', returnProbabilityScore=False, wordCountDict=Non
         return maxValWord[0]
 
 
+def getWiki1000MostCommonLexicon(lang=u'en'):
+    pth = u'/u/alfonsda/Documents/workRALI/utils/resources/tokDict/{0}TokReducedLessThan1000Instances.json'.format(
+        lang)
+    orthDictOrSet = utilsOs.openJsonFileAsDict(pth)
+    return set(orthDictOrSet.keys())
+
+
+def detectBadSpelling(tokenList, orthDictOrSet=None, lang=u'en'):
+    """ given a list of tokens it returns a list containing the word and a score:
+     - 0 if the token is not in the orth dict
+     - 1 if it's in the orth dict """
+    output = []
+    if orthDictOrSet is None:
+        pth = u'/u/alfonsda/Documents/workRALI/utils/resources/tokDict/{0}TokReducedLessThan1000Instances.json'.format(
+            lang)
+        orthDictOrSet = utilsOs.openJsonFileAsDict(pth)
+        orthDictOrSet = set(orthDictOrSet.keys())
+    # get rid of numbers and symbols
+    nbAndSymb = re.compile(r"""[\.,:;?!\(\)\[\]\{\}"'«»`´@#$%&*+\-=<>_\\/0-9]+""")
+    for indexTok, tok in enumerate(tokenList):
+        tokenList[indexTok] = nbAndSymb.sub('', tok)
+    tokenList = [tok for tok in tokenList if tok != u'']
+    # compare to the orth dict
+    for tok in tokenList:
+        # lowercase it before searching in the dict
+        if tok.lower() in orthDictOrSet:
+            output.append(tuple([tok, 1]))
+        else:
+            output.append(tuple([tok, 0]))
+    return output
+
+
+
 def correctionNgram(ngram, lang=u'en', ngramCountDict=None):
     '''Most probable spelling correction for ngram.
 	based on statistical ngram frequency
@@ -732,7 +792,7 @@ def correctionNgram(ngram, lang=u'en', ngramCountDict=None):
 	based on from peter norvig spell post : https://norvig.com/spell-correct.html
 	'''
     if ngramCountDict != None:
-        ngramCountDict = utilsOs.openJsonFileAsDict(u'./utilsString/tokDict/{0}Tok.json'.format(lang))
+        ngramCountDict = utilsOs.openJsonFileAsDict(u'./resources/tokDict/{0}Tok.json'.format(lang))
     cadidatesList = candidatesNgram(ngram, ngramCountDict)
     maxValNgram = (ngram, 0)
     # evaluate for all candidates wich is most probable
@@ -904,10 +964,10 @@ def naiveSpellChecker(string, dejavuDict={}, lang=u'en', wordCountDict=None, ret
                                           captureSymbols=captureSymbols)
     # get the most common (and probably correctly written) tokens from wikipedia
     setOfMostCommon = set([key.lower() for key in utilsOs.openJsonFileAsDict(
-        u'./utilsString/tokDict/{0}TokReducedLessThan1000Instances.json'.format(lang))])
+        u'./resources/tokDict/{0}TokReducedLessThan1000Instances.json'.format(lang))])
     # get the abbreviation dict
     abbreviationDict = {key: getGreaterVal(value) for key, value in utilsOs.openJsonFileAsDict(
-        u'./utilsString/tokDict/{0}AbbrevDictReducedLess1000.json'.format(lang)).items()}
+        u'./resources/tokDict/{0}AbbrevDictReducedLess1000.json'.format(lang)).items()}
     # verify if the tokens are not already well written
     elemDict = getElemsNotInIterObj(stringTokenList, setOfMostCommon)
     # verify if not in dejavus
@@ -931,8 +991,7 @@ def naiveSpellChecker(string, dejavuDict={}, lang=u'en', wordCountDict=None, ret
 
 def naiveSpellCheckerOrora(string, dejavuDict={}, lang=u'en', wordCountDict=None, returnCorrectedTokenScore=False,
                            capturePunctuation=False,
-                           captureSymbols=[r'\+', r'\#', r'\$', r'%', r'&', r'\'', r'\*', r'`', r'\|', r'~', r':', r'-',
-                                           r'¤']):
+                           captureSymbols=[r'\+', r'\#', r'\$', r'%', r'&', r'\'', r'\*', r'`', r'\|', r'~', r':', r'-', r'¤']):
     '''
 	for each token in the string, it returns the most statistically 
 	closely	related and most counted token in the big data
@@ -951,11 +1010,11 @@ def naiveSpellCheckerOrora(string, dejavuDict={}, lang=u'en', wordCountDict=None
     # get the most common (and probably correctly written) tokens from wikipedia, if there is a number or symbol in the set of most commons, eliminate it
     nbAndSymbols = re.compile(r'([0-9]|-|\+|\!|\#|\$|%|&|\'|\*|\?|\.|\^|_|`|\||~|:|@)')
     setOfMostCommon = set([key.lower() for key in utilsOs.openJsonFileAsDict(
-        u'./utilsString/tokDict/{0}TokReducedLessThan1000Instances.json'.format(lang)) if
+        u'./resources/tokDict/{0}TokReducedLessThan1000Instances.json'.format(lang)) if
                            len(re.findall(nbAndSymbols, key)) == 0])
     # get the abbreviation dict
     abbreviationDict = {key: getGreaterVal(value) for key, value in utilsOs.openJsonFileAsDict(
-        u'./utilsString/tokDict/{0}AbbrevDictORORA.json'.format(lang)).items()}
+        u'./resources/tokDict/{0}AbbrevDictORORA.json'.format(lang)).items()}
     # verify if the tokens are not already well written
     elemDict = getElemsNotInIterObj(stringTokenList, setOfMostCommon)
     # verify if not in dejavus
@@ -992,6 +1051,69 @@ def naiveNgramSpellChecker(string, n=3, lang=u'en'):
         len([ngrm for ngrm in correctedStringNgramList if ngrm not in stringTok3gramList])) / float(
         len(stringTok3gramList))
     return u' '.join(correctedStringNgramList), correctedNgramScore
+
+
+##################################################################################
+# LINGUISTIC DICTS AND RESOURCES
+##################################################################################
+
+def openFauxAmisDict(enToFr=True, withDescription=False, reducedVersion=False):
+    """ opens the faux amis (false cognates) dict """
+    path = u'/u/alfonsda/Documents/workRALI/utils/resources/fauxAmis/fauxAmis'
+    if withDescription is not False:
+        path = u'{0}AndDescrip'.format(path)
+    if reducedVersion is not False:
+        path = u'{0}Reduced'.format(path)
+    if enToFr is True:
+        path = u'{0}En-Fr.json'.format(path)
+    else:
+        path = u'{0}Fr-En.json'.format(path)
+    return utilsOs.openJsonFileAsDict(path)
+
+
+def openEn2FrStopWordsDict():
+    """ opens the stop words dict """
+    path = u'/u/alfonsda/Documents/workRALI/utils/resources/litteralTranslationDict/stopWordsEn-Fr.json'
+    return utilsOs.openJsonFileAsDict(path)
+
+
+def dumpStarbucksWordAndExpressionDicts():
+    """ takes the web-scrapped starbucks en-fr dict and dumps it as a json """
+    inputExprPath = u'/u/demorali/corpora/dict/starbucks/lexicons/expr_lexicon.txt'
+    inputWordPath = u'/u/demorali/corpora/dict/starbucks/lexicons/word_lexicon.txt'
+    outputExprPath = u'/u/alfonsda/Documents/workRALI/utils/resources/litteralTranslationDict/starbucksEn-FrExpr.json'
+    outputWordPath = u'/u/alfonsda/Documents/workRALI/utils/resources/litteralTranslationDict/starbucksEn-FrWord.json'
+    exprDict, wordDict = {}, {}
+    # open the expression txt file
+    with open(inputExprPath) as exprFile:
+        exprLns = [ln.replace(u'\n', u'') for ln in exprFile.readlines()]
+    # make the expression dict
+    for expr in exprLns:
+        exprList = expr.split(u'\t')
+        if exprList[0] not in exprDict:
+            exprDict[exprList[0]] = [exprList[1]]
+        else:
+            exprDict[exprList[0]].append(exprList[1])
+    # open the word txt file
+    with open(inputWordPath) as wordFile:
+        wordLns = [ln.replace(u'\n', u'') for ln in wordFile.readlines()]
+    # make the expression dict
+    for word in wordLns:
+        wordList = word.split(u'\t')
+        if wordList[0] not in wordDict:
+            wordDict[wordList[0]] = [wordList[1]]
+        else:
+            wordDict[wordList[0]].append(wordList[1])
+    # dump the dicts
+    utilsOs.dumpDictToJsonFile(exprDict, outputExprPath, overwrite=True)
+    utilsOs.dumpDictToJsonFile(wordDict, outputWordPath, overwrite=True)
+
+
+def openEn2FrStarbucksDict():
+    """ opens and returns the starbucks expression and word dicts """
+    exprPath = u'/u/alfonsda/Documents/workRALI/utils/resources/litteralTranslationDict/starbucksEn-FrExpr.json'
+    wordPath = u'/u/alfonsda/Documents/workRALI/utils/resources/litteralTranslationDict/starbucksEn-FrWord.json'
+    return utilsOs.openJsonFileAsDict(exprPath), utilsOs.openJsonFileAsDict(wordPath)
 
 
 ##################################################################################
@@ -1125,12 +1247,12 @@ def getBigDataDict(ressourceType=u'token',
     # assign a path to the big data ressource corresponding to the language
     if ressourceType == u'token':
         # data is also available at u'/data/rali5/Tmp/alfonsda/wikiDump/outputWikidump/tokDict'
-        bigDataPath = u'./utilsString/{0}Tok.json'.format(lang)
+        bigDataPath = u'./resources/{0}Tok.json'.format(lang)
     elif ressourceType == u'ngram':
-        bigDataPath = u'./utilsString/{0}Tok3gram.json'.format(lang)
+        bigDataPath = u'./resources/{0}Tok3gram.json'.format(lang)
     elif ressourceType == u'hybrid':
-        bigDataPath1 = u'./utilsString/{0}Tok.json'.format(lang)
-        bigDataPath2 = u'./utilsString/{0}Tok3gram.json'.format(lang)
+        bigDataPath1 = u'./resources/{0}Tok.json'.format(lang)
+        bigDataPath2 = u'./resources/{0}Tok3gram.json'.format(lang)
         # return a collections.counter dict of the counted instances of the words
         with codecs.open(bigDataPath1, u'r', encoding=u'utf8') as openedFile1:
             with codecs.open(bigDataPath2, u'r', encoding=u'utf8') as openedFile2:
@@ -1207,6 +1329,7 @@ def makeBigDataDictOfArtificialErrorsAndAbbreviations(inputFilePath, outputFileP
 ##################################################################################
 # SPECIAL DICTS - CHARACTERS
 ##################################################################################
+
 
 def trigramDictMaker(string):
     '''

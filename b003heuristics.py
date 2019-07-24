@@ -7,6 +7,7 @@ import sys
 sys.path.append(u'../utils')
 sys.path.append(u'./utils')
 import b000path, utilsOs, utilsString
+from collections import Counter
 
 ########################################################################
 # HEURISTIC TOOLS
@@ -81,6 +82,27 @@ def tableOfContentStart(aString, separateNbAndSymbScores=False):
     else:
         scrs.append(1)
     return scrs
+
+
+def makeListIntersection(iterElem1, iterElem2):
+    return list((Counter(iterElem1) & Counter(iterElem2)).elements())
+
+
+def isCharNgramGibberish(charTrigram):
+    """ returns a boolean indicating the presence of non-alphanumeric (+ space) characters in the character-ngram
+    TRUE means more than 2/3 of the chars in the trigram are non-alphanumeric"""
+    # if the trigram is a repetition of the same char trice, it's possibly gibberish
+    if charTrigram == charTrigram[0]*3:
+        return True
+    # measure the number of potential gibberish characters
+    gibbScore = 0.0
+    for char in charTrigram:
+        if utilsString.isItAlphaNumeric(char) is False:
+            gibbScore += 1.0
+    # if there is 1 or more not alphanumeric character in the trigram, the trigram is classified as gibberish
+    if gibbScore >= 1:
+        return True
+    return False
 
 
 ########################################################################
@@ -273,7 +295,7 @@ def compareLengths(stringSrc, stringTrgt, useCharInsteadOfTokens=False, addInfo=
                 return None
             return None, 0, 0, 0
     # get the score
-    sc = 1.0 - (diff/max([srcLength, trgtLength]))
+    sc = min([srcLength, trgtLength])/max([srcLength, trgtLength])
     if addInfo is False:
         return sc
     return sc, int(diff), srcLength, trgtLength
@@ -341,7 +363,7 @@ def ionSuffixMismatch(stringSrc, stringTrgt, addInfo=False):
     ionInSrc = [tok for tok in stringSrc if hasIonSuffix(tok) is True]
     ionInTrgt = [tok for tok in stringTrgt if hasIonSuffix(tok) is True]
     # take the silence into account
-    if len(ionInSrc)+len(ionInTrgt) == 0:
+    if len(ionInSrc)+len(ionInTrgt) <= 2:
         if addInfo is False:
             return None
         return None, 0, 0
@@ -367,9 +389,12 @@ def stopWordsMismatch(stringEn, stringFr, addInfo=False, stopWordsEnFrDict=None)
         if tokEn in stopWordsEnFrDict:
             stopWEn.append(tokEn)
             # search the french tokens for a translation of the english stop words
-            for tokFr in stringFr:
-                if tokFr in stopWordsEnFrDict[tokEn]:
+            stringFrCopy = list(stringFr)
+            for tokFr in stopWordsEnFrDict[tokEn]:
+                if tokFr in stringFrCopy:
                     stopWEnFr.append(tokFr)
+                    stringFrCopy.remove(tokFr)
+                    break
     # take the silence into account
     if len(stopWEnFr) + len(stopWEn) == 0:
         if addInfo is False:
@@ -541,6 +566,90 @@ def starbucksTranslationMismatch(stringEn, stringFr, addInfo=False, starbucksExp
     return scSB, len(tokensEn), len(intersectionTokens)
 
 
+def punctAndSymb(stringSrc, stringTrgt, addInfo=False):
+    """ given the SP source and target, returns a score between 0 and 1 representing the
+    presence of punctuation and symbols, 0.0 being not having any in common
+     and 1.0 being havging the exact same type and number of punct.&symb. in common """
+    # un-tokenize if not already
+    if type(stringSrc) is list:
+        stringSrc = u' '.join(stringSrc)
+    if type(stringTrgt) is list:
+        stringTrgt = u' '.join(stringTrgt)
+    # define the punct and symb to look for
+    punctSymb = {u'!', u'"', u"'", u',', u'.', u':', u';', u'?', u'-', u'(', u')', u'[', u']', u'{', u'}', u'#', u'$',
+                 u'%', u'&', u'*', u'+', u'/', u'\\', u'<', u'>', u'=', u'@', u'^', u'_', u'`', u'|', u'~'}
+    # we look-up for punctuation and symbols in the src and trgt
+    srcPunctAndSymb = []
+    trgtPunctAndSymb = []
+    for char in stringSrc:
+        # in the src
+        if char in punctSymb:
+            srcPunctAndSymb.append(char)
+    for char in stringTrgt:
+        # in the trgt
+        if char in punctSymb:
+            trgtPunctAndSymb.append(char)
+    intersection = makeListIntersection(srcPunctAndSymb, trgtPunctAndSymb)
+    # if there is no or very low intersection, return silence
+    if len(intersection) <= 2:
+        if addInfo is False:
+            return None
+        return None, len(intersection), len(srcPunctAndSymb), len(trgtPunctAndSymb)
+    # otherwise return the score and metadata
+    avgPunctSymbLen = (float(len(srcPunctAndSymb)) + float(len(trgtPunctAndSymb))) / 2.0
+    scPs = (float(len(intersection)) / avgPunctSymbLen)
+    if addInfo is False:
+        return scPs
+    return scPs, len(intersection), len(srcPunctAndSymb), len(trgtPunctAndSymb)
+
+
+def gibberish(stringSrc, stringTrgt, addInfo=False):
+    """ given the SP source and target, returns a score between 0 and 1 representing the presence of "gibberish"
+     (unreadeable and incomprehensible text) inside the 2 strings
+     0.0 being it's very probably gibberish
+     1.0 being it's very unlikely to be gibberish"""
+    # un-tokenize if not already
+    if type(stringSrc) is list:
+        stringSrc = (u''.join(stringSrc))
+    if type(stringTrgt) is list:
+        stringTrgt = (u''.join(stringTrgt))
+    stringSrc = stringSrc.replace(u' ', u'').replace(u'\t', u'').replace(u'\n', u'')
+    stringTrgt = stringTrgt.replace(u' ', u'').replace(u'\t', u'').replace(u'\n', u'')
+    # get the trigram set of the source
+    srcTrigramSet = set(utilsString.charNgramArray(stringSrc, n=3))
+    srcGibb3grams = []
+    trgtGibb3grams = []
+    if len(srcTrigramSet) == 0:
+        scGibbSrc = 0
+    else:
+        # get the source trigrams that appear to be gibberish
+        for src3gram in srcTrigramSet:
+            if isCharNgramGibberish(src3gram) is True:
+                srcGibb3grams.append(src3gram)
+        scGibbSrc = float(len(srcGibb3grams))/float(len(srcTrigramSet))
+    # get the trigram set of the target
+    trgtTrigramSet = set(utilsString.charNgramArray(stringTrgt, n=3))
+    if len(trgtTrigramSet) == 0:
+        scGibbTrgt = 0
+    else:
+        # get the target trigrams that appear to be gibberish
+        for trgt3gram in trgtTrigramSet:
+            if isCharNgramGibberish(trgt3gram) is True:
+                trgtGibb3grams.append(trgt3gram)
+        scGibbTrgt = float(len(trgtGibb3grams))/float(len(trgtTrigramSet))
+    # if the strings are too short (less than 10 char), return silence
+    if len(stringSrc) <= 10 or len(stringTrgt) <= 10:
+        if addInfo is False:
+            return None
+        return None, len(srcGibb3grams), len(trgtGibb3grams), len(srcTrigramSet), len(trgtTrigramSet)
+    # get the score
+    scGibb = 1.0 - ((scGibbSrc + scGibbTrgt) / 2)
+    # return the score
+    if addInfo is False:
+        return scGibb
+    return scGibb, len(srcGibb3grams), len(trgtGibb3grams), len(srcTrigramSet), len(trgtTrigramSet)
+
+
 ########################################################################
 # USE HEURISTICS TO EXTRACT
 ########################################################################
@@ -561,3 +670,12 @@ def getContextScores(srcLnIndex, srcLines, trgtLines):
     post0 = 1 if srcLnIndex >= (len(srcLines)-1) else tooFewTokens(srcLines[srcLnIndex + 1], trgtLines[srcLnIndex + 1])
     post1 = 1 if srcLnIndex >= (len(srcLines)-2) else tooFewTokens(srcLines[srcLnIndex + 2], trgtLines[srcLnIndex + 2])
     return [pre0, pre1, post0, post1]
+
+
+s1 = """Operating Budget of 2015 -16\n"""
+s2 = """Budget de fonctionnement, budget d’investissement et plan d’emprunt\n"""
+print("nb	len	cog	fa	ion	sw	spell	url	mono	strBcks	punct	gibb	tabl ")
+print(nbMismatch(s1, s2, includeNumberNames=True), compareLengths(s1, s2, onlyLongSentOfNPlusLen=10),
+      cognateCoincidence(s1, s2), fauxAmis(s1, s2), ionSuffixMismatch(s1, s2), stopWordsMismatch(s1, s2),
+      spellingCheck(s1, s2), urlMismatch(s1, s2), monoling(s1, s2), starbucksTranslationMismatch(s1, s2),
+      punctAndSymb(s1, s2), gibberish(s1, s2), tableOfContentsMismatch(s1, s2, nTokens=4))

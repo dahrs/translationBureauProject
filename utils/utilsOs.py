@@ -2,7 +2,7 @@
 #-*- coding:utf-8 -*-
 
 
-import os, sys, json, codecs, gzip, time
+import os, sys, shutil, json, codecs, gzip, time
 import pandas as pd
 
 ##################################################################################
@@ -35,6 +35,10 @@ def emptyTheFolder(directoryPath, fileExtensionOrListOfExtensions=u'*'):
 			os.remove(directoryPath + file)
 	except OSError:
 		pass
+
+
+def removeFolderAndContent(folderPath):
+	shutil.rmtree(folderPath)
 
 
 def getContentOfFolder(folderPath):
@@ -453,6 +457,10 @@ def getDataFrameFromArgs(df1arg, df2arg=None, header=True):
 	return df1, df2 
 
 
-def dumpDataFrame(df, dfPath):
+def concatenateDfsOrSeries(listOfDfsOrSeriesInOrder):
+	return pd.concat(listOfDfsOrSeriesInOrder, ignore_index=True)
+
+
+def dumpDataFrame(df, dfPath, header=True):
 	'''  '''
-	df.to_csv(dfPath, sep='\t', index=False)
+	df.to_csv(dfPath, sep='\t', index=False, header=header)

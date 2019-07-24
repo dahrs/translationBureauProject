@@ -17,7 +17,7 @@ import pandas as pd
 
 def populateConfMatrix(pred, real, confMatrix=[]):
     if len(confMatrix) == 0:
-        content = np.zeros(shape=(2,2))
+        content = np.zeros(shape=(2, 2))
         confMatrix = pd.DataFrame(content, index=[u'pred pos', u'pred neg'], columns=[u'real pos', u'real neg'])
     if pred == real:
         if pred == False:
@@ -37,8 +37,8 @@ def populateConfMatrix(pred, real, confMatrix=[]):
 
 
 def getPrecisionRecallAccuracy(confMatrix, verbose=True):
-    precision = confMatrix[u'real pos'][u'pred pos'] / (confMatrix[u'real pos'][u'pred pos']+confMatrix[u'real pos'][u'pred neg'])
-    recall = confMatrix[u'real pos'][u'pred pos'] / (confMatrix[u'real pos'][u'pred pos']+confMatrix[u'real neg'][u'pred pos'])
+    precision = confMatrix[u'real pos'][u'pred pos'] / (confMatrix[u'real pos'][u'pred pos']+confMatrix[u'real neg'][u'pred pos'])
+    recall = confMatrix[u'real pos'][u'pred pos'] / (confMatrix[u'real pos'][u'pred pos']+confMatrix[u'real pos'][u'pred neg'])
     f1 = 2 * ((precision*recall)/(precision+recall))
     truePosTrueNeg = confMatrix[u'real pos'][u'pred pos'] + confMatrix[u'real neg'][u'pred neg']
     everything = (confMatrix[u'real pos'][u'pred pos'] + confMatrix[u'real neg'][u'pred neg'] +
@@ -79,7 +79,7 @@ def getAnnotationScore(manualAnnotationString, focus=u'all', negativesOnly=False
         - qa: good alignment and good quality
         - g: no gibberish
         - qg: good quality and no gibberish
-        - all: good alignment and good quality and no gibberish"""
+        - all: good alignment and good quality and no gibberish """
     manualAnnotationString = manualAnnotationString.replace(u'\n', u'')
     # verify the string nature of the annotation
     if type(manualAnnotationString) is float:
@@ -140,9 +140,9 @@ def getAnnotationScore(manualAnnotationString, focus=u'all', negativesOnly=False
     # get the right score - true = good qual and good align and no gibberish
     elif focus == u'all':
         if u'1.0' in manualAnnotationString:
-            # if we want only the negatives we replace true with None (silence)
-            if negativesOnly == False:
+            if negativesOnly is False:
                 return True
+            # if we want only the negatives we replace true with None (silence)
             else:
                 return None
         return False
@@ -166,14 +166,89 @@ def countAndPopulate(aFunction, functionId, ln1, ln2, annotScore, silenceRateDic
         return confMatrix, silenceRateDict, funcScore, binaryScore
 
 
+def getAllScoreProblematicOriented(binSc0, binSc1, binSc2, binSc3, binSc4, binSc5, binSc6, binSc7, binSc8, binSc9,
+                                   binSc10, binSc11, binSc99, silenceRate):
+    """ use a vote system divided in 3 categories of scores divided according to their precision and trustyness """
+    mostPreciseScores = [bSc for bSc in [binSc1, binSc3, binSc8, binSc11] if bSc is not None]
+    highPreciseScores = [bSc for bSc in [binSc0, binSc4, binSc5, binSc6, binSc7, binSc9, binSc10, binSc99] if
+                         bSc is not None]
+    lowPreciseScores = [bSc for bSc in [binSc2] if bSc is not None]
+    # this is problematic SP oriented
+    nbFalseInHighScores = sum([1 if sc is False else 0 for sc in highPreciseScores])
+    nbFalseInLowScores = sum([1 if sc is False else 0 for sc in lowPreciseScores])
+    # one most-precise is enough
+    if False in mostPreciseScores:
+        scoreAll = False
+        # print('most precise alone', annotScore)
+    # three or more high-scores
+    elif nbFalseInHighScores >= 3:
+        scoreAll = False
+        # print('three high', annotScore)
+    # two high-score and one or more low-scores
+    elif nbFalseInHighScores == 2 and nbFalseInLowScores >= 1:
+        scoreAll = False
+        # print('two high, one low', annotScore)
+    # if no heuristic helps, add to the silence
+    elif nbFalseInHighScores+nbFalseInLowScores == 0:
+        silenceRate['all'] += 1
+        scoreAll = None
+        # print('silence', annotScore)
+    else:
+        scoreAll = True
+        # if annotScore is False:
+        #     print(srcLn)
+        #     print(trgtLn)
+    return scoreAll, silenceRate
+
+
+def getAllScoreNotProblematicOriented(binSc0, binSc1, binSc2, binSc3, binSc4, binSc5, binSc6, binSc7, binSc9,
+                                   binSc10, binSc11, binSc99, silenceRate):
+    """ use a vote system divided in 3 categories of scores divided according to their precision and trust """
+    mostPreciseScores = [bSc for bSc in [binSc0, binSc9] if bSc is not None]
+    highPreciseScores = [bSc for bSc in [binSc4, binSc10] if bSc is not None]
+    lowPreciseScores = [bSc for bSc in [binSc1, binSc2, binSc5, binSc6] if bSc is not None]
+    # this is not-problematic SP oriented
+    nbTrueInMostScores = sum([1 if sc is True else 0 for sc in mostPreciseScores])
+    nbTrueInHighScores = sum([1 if sc is True else 0 for sc in highPreciseScores])
+    nbTrueInLowScores = sum([1 if sc is True else 0 for sc in lowPreciseScores])
+
+    # both the most-precise
+    if nbTrueInMostScores >= 2:
+        scoreAll = True
+    # one most-precise and one high
+    elif nbTrueInMostScores == 1 and nbTrueInHighScores >= 1:
+        scoreAll = True
+
+    # # one most-precise
+    # if nbTrueInMostScores >= 1:
+    #     scoreAll = True
+    # # two high-scores
+    # elif nbTrueInHighScores >= 2:
+    #     scoreAll = True
+    # # one high-score and one or more low-scores
+    # elif nbTrueInHighScores == 1 and nbTrueInLowScores >= 1:
+    #     scoreAll = True
+    # # all the four low-scores
+    # elif nbTrueInLowScores >= 4:
+    #     scoreAll = True
+
+    # if no heuristic helps, add to the silence
+    elif nbTrueInHighScores + nbTrueInLowScores == 0:
+        silenceRate['all'] += 1
+        scoreAll = None
+    else:
+        scoreAll = False
+    return scoreAll, silenceRate, nbTrueInMostScores, nbTrueInHighScores, nbTrueInLowScores
+
+
 def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTableOfContent=False, inverseScores=False):
     """ given the path to an annotated corpus, it checks if the extractors correspond to the annotation """
-    confMatrix0, confMatrix1, confMatrix2, confMatrix0and1, confMatrixAll = [], [], [], [], []
+    confMatrix0, confMatrix1, confMatrix2, confMatrixAll = [], [], [], []
     confMatrix3, confMatrix4, confMatrix5, confMatrix6, confMatrix7, confMatrix8 = [], [], [], [], [], []
-    confMatrix9, confMatrix99 = [], []
+    confMatrix9, confMatrix10, confMatrix11, confMatrix99 = [], [], [], []
     validLine = True
     totalSpAnalyzed = 0
-    silenceRate = {0: 0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0,  7:0,  8:0, 9:0, 99:0,  'all':0}
+    silenceRate = {0: 0, 1:0, 2:0, 3:0, 4:0, 5:0, 6:0, 7:0,  8:0, 9:0, 10:0, 11:0, 99:0, 'all':0}
     # if there is only one annotation path, put it in a list
     if type(annotationFolderPath) is str:
         annotationFolderPath = [annotationFolderPath]
@@ -209,98 +284,108 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
                     annotScore = getAnnotationScore(annot, focus=u'all', negativesOnly=False)
                     if annotScore is not None:
                         # discard or not the table content and index
-                        if discardTableOfContent != False:
+                        if discardTableOfContent is not False:
                             cntxtScores = getContextScores(refIndex, srcLines, trgtLines)
                             docLoc = refIndex / len(srcLines)
                             contentTableScore = tableOfContents(srcLn, trgtLn, nTokens=4,
                                                                 contextScores=cntxtScores, placeInDocument=docLoc)
                             validLine = False if contentTableScore < 0.2 else True
-                        if validLine == True:
+                        if validLine is True:
                             totalSpAnalyzed += 1
                             # number coincidence #######################
+                            fcThreshold = 0.5 if inverseScores is not False else 1.0
                             confMatrix0, silenceRate, score0, binSc0 = countAndPopulate(nbMismatch, 0, srcLn, trgtLn,
                                                                         annotScore, silenceRate, confMatrix0,
-                                                                        fcThreshold=0.5)
+                                                                        fcThreshold)
                             # disproportionate length #######################
+                            fcThreshold = 0.35 if inverseScores is not False else 0.7
                             confMatrix1, silenceRate, score1, binSc1 = countAndPopulate(compareLengths, 1, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix1,
-                                                                                fcThreshold=0.35)
+                                                                                fcThreshold)
                             # cognates #######################
+                            fcThreshold = 0.1 if inverseScores is not False else 0.2
                             confMatrix2, silenceRate, score2, binSc2 = countAndPopulate(cognateCoincidence, 2, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix2,
-                                                                                fcThreshold=0.1)
-                            # nb mismatch and length #######################
-                            scores = [score0, score1]
-                            absolute = len(scores)
-                            howManyFalse = sum([1 for e in scores if e is False])
-                            if howManyFalse == absolute:
-                                score0and1 = False
-                            else:
-                                score0and1 = True
-                            confMatrix0and1 = populateConfMatrix(score0and1, annotScore, confMatrix0and1)
+                                                                                fcThreshold)
                             # faux-amis coincidence #######################
+                            fcThreshold = 0.3 if inverseScores is not False else 0.6
                             confMatrix3, silenceRate, score3, binSc3 = countAndPopulate(fauxAmis, 3, enLn, frLn,
                                                                                 annotScore, silenceRate, confMatrix3,
-                                                                                fcThreshold=0.3)
+                                                                                fcThreshold)
                             # ion suffixes mismatch #######################
+                            fcThreshold = 0.5 if inverseScores is not False else 0.65
                             confMatrix4, silenceRate, score4, binSc4 = countAndPopulate(ionSuffixMismatch, 4, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix4,
-                                                                                fcThreshold=0.5)
+                                                                                fcThreshold)
                             # stop words mismatch #######################
+                            fcThreshold = 0.3 if inverseScores is not False else 0.9
                             confMatrix5, silenceRate, score5, binSc5 = countAndPopulate(stopWordsMismatch, 5, enLn, frLn,
                                                                                 annotScore, silenceRate, confMatrix5,
-                                                                                fcThreshold=0.3)
+                                                                                fcThreshold)
                             # spell check #######################
+                            fcThreshold = 0.25 if inverseScores is not False else 0.85
                             confMatrix6, silenceRate, score6, binSc6 = countAndPopulate(spellingCheck, 6, enLn, frLn,
                                                                                 annotScore, silenceRate, confMatrix6,
-                                                                                fcThreshold=0.25)
+                                                                                fcThreshold)
                             # url detection #######################
+                            fcThreshold = 0.9 if inverseScores is not False else 0.95
                             confMatrix7, silenceRate, score7, binSc7 = countAndPopulate(urlMismatch, 7, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix7,
-                                                                                fcThreshold=0.9)
+                                                                                fcThreshold)
                             # monolingual sentences detection #######################
+                            fcThreshold = 0.95 if inverseScores is not False else float('inf')
                             confMatrix8, silenceRate, score8, binSc8 = countAndPopulate(monoling, 8, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix8,
-                                                                                fcThreshold=0.95)
+                                                                                fcThreshold)
                             # starbucks word by words translation mismatch #######################
+                            fcThreshold = 0.25 if inverseScores is not False else 0.65
                             confMatrix9, silenceRate, score9, binSc9 = countAndPopulate(starbucksTranslationMismatch, 9, enLn, frLn,
                                                                                 annotScore, silenceRate, confMatrix9,
-                                                                                fcThreshold=0.25)
+                                                                                fcThreshold)
+                            # punctuation and symbols mismatch #######################
+                            fcThreshold = 0.5 if inverseScores is not False else 0.85
+                            confMatrix10, silenceRate, score10, binSc10 = countAndPopulate(punctAndSymb, 10, srcLn, trgtLn,
+                                                                                annotScore, silenceRate, confMatrix10,
+                                                                                fcThreshold)
+                            # gibberish presence #######################
+                            fcThreshold = 0.1 if inverseScores is not False else 0.85
+                            confMatrix11, silenceRate, score11, binSc11 = countAndPopulate(gibberish, 11, srcLn, trgtLn,
+                                                                                annotScore, silenceRate, confMatrix11,
+                                                                                fcThreshold)
                             # table of contents mismatch detector #######################
+                            fcThreshold = 0.65 if inverseScores is not False else 0.75
                             confMatrix99, silenceRate, score99, binSc99 = countAndPopulate(tableOfContentsMismatch, 99, srcLn, trgtLn,
                                                                                 annotScore, silenceRate, confMatrix99,
-                                                                                fcThreshold=0.65)
+                                                                                fcThreshold)
                             # all together #######################
-                            mostPreciseScores = [bSc for bSc in [binSc1, binSc3, binSc8] if bSc is not None]
-                            highPreciseScores = [bSc for bSc in [binSc0, binSc5, binSc6, binSc7, binSc9, binSc99] if bSc is not None]
-                            lowPreciseScores = [bSc for bSc in [binSc2, binSc4] if bSc is not None]
-                            # this is problematic SP oriented
-                            nbFalseInHighScores = sum([1 if sc is False else 0 for sc in highPreciseScores])
-                            nbFalseInLowScores = sum([1 if sc is False else 0 for sc in lowPreciseScores])
-                            # one most-precise is enough
-                            if False in mostPreciseScores:
-                                scoreAll = False
-                                # print('most precise alone', annotScore)
-                            # three or more high-scores
-                            elif nbFalseInHighScores >= 3:
-                                scoreAll = False
-                                # print('three high', annotScore)
-                            # two high-score and one or more low-scores
-                            elif nbFalseInHighScores == 2 and nbFalseInLowScores >= 1:
-                                scoreAll = False
-                                # print('two high, one low', annotScore)
-                            # if no heuristic helps, add to the silence
-                            elif nbFalseInHighScores+nbFalseInLowScores == 0:
-                                silenceRate['all'] += 1
-                                # print('silence', annotScore)
+                            if inverseScores is not False:
+                                scoreAll, silenceRate = getAllScoreProblematicOriented(binSc0, binSc1,
+                                                                                                    binSc2, binSc3,
+                                                                                                    binSc4, binSc5,
+                                                                                                    binSc6, binSc7,
+                                                                                                    binSc8,
+                                                                                                    binSc9, binSc10,
+                                                                                                    binSc11, binSc99,
+                                                                                                    silenceRate)
+                                # populate the confusion matrix except if there is silence
+                                if scoreAll is not None:
+                                    confMatrixAll = populateConfMatrix(scoreAll, annotScore, confMatrixAll)
                             else:
-                                scoreAll = True
-                                # if annotScore is False:
-                                #     print(srcLn)
-                                #     print(trgtLn)
-                            # populate the confusion matrix except if there is silence
-                            if nbFalseInHighScores+nbFalseInLowScores != 0:
-                                confMatrixAll = populateConfMatrix(scoreAll, annotScore, confMatrixAll)
+                                scoreAll, silenceRate, most, high, low = getAllScoreNotProblematicOriented(binSc0, binSc1,
+                                                                                                    binSc2, binSc3,
+                                                                                                    binSc4, binSc5,
+                                                                                                    binSc6, binSc7,
+                                                                                                    binSc9, binSc10,
+                                                                                                    binSc11, binSc99,
+                                                                                                    silenceRate)
+                                # populate the confusion matrix except if there is silence
+                                if scoreAll is not None:
+                                    if scoreAll != annotScore:
+                                        print(11111, index, scoreAll, annotScore, most, high, low)
+                                        print(222, binSc0, binSc1, binSc2, binSc3, binSc4, binSc5, binSc6, binSc7, binSc9,
+                                            binSc10, binSc11, binSc99)
+                                    confMatrixAll = populateConfMatrix(scoreAll, annotScore, confMatrixAll)
+
     print(u'NUMBER COINCIDENCE')
     print(confMatrix0)
     if inverseScores is False:
@@ -318,12 +403,6 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
     if inverseScores is False:
         getPrecisionRecallAccuracy(confMatrix2)
     else: getInversePrecisionRecallAccuracy(confMatrix2)
-    print()
-    print(u'NUMBER COINCIDENCE AND DISPROPORTIONATE TOK LENGTH')
-    print(confMatrix0and1)
-    if inverseScores is False:
-        getPrecisionRecallAccuracy(confMatrix0and1)
-    else: getInversePrecisionRecallAccuracy(confMatrix0and1)
     print()
     print(u'FAUX AMIS COINCIDENCE')
     print(confMatrix3)
@@ -367,6 +446,18 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
         getPrecisionRecallAccuracy(confMatrix9)
     else: getInversePrecisionRecallAccuracy(confMatrix9)
     print()
+    print(u'PUNCT. AND SYMB. MISMATCH')
+    print(confMatrix10)
+    if inverseScores is False:
+        getPrecisionRecallAccuracy(confMatrix10)
+    else: getInversePrecisionRecallAccuracy(confMatrix10)
+    print()
+    print(u'GIBBERISH PRESENCE')
+    print(confMatrix11)
+    if inverseScores is False:
+        getPrecisionRecallAccuracy(confMatrix11)
+    else: getInversePrecisionRecallAccuracy(confMatrix11)
+    print()
     print(u'TABLE OF CONTENTS')
     print(confMatrix99)
     if inverseScores is False:
@@ -385,7 +476,7 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
 
 
 def checkOneHeuristicQualAgainstManEval(annotFolderPathList, heuristicId, discardTableOfContent=False,
-                                        threshold=0.5, focus=u'all', inverseScores=False):
+                                        thresholdLimit=0.5, focus=u'all', inverseScores=False):
     """ given the path to an annotated corpus, it checks if the extractors correspond to the annotation """
     confMatrix = []
     validLine = True
@@ -415,25 +506,25 @@ def checkOneHeuristicQualAgainstManEval(annotFolderPathList, heuristicId, discar
             with open(trgtFilePath) as trgtFile:
                 trgtLines = trgtFile.readlines()
             # discard or not the table content and index
-            if discardTableOfContent != False:
+            if discardTableOfContent is not False:
                 cntxtScores = getContextScores(refIndex, srcLines, trgtLines)
                 docLoc = refIndex / len(srcLines)
                 contentTableScore = tableOfContents(srcLn, trgtLn, nTokens=4,
                                         contextScores=cntxtScores, placeInDocument=docLoc)
                 validLine = False if contentTableScore < 0.37 else True
-            #calculate the score
-            if validLine == True:
+            # calculate the score
+            if validLine is True:
                 # get the human annotation
                 annot = annotationLines[index]
                 # get the src-trgt lines
                 srcLn = srcLines[refIndex].replace(u'\n', u'')
                 trgtLn = trgtLines[refIndex].replace(u'\n', u'')
-                # get the enfglish-french lines
+                # get the english-french lines
                 enLn = srcLn if u'en-fr' in refPath else trgtLn
                 frLn = trgtLn if u'en-fr' in refPath else srcLn
                 # annotation score
                 annotScore = getAnnotationScore(annot, focus, negativesOnly=False)
-                if annotScore != None:
+                if annotScore is not None:
                     # add to the total
                     totalLines += 1
                     # number coincidence
@@ -450,7 +541,7 @@ def checkOneHeuristicQualAgainstManEval(annotFolderPathList, heuristicId, discar
                         score = fauxAmis(enLn, frLn)
                     # ion suffix
                     if heuristicId == 4:
-                        score = ionSuffixMismatch(srcLn, trgtLn)
+                        score = ionSuffixMismatch(enLn, frLn)
                     # stop words translation mismatch
                     if heuristicId == 5:
                         score = stopWordsMismatch(enLn, frLn)
@@ -463,20 +554,26 @@ def checkOneHeuristicQualAgainstManEval(annotFolderPathList, heuristicId, discar
                     # monolinguistic content
                     if heuristicId == 8:
                         score = monoling(srcLn, trgtLn)
-                    # monolinguistic content
+                    # word by word translation content
                     if heuristicId == 9:
                         score = starbucksTranslationMismatch(enLn, frLn)
+                    # punctuation mismatch
+                    if heuristicId == 10:
+                        score = punctAndSymb(srcLn, trgtLn)
+                    # gibberish presence
+                    if heuristicId == 11:
+                        score = gibberish(srcLn, trgtLn)
                     # table of content
                     if heuristicId == 99:
-                        cntxtScores = getContextScores(refIndex, srcLines, trgtLines)
-                        docLoc = refIndex / len(srcLines)
+                        # cntxtScores = getContextScores(refIndex, srcLines, trgtLines)
+                        # docLoc = refIndex / len(srcLines)
                         score = tableOfContentsMismatch(srcLn, trgtLn, nTokens=4)
                     # count the silence rate
                     if score is None:
                         silenceRate += 1
                     # populate the matrix
                     else:
-                        score = True if score >= threshold else False
+                        score = True if score >= thresholdLimit else False
                         confMatrix = populateConfMatrix(score, annotScore, confMatrix)
     # print(confMatrix)
     if inverseScores is False:
@@ -486,7 +583,7 @@ def checkOneHeuristicQualAgainstManEval(annotFolderPathList, heuristicId, discar
         precision, recall, f1, accuracy = getInversePrecisionRecallAccuracy(confMatrix, verbose=False)
     # get the silence rate
     silenceRate = silenceRate / totalLines
-    print(u'{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(threshold, precision, recall, f1, accuracy, silenceRate))
+    print(u'{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(thresholdLimit, precision, recall, f1, accuracy, silenceRate))
 
 
 # count the time the algorithm takes to run
@@ -494,12 +591,18 @@ startTime = utilsOs.countTime()
 
 annotatedFolderPathList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtractors/000manualAnnotation/']
 
-# check for potential usable clues to make heuristics
-# for threshold in np.arange(0.05, 1.05, 0.05):
-#     checkOneHeuristicQualAgainstManEval(annotatedFolderPathList, 9, False, threshold, focus=u'all', inverseScores=True)
+# # check for potential usable clues to make heuristics
+# for heurTupl in [(u'nb', 0), (u'len', 1), (u'cog', 2), (u'fa', 3), (u'ion', 4), (u'sw', 5), (u'spell', 6), (u'url', 7),
+#                  (u'mono', 8), (u'strBcks', 9), (u'punct', 10), (u'gibb', 11), (u'tabl', 99)]:
+#     print(u'\n##################################   {0}   ######################################\n'.format(heurTupl[0]))
+#     for threshold in np.arange(0.05, 1.05, 0.05):
+#         # get the metrics to find the PROBLEMATIC SPs
+#         # checkOneHeuristicQualAgainstManEval(annotatedFolderPathList, 0, False, threshold, focus=u'all', inverseScores=True)
+#         # get the metrics to find the NON-PROBLEMATIC SPs
+#         checkOneHeuristicQualAgainstManEval(annotatedFolderPathList, heurTupl[1], False, threshold, focus=u'all', inverseScores=False)
 
 # check the extractors on the annotated corpus
-checkHeuristicsAgainstAnnotatedCorpusFile(annotatedFolderPathList, discardTableOfContent=True, inverseScores=True)
+checkHeuristicsAgainstAnnotatedCorpusFile(annotatedFolderPathList, discardTableOfContent=False, inverseScores=False)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))
