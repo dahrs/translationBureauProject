@@ -4,20 +4,42 @@
 import fastText
 import numpy as np
 import pandas as pd
+import torch
 
 import utilsOs, utilsString
 
 
 ##################################################################################
-#DIVISION IN TEST, TRAIN AND VALIDATION SETS
+# MAKE NUMPY OBJECTS
 ##################################################################################
 
-def makeTrainTestValidSetsFromTsv(origDf, ratioSizes=[0.5, 0.3, 0.2], outputFolderPath=None):
-	''' given the dataframe with the whole original input, returns 2 or 3 distinct
+def fromTsvToMatrix(path):
+	""" given the path to a tsv file of scores (with no header), transforms them into a numpy array """
+	listOfLists = []
+	with open(path) as heurFile:
+		# get line
+		ln = heurFile.readline()
+		while ln:
+			lnList = ln.replace(u'\n', u'').replace(u'na', u'-1.0').split(u'\t')
+			if lnList != '':
+				listOfLists.append([float(sc) for sc in lnList])
+			# next line
+			ln = heurFile.readline()
+	return np.asarray(listOfLists)
+
+
+##################################################################################
+# DIVISION IN TEST, TRAIN AND VALIDATION SETS
+##################################################################################
+
+def makeTrainTestValidSetsFromTsv(origDf, ratioSizes=None, outputFolderPath=None):
+	""" given the dataframe with the whole original input, returns 2 or 3 distinct
 	dataframes containing a randomly selected elements corresponding to the given 
-	ratio sizes. The ratioSizes order must be: TRAIN - TEST - VALIDATION'''
+	ratio sizes. The ratioSizes order must be: TRAIN - TEST - VALIDATION"""
 	if outputFolderPath != None:
 		outputFolderPath = u'{0}/'.format(outputFolderPath) if outputFolderPath[-1] != u'/' else outputFolderPath
+	if ratioSizes is None:
+		ratioSizes = [0.5, 0.3, 0.2]
 	#get the data frame
 	origDf = utilsOs.getDataFrameFromArgs(origDf)
 	#get the actual sizes from the ratios
@@ -93,7 +115,9 @@ def unifyListOfTestSetsIntoOne(listOfTestFiles, outputUnifiedFilePath=None):
 #TOKEN DATASETS FOR MACHINE LEARNING MODELS
 ##################################################################################
 
-def makeSimpleTokenDatasetFromTsv(tsvInputFilePath, originalStringColumnName, correctStringColumnName, outputFilePath, outputOriginalColumnName=u'input', outputCorrectColumnName=u'output', caseSensitive=True):
+def makeSimpleTokenDatasetFromTsv(tsvInputFilePath, originalStringColumnName, correctStringColumnName, outputFilePath,
+								  outputOriginalColumnName=u'input', outputCorrectColumnName=u'output',
+								  caseSensitive=True):
 	''' takes a tsv file, naively space-char tokenizes the content in the original 
 	and correct columns, makes correspond the original and correct tokens and dumps 
 	each token in a row of an output tsv file '''
@@ -173,7 +197,10 @@ class FastTextNN:
 		self.ft_words = ft_model.get_words()
 		self.word_frequencies = dict(zip(*ft_model.get_words(include_freq=True)))
 		self.ft_matrix = ftTools().getFtMatrix(ft_model, ft_matrix)
-		
+
+	'''ftClass = FastTextNN(ft_matrix=u'./utilsString/tokDict/listOfMostCommon10000tok.json')
+	liste = ftClass.nearestWords(u'toiletdte', n=10, word_freq=None)
+	print(liste)'''
 	
 	def findNearestNeighbor(self, query, vectors, n=10,  cossims=None):
 		"""
@@ -203,7 +230,26 @@ class FastTextNN:
 			return [(self.ft_words[r[0]], r[1]) for r in result]
 
 
+##################################################################################
+# FEED FORWARD NEURAL NETWORK
+##################################################################################
 
-'''ftClass = FastTextNN(ft_matrix=u'./utilsString/tokDict/listOfMostCommon10000tok.json')
-liste = ftClass.nearestWords(u'toiletdte', n=10, word_freq=None)
-print(liste)'''
+class Feedforward(torch.nn.Module):
+	def __init__(self, input_size, hidden_size):
+		super(Feedforward, self).__init__()
+		self.input_size = input_size
+		self.hidden_size = hidden_size
+		self.fc1 = torch.nn.Linear(self.input_size, self.hidden_size)
+		self.relu = torch.nn.ReLU()
+		self.fc2 = torch.nn.Linear(self.hidden_size, 1)
+		self.sigmoid = torch.nn.Sigmoid()
+
+	def forward(self, x):
+		try:
+			hidden = self.fc1(x)
+		except RuntimeError:
+			hidden = self.fc1(x.float())
+		relu = self.relu(hidden)
+		output = self.fc2(relu)
+		output = self.sigmoid(output)
+		return output
