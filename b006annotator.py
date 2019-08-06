@@ -607,13 +607,13 @@ startTime = utilsOs.countTime()
 
 
 # annotate the sample of already selected lines post-heuristic-application-and-extraction
-inputFolderPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/problematic/'
-outputFolderPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/problematic/'
-annotateFilesAfterHeurAndSelection(inputFolderPrblm, outputFolderPrblm)
+# inputFolderPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/problematic/'
+# outputFolderPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/problematic/'
+# annotateFilesAfterHeurAndSelection(inputFolderPrblm, outputFolderPrblm)
 
-# inputFolderNoPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/noProblematic/'
-# outputFolderNoPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/'
-# annotateFilesAfterHeurAndSelection(inputFolderNoPrblm, outputFolderNoPrblm)
+inputFolderNoPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/noProblematic/'
+outputFolderNoPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/'
+annotateFilesAfterHeurAndSelection(inputFolderNoPrblm, outputFolderNoPrblm)
 
 
 # change one type of annotation

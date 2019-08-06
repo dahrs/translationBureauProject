@@ -270,11 +270,6 @@ def randomSPselectionForAnnotation(enPath, frPath, refPath, scPath, outputFolder
         utilsOs.appendLineToFile(frLn, u'{0}sample.fr'.format(outputFolderPath), addNewLine=False)
         utilsOs.appendLineToFile(refLn, u'{0}sampleReference.Paths'.format(outputFolderPath), addNewLine=False)
         utilsOs.appendLineToFile(scLn, u'{0}scores.tsv'.format(outputFolderPath), addNewLine=False)
-        print(1000000, rdmInd)
-        print(11111111, scLn)
-        print(enLn)
-        print(frLn)
-        print(refLn)
     return None
 
     # count the time the algorithm takes to run

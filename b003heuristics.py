@@ -6,8 +6,10 @@ import re, math
 import sys
 sys.path.append(u'../utils')
 sys.path.append(u'./utils')
-import b000path, utilsOs, utilsString
+import b000path, utilsOs, utilsString, utilsML
 from collections import Counter
+import numpy as np
+
 
 ########################################################################
 # HEURISTIC TOOLS
@@ -672,10 +674,250 @@ def getContextScores(srcLnIndex, srcLines, trgtLines):
     return [pre0, pre1, post0, post1]
 
 
-s1 = """Operating Budget of 2015 -16\n"""
-s2 = """Budget de fonctionnement, budget d’investissement et plan d’emprunt\n"""
-print("nb	len	cog	fa	ion	sw	spell	url	mono	strBcks	punct	gibb	tabl ")
-print(nbMismatch(s1, s2, includeNumberNames=True), compareLengths(s1, s2, onlyLongSentOfNPlusLen=10),
-      cognateCoincidence(s1, s2), fauxAmis(s1, s2), ionSuffixMismatch(s1, s2), stopWordsMismatch(s1, s2),
-      spellingCheck(s1, s2), urlMismatch(s1, s2), monoling(s1, s2), starbucksTranslationMismatch(s1, s2),
-      punctAndSymb(s1, s2), gibberish(s1, s2), tableOfContentsMismatch(s1, s2, nTokens=4))
+########################################################################
+# META-HEURISTICS TOOLS
+########################################################################
+
+def makeClassificationBinary(annotArray):
+    # if we want to use a binary system of classes
+    annotArray = np.equal(annotArray, [1.0])
+    annotArray = annotArray.astype(int)
+    return np.array(annotArray).reshape(-1, 1)
+
+
+def makeClassificationByType(annotArray):
+    """ use a type based classification system where [0.0, 0.1, 0.2], [1.1, 1.2, 1.4], [1.3], [1.0] are the classes
+    at output:
+    0 = not aligned
+    1 = good
+    2 = bad qual
+    3 = gibberish"""
+    notBadAlignArray = np.greater_equal(annotArray, [1.0]).astype(int)
+    notGood = np.greater(annotArray, [1.0]).astype(int)
+    notGibbArray = np.equal(annotArray, [1.3]).astype(int)
+    annotArray = notBadAlignArray+notGood+notGibbArray
+    return np.array(annotArray).reshape(-1, 1)
+
+
+def makeLabelClasses(annotArray):
+    try:
+        labelEncoder = preprocessing.LabelEncoder()
+    except NameError:
+        from sklearn import preprocessing
+        labelEncoder = preprocessing.LabelEncoder()
+    annotationClasses = labelEncoder.fit_transform(annotArray)
+    return annotationClasses.reshape(-1, 1)
+
+
+def getRightClasses(annotArray, makeClassifBinary=False, makeClassifByType=False):
+    # if we want to use multiple classes
+    if makeClassifBinary is False and makeClassifByType is False:
+        annotArray = makeLabelClasses(annotArray)
+    elif makeClassifBinary is False:
+        annotArray = makeClassificationByType(annotArray)
+    else:
+        # if we want to use a binary system of classes
+        annotArray = makeClassificationBinary(annotArray)
+    return annotArray
+
+
+def concatContent(listOfFilePaths):
+    concatenated = None
+    for fPath in listOfFilePaths:
+        if concatenated is None:
+            concatenated = utilsML.fromTsvToMatrix(fPath)
+        else:
+            concatenated = np.vstack((concatenated, utilsML.fromTsvToMatrix(fPath)))
+    return concatenated
+
+
+def naiveOversampling(featArray, classesArray):
+    """ oversampling randomly until all classes have the same number of elements
+    (exceeding even the max of the most common class) """
+    unq, unq_idx = np.unique(classesArray, return_inverse=True)
+    unq_cnt = np.bincount(unq_idx)
+    cnt = np.max(unq_cnt)
+    cnt = int(cnt*1.5)
+    out = np.empty((cnt * len(unq),) + featArray.shape[1:], featArray.dtype)
+    outClasses = []
+    for j in range(len(unq)):
+        indices = np.random.choice(np.where(unq_idx == j)[0], cnt)
+        outClasses += [j] * len(indices)
+        out[j * cnt:(j + 1) * cnt] = featArray[indices]
+    outClasses = np.asarray(outClasses).reshape(-1, 1)
+    return out, outClasses
+
+
+def dataTrainPreparation(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificationTsvFiles,
+                         makeClassifBinary=False, makeClassifType=False):
+    # be sure the list of paths are lists of paths and not strings
+    if type(listOfPathsToFeaturesTsvFiles) is str:
+        listOfPathsToFeaturesTsvFiles = [listOfPathsToFeaturesTsvFiles]
+    if type(listOfPathsToClassificationTsvFiles) is str:
+        listOfPathsToClassificationTsvFiles = [listOfPathsToClassificationTsvFiles]
+    # concatenate the content of all the feature paths
+    features = concatContent(listOfPathsToFeaturesTsvFiles)
+    # concatenate the content of all the classifications paths
+    annotationClasses = concatContent(listOfPathsToClassificationTsvFiles)
+    # if we want to use multiple classes
+    annotationClasses = getRightClasses(annotationClasses, makeClassifBinary, makeClassifType)
+    # oversample
+    features, annotationClasses = naiveOversampling(features, annotationClasses)
+    return features, annotationClasses
+
+
+########################################################################
+# META-HEURISTICS (classifiers)
+########################################################################
+
+def trainSvmModel(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificationTsvFiles,
+                  makeClassifBinary=False, makeClassifType=False):
+    """ given a list of paths leading to the features files and the classification (one per vector of features)
+     returns a simple trained SVM """
+    from sklearn import svm
+    # be sure the list of paths are lists of paths and not strings
+    if type(listOfPathsToFeaturesTsvFiles) is str:
+        listOfPathsToFeaturesTsvFiles = [listOfPathsToFeaturesTsvFiles]
+    if type(listOfPathsToClassificationTsvFiles) is str:
+        listOfPathsToClassificationTsvFiles = [listOfPathsToClassificationTsvFiles]
+    # concatenate the content of all the feature paths
+    features = concatContent(listOfPathsToFeaturesTsvFiles)
+    # concatenate the content of all the classifications paths
+    annotationClasses = concatContent(listOfPathsToClassificationTsvFiles)
+    # if we want to use multiple classes
+    annotationClasses = getRightClasses(annotationClasses, makeClassifBinary, makeClassifType)
+    # make and train the classifier
+    classifier = svm.SVC(gamma='scale', kernel='rbf')
+    classifier.fit(features, annotationClasses)
+    return classifier
+
+
+def trainRdmForestModel(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificationTsvFiles,
+                        makeClassifBinary=False, makeClassifType=False):
+    """ given a list of paths leading to the features files and the classification (one per vector of features)
+        returns a simply trained random forest classifier """
+    from sklearn.ensemble import RandomForestClassifier
+    features, annotationClasses = dataTrainPreparation(listOfPathsToFeaturesTsvFiles,
+                                                       listOfPathsToClassificationTsvFiles,
+                                                       makeClassifBinary, makeClassifType)
+    # make and train the classifier
+    classifier = RandomForestClassifier(n_estimators=100, max_depth=None, random_state=0)
+    classifier.fit(features, annotationClasses)
+    return classifier
+
+
+def trainMaxEntLinearModel(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificationTsvFiles,
+                           makeClassifBinary=False, makeClassifType=False):
+    """ given a list of paths leading to the features files and the classification (one per vector of features)
+            returns a simply trained maximum entropy model """
+    from sklearn.linear_model import LogisticRegression
+    features, annotationClasses = dataTrainPreparation(listOfPathsToFeaturesTsvFiles,
+                                                       listOfPathsToClassificationTsvFiles,
+                                                       makeClassifBinary, makeClassifType)
+    # make and train the classifier
+    classifier = LogisticRegression(random_state=0, solver='liblinear', fit_intercept=False)
+    classifier.fit(features, annotationClasses)
+    return classifier
+
+
+def trainFeedForwardNNModel(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificationTsvFiles,
+                            makeClassifBinary=False, makeClassifType=False):
+    """ given a list of paths leading to the features files and the classification (one per vector of features)
+            returns a simply trained random forest classifier """
+    import torch.tensor as tensor
+    import torch
+    features, annotationClasses = dataTrainPreparation(listOfPathsToFeaturesTsvFiles,
+                                                       listOfPathsToClassificationTsvFiles,
+                                                       makeClassifBinary, makeClassifType)
+    # make tensors for NN
+    featTensor = tensor(features).float()
+    annotTensor = tensor(annotationClasses).float()
+    # make the model as a sequence of layers
+    model = utilsML.Feedforward(13, 2)
+    lossFuncCriterion = torch.nn.BCELoss()
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+    # train the classifier
+    model.train()
+    for epoch in range(3):
+        optimizer.zero_grad()
+        # Forward pass
+        classPredictions = model(featTensor)  # Compute Loss
+        loss = lossFuncCriterion(classPredictions.squeeze(), annotTensor)
+        print('Epoch {}: train loss: {}'.format(epoch, loss.item()))  # Backward pass
+        loss.backward()
+        optimizer.step()
+    return model
+
+
+def getModelPredictions(modelClassifier, listOfPathsToTestFeatureFiles):
+    """ given a list of paths where to find the validation/test set features, returns a prediction of the class
+    it belongs to"""
+    import torch.tensor as tensor
+    if type(listOfPathsToTestFeatureFiles) is str:
+        listOfPathsToTestFeatureFiles = [listOfPathsToTestFeatureFiles]
+    # concatenate the content of all the feature paths
+    testFeatures = concatContent(listOfPathsToTestFeatureFiles)
+    # simple ml classifier
+    try:
+        predictions = modelClassifier.predict(testFeatures)
+    # pytorch classifier model
+    except AttributeError:
+        modelClassifier.eval()
+        testFeatures = tensor(testFeatures).float()
+        predictions = modelClassifier(testFeatures)
+    return predictions
+
+
+########################################################################
+# META-HEURISTICS RUSTIC EVALUATION
+########################################################################
+
+def getModelEval(listOfPathsToTestFeatureFiles, listOfPathsToTestClassificationFiles, modelClassifier,
+                 makeClassifBinary=False):
+    import torch.tensor as tensor
+    import torch
+    # test set
+    predictions = getModelPredictions(modelClassifier, listOfPathsToTestFeatureFiles)
+    realClasses = concatContent(listOfPathsToTestClassificationFiles)
+    realClasses = getRightClasses(realClasses, makeClassifBinary)
+    # if the predictions are not pytorch tensors
+    if type(predictions) is not torch.Tensor:
+        # count
+        total = 0
+        good = 0
+        for n in range(len(predictions)):
+            if predictions[n] == realClasses[n][0]:
+                # print(predictions[n], int(realClasses[n][0]))
+                good += 1
+            else:
+                # print(predictions[n], (realClasses[n][0]))
+                pass
+            total += 1
+        print(good / total, good, total)
+    # if the predictions are torch tensors (we used an NN)
+    else:
+        import sklearn
+        lossFuncCriterion = torch.nn.BCELoss()
+        after_train = lossFuncCriterion(predictions.squeeze(), tensor(realClasses).float())
+        print('Test loss after Training', after_train.item())
+    return None
+
+
+pathsToFeaturesTsvFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/002manuallyAnnotated/scores.tsv",
+                                     "/u/alfonsda/Documents/workRALI/004tradBureau/003negativeNaiveExtractors/000manualAnnotation/scores.tsv"]
+pathsToClassificationTsvFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/002manuallyAnnotated/sampleAnnotation.tsv",
+                                       "/u/alfonsda/Documents/workRALI/004tradBureau/003negativeNaiveExtractors/000manualAnnotation/sampleAnnotation.tsv"]
+# pathsToTestFeatureFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/scores.tsv",
+#                                  "/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/problematic/scores.tsv"]
+# pathsToTestClassificationFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/sampleAnnotation.tsv",
+#                                         "/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/problematic/sampleAnnotation.tsv"]
+pathsToTestFeatureFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/scores.tsv"]
+pathsToTestClassificationFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/sampleAnnotation.tsv"]
+classifBinary = True
+classifType = False
+
+# classifier = trainSvmModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifType)
+# classifier = trainRdmForestModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifType)
+# classifier = trainMaxEntLinearModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifType)
+classifier = trainFeedForwardNNModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifType)
+getModelEval(pathsToTestFeatureFiles, pathsToTestClassificationFiles, classifier, classifBinary)

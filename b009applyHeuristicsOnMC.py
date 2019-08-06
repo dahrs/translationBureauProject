@@ -389,44 +389,147 @@ def joinNotFlaggedFolder(notFlaggedPath=u'/data/rali5/Tmp/alfonsda/workRali/004t
     notFound = 0
     # make the output path
     refPathOut = u'{0}reference.tsv'.format(notFlaggedPath)
+    nbPathOut = u'{0}nb/score.tsv'.format(notFlaggedPath)
+    cogPathOut = u'{0}cog/score.tsv'.format(notFlaggedPath)
+    lenPathOut = u'{0}len/score.tsv'.format(notFlaggedPath)
+    faPathOut = u'{0}fa/score.tsv'.format(notFlaggedPath)
+    ionPathOut = u'{0}ion/score.tsv'.format(notFlaggedPath)
+    swPathOut = u'{0}sw/score.tsv'.format(notFlaggedPath)
+    spellPathOut = u'{0}spell/score.tsv'.format(notFlaggedPath)
+    urlPathOut = u'{0}url/score.tsv'.format(notFlaggedPath)
+    monoPathOut = u'{0}mono/score.tsv'.format(notFlaggedPath)
+    tablPathOut = u'{0}tabl/score.tsv'.format(notFlaggedPath)
+    strBcksPathOut = u'{0}strBcks/score.tsv'.format(notFlaggedPath)
+    punctPathOut = u'{0}punct/score.tsv'.format(notFlaggedPath)
+    gibbPathOut = u'{0}gibb/score.tsv'.format(notFlaggedPath)
+    # delete the existing file content
+    for folderPath in [refPathOut, nbPathOut, cogPathOut, lenPathOut, faPathOut, ionPathOut, swPathOut, spellPathOut,
+                       urlPathOut, monoPathOut, tablPathOut, strBcksPathOut, punctPathOut, gibbPathOut]:
+        utilsOs.deleteFileContent(folderPath)
+    # open each n segmentation file in order to join them in a single file
     for n in range(3013):
         # make the input paths
         refPath = u'{0}{1}/reference.tsv'.format(notFlaggedPath, n)
+        nbPath = u'{0}{1}/nb/score.tsv'.format(notFlaggedPath, n)
+        cogPath = u'{0}{1}/cog/score.tsv'.format(notFlaggedPath, n)
+        lenPath = u'{0}{1}/len/score.tsv'.format(notFlaggedPath, n)
+        faPath = u'{0}{1}/fa/score.tsv'.format(notFlaggedPath, n)
+        ionPath = u'{0}{1}/ion/score.tsv'.format(notFlaggedPath, n)
+        swPath = u'{0}{1}/sw/score.tsv'.format(notFlaggedPath, n)
+        spellPath = u'{0}{1}/spell/score.tsv'.format(notFlaggedPath, n)
+        urlPath = u'{0}{1}/url/score.tsv'.format(notFlaggedPath, n)
+        monoPath = u'{0}{1}/mono/score.tsv'.format(notFlaggedPath, n)
+        tablPath = u'{0}{1}/tabl/score.tsv'.format(notFlaggedPath, n)
+        strBcksPath = u'{0}{1}/strBcks/score.tsv'.format(notFlaggedPath, n)
+        punctPath = u'{0}{1}/punct/score.tsv'.format(notFlaggedPath, n)
+        gibbPath = u'{0}{1}/gibb/score.tsv'.format(notFlaggedPath, n)
+        # join them in a single file
         try:
             with open(refPath) as refFile:
                 refLns = refFile.readlines()
+            heurLnsList = []
+            for hPath in [nbPath, cogPath, lenPath, faPath, ionPath, swPath, spellPath, urlPath, monoPath,
+                          tablPath, strBcksPath, punctPath, gibbPath]:
+                try:
+                    with open(hPath) as hFile:
+                        heurLnsList.append(hFile.readlines())
+                except FileNotFoundError:
+                    heurLnsList.append(None)
             # pass each line into a single output file
             with open(refPathOut, u'a') as refOut:
-                for refLn in refLns:
-                    refOut.write(refLn)
-
-            # get the lines for each heuristic
-            # fill the heuristic score files
-            for hName in [u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl',
-                          u'strBcks', u'punct', u'gibb']:
-                # make the paths
-                heurPath = u'{0}{1}/{2}/score.tsv'.format(notFlaggedPath, n, hName)
-                # make the folder
-                utilsOs.createEmptyFolder(u'{0}{1}/'.format(notFlaggedPath, hName))
-                heurPathOut = u'{0}{1}/score.tsv'.format(notFlaggedPath, hName)
-                # open the input files
-                try:
-                    with open(heurPath) as heurFile:
-                        heurLns = heurFile.readlines()
-                    with open(heurPathOut, u'a') as heurOut:
-                        for iheur, heurLn in enumerate(heurLns):
-                            heurOut.write(heurLn)
-                            print(hName, heurLn, refLns[iheur])
-                except FileNotFoundError:
-                    # fill the heuristic file with NA, so the heuristics and reference indexes correspond
-                    with open(heurPathOut, u'a') as heurOut:
-                        for nb in range(len(refLns)):
-                            heurOut.write(u'NA\n')
-                    notFound += 1
-                    pass
-
-            # count the total
-            tot += len(refLns)
+                with open(nbPathOut, u'a') as nbOut:
+                    with open(cogPathOut, u'a') as cogOut:
+                        with open(lenPathOut, u'a') as lenOut:
+                            with open(faPathOut, u'a') as faOut:
+                                with open(ionPathOut, u'a') as ionOut:
+                                    with open(swPathOut, u'a') as swOut:
+                                        with open(spellPathOut, u'a') as spellOut:
+                                            with open(urlPathOut, u'a') as urlOut:
+                                                with open(monoPathOut, u'a') as monoOut:
+                                                    with open(tablPathOut, u'a') as tablOut:
+                                                        with open(strBcksPathOut, u'a') as strBcksOut:
+                                                            with open(punctPathOut, u'a') as punctOut:
+                                                                with open(gibbPathOut, u'a') as gibbOut:
+                                                                    # dump the ref lines
+                                                                    for indRef, refLn in enumerate(refLns):
+                                                                        refOut.write(refLn)
+                                                                        # dump lines for each heuristic - Nb
+                                                                        if heurLnsList[0] is not None:
+                                                                            nbOut.write(heurLnsList[0][indRef])
+                                                                        else:
+                                                                            nbOut.write(u'NA\n')
+                                                                        # cog
+                                                                        if heurLnsList[1] is not None:
+                                                                            cogOut.write(heurLnsList[1][indRef])
+                                                                        else:
+                                                                            cogOut.write(u'NA\n')
+                                                                        # len
+                                                                        if heurLnsList[2] is not None:
+                                                                            lenOut.write(heurLnsList[2][indRef])
+                                                                        else:
+                                                                            lenOut.write(u'NA\n')
+                                                                        # fa
+                                                                        if heurLnsList[3] is not None:
+                                                                            faOut.write(heurLnsList[3][indRef])
+                                                                        else:
+                                                                            faOut.write(u'NA\n')
+                                                                            notFound += 1
+                                                                        # ion
+                                                                        if heurLnsList[4] is not None:
+                                                                            ionOut.write(heurLnsList[4][indRef])
+                                                                        else:
+                                                                            ionOut.write(u'NA\n')
+                                                                            notFound += 1
+                                                                        # sw
+                                                                        if heurLnsList[5] is not None:
+                                                                            swOut.write(heurLnsList[5][indRef])
+                                                                        else:
+                                                                            swOut.write(u'NA\n')
+                                                                            notFound += 1
+                                                                        # spell
+                                                                        if heurLnsList[6] is not None:
+                                                                            spellOut.write(heurLnsList[6][indRef])
+                                                                        else:
+                                                                            spellOut.write(u'NA\n')
+                                                                            notFound += 1
+                                                                        # url
+                                                                        if heurLnsList[7] is not None:
+                                                                            urlOut.write(heurLnsList[7][indRef])
+                                                                        else:
+                                                                            urlOut.write(u'NA\n')
+                                                                            notFound += 1
+                                                                        # mono
+                                                                        if heurLnsList[8] is not None:
+                                                                            monoOut.write(heurLnsList[8][indRef])
+                                                                        else:
+                                                                            monoOut.write(u'NA\n')
+                                                                            notFound += 1
+                                                                        # tabl
+                                                                        if heurLnsList[9] is not None:
+                                                                            tablOut.write(heurLnsList[9][indRef])
+                                                                        else:
+                                                                            tablOut.write(u'NA\n')
+                                                                            notFound += 1
+                                                                        # strBcks
+                                                                        if heurLnsList[10] is not None:
+                                                                            strBcksOut.write(heurLnsList[10][indRef])
+                                                                        else:
+                                                                            strBcksOut.write(u'NA\n')
+                                                                            notFound += 1
+                                                                        # punct
+                                                                        if heurLnsList[11] is not None:
+                                                                            punctOut.write(heurLnsList[11][indRef])
+                                                                        else:
+                                                                            punctOut.write(u'NA\n')
+                                                                            notFound += 1
+                                                                        # gibb
+                                                                        if heurLnsList[12] is not None:
+                                                                            gibbOut.write(heurLnsList[12][indRef])
+                                                                        else:
+                                                                            gibbOut.write(u'NA\n')
+                                                                            notFound += 1
+                                                                        # count the total
+                                                                        tot += 1
         # if there is no reference file
         except FileNotFoundError:
             print(u'NO REFERENCE FILE IN THE FOLDER ', n)
