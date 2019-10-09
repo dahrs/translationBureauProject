@@ -289,7 +289,7 @@ startTime = utilsOs.countTime()
 
 
 # if we already tuned the heuristics, applied them to the MC and now we wish to select random SPs to annotate them
-paths = [u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/problematic/',
+paths = [u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/problematic/withoutEmptyLinesWithoutFAheur/',
          u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/noProblematic/']
 outFoldPaths = [u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/problematic/',
                 u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/noProblematic/']
