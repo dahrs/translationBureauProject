@@ -152,14 +152,15 @@ def getLnToWrite(heurName, srcLn, trgtLn, enLn, frLn,
         return u'{0}\t{1}\t{2}\t{3}\n'.format(score, totalIntersect, totalSrc, totalTrgt)
 
 
-def applyHeuristicOnCorpus(corpus=None, heuristic=None):
+def applyHeuristicOnCorpus(corpus=None, heuristic=None, out=None):
     """ given a corpus and heuristic indication, it applies the heuristic to that corpus and dumps the result """
     if corpus is None:
         corpus = [u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY']
     if heuristic is None:
         heuristic = [u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl', u'strBcks',
                      u'punct', u'gibb']
-    out = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/'
+    if out is None:
+        out = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/'
     # get the heuristic needed objects
     starbucksExprDict, starbucksWordDict = utilsString.openEn2FrStarbucksDict()
     fauxAmisEn = utilsString.openFauxAmisDict(enToFr=True, withDescription=False, reducedVersion=True)
@@ -569,6 +570,71 @@ def repairHeuristicsScore(heuristicName, corpus=[u'ALIGNMENT-QUALITY', u'MISALIG
         utilsOs.dumpRawLines(scoreLines, scorePath, addNewline=False, rewrite=True)
 
 
+def applyHeurAndDumpScoresAndMetadata(inEnPath, inFrPath, outScMdPath):
+    """
+    Applies the heuristics and dumps in a file all the scores with their respective metadata.
+    :param inEnPath: path to the english sentences of the SP
+    :param inFrPath: path to the french sentences of the SP
+    :param outScMdPath: path to the SP's scores and metadata output
+    :return: None
+    """
+    scoresList = []
+    scoresAndMetadataList = []
+    heuristicsList = [u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl', u'strBcks', 
+                      u'punct', u'gibb']
+    outScPath = outScMdPath.replace(u'AndMetaData', u'')
+    # delete the previous files
+    utilsOs.deleteFileContent(outScPath)
+    utilsOs.deleteFileContent(outScMdPath)
+    # get the heuristic needed objects
+    starbucksExprDict, starbucksWordDict = utilsString.openEn2FrStarbucksDict()
+    fauxAmisEn = utilsString.openFauxAmisDict(enToFr=True, withDescription=False, reducedVersion=True)
+    fauxAmisFr = utilsString.openFauxAmisDict(enToFr=False, withDescription=False, reducedVersion=True)
+    stopWordsEnFrDict = utilsString.openEn2FrStopWordsDict()
+    enLexicon = utilsString.getWiki1000MostCommonLexicon(u'en')
+    frLexicon = utilsString.getWiki1000MostCommonLexicon(u'fr')
+    # open the SP files
+    with open(inEnPath) as enFile:
+        with open(inFrPath) as frFile:
+            # first line
+            enLn = enFile.readline().replace(u'\n', u'')
+            frLn = frFile.readline().replace(u'\n', u'')
+            while enLn or frLn:
+                scString = u''
+                scMdString = u''
+                for heurName in heuristicsList:
+                    # get the all scores string
+                    allScores = getLnToWrite(heurName, enLn, frLn, enLn, frLn,
+                                             placeInDocument=None, stopWordsEnFrDict=stopWordsEnFrDict, 
+                                             enLex=enLexicon, frLex=frLexicon, fauxAmisEn=fauxAmisEn,
+                                             fauxAmisFr=fauxAmisFr, starbucksExprDict=starbucksExprDict, 
+                                             starbucksWordDict=starbucksWordDict)
+                    # if it's the first line, we do not add a tabulation to separate
+                    sep = u'' if scString == u'' else u'\t'
+                    # add to the recollection of scores string
+                    scString = u'{0}{1}{2}'.format(scString, sep, allScores.split(u'\t')[0])
+                    # add to the scores and metadata string
+                    scMdString = u'{0}{1}{2}'.format(scMdString, sep, allScores.replace(u'\n', u''))
+                # add to the scores list
+                scoresList.append(scString)
+                scoresAndMetadataList.append(scMdString)
+                # dump after a 1000 elements
+                if len(scoresList) >= 1000:
+                    utilsOs.appendMultLinesToFile(scoresList, outScPath, addNewLine=True)
+                    utilsOs.appendMultLinesToFile(scoresAndMetadataList, outScMdPath, addNewLine=True)
+                    scoresList = []
+                    scoresAndMetadataList = []
+                # next line
+                enLn = enFile.readline().replace(u'\n', u'')
+                frLn = frFile.readline().replace(u'\n', u'')
+                # print(bool(enLn), bool(frLn))
+            # make the last dump with the remaining elements
+            utilsOs.appendMultLinesToFile(scoresList, outScPath, addNewLine=True)
+            utilsOs.appendMultLinesToFile(scoresAndMetadataList, outScMdPath, addNewLine=True)
+                
+
+
+
 # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
 
@@ -597,8 +663,20 @@ startTime = utilsOs.countTime()
 
 
 # # join the divided files of the not-flagged corpus
-joinNotFlaggedFolder()
+# joinNotFlaggedFolder()
 
+
+
+# apply the heuristics score to shivendra's train set
+# 7M train dataset
+# inEnPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/bal_train_en'
+# inFrPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/bal_train_fr'
+# outPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/bal_train_scoresAndMetaData'
+# 17M train dataset
+inEnPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_en'
+inFrPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_fr'
+outPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_scoresAndMetaData'
+applyHeurAndDumpScoresAndMetadata(inEnPath, inFrPath, outPath)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

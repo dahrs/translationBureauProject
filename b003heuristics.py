@@ -9,6 +9,9 @@ sys.path.append(u'./utils')
 import b000path, utilsOs, utilsString, utilsML
 from collections import Counter
 import numpy as np
+import torch.tensor as tensor
+import torch.nn as nn
+import torch
 
 
 ########################################################################
@@ -709,25 +712,49 @@ def makeLabelClasses(annotArray):
     return annotationClasses.reshape(-1, 1)
 
 
-def getRightClasses(annotArray, makeClassifBinary=False, makeClassifByType=False):
-    # if we want to use multiple classes
-    if makeClassifBinary is False and makeClassifByType is False:
+def getRightClasses(annotArray, makeClassifBinary=False, makeClassifByGroup=False):
+    # use label as classes
+    if makeClassifBinary is False and makeClassifByGroup is False:
         annotArray = makeLabelClasses(annotArray)
+    # use group labels into 2+ classes
     elif makeClassifBinary is False:
         annotArray = makeClassificationByType(annotArray)
+
     else:
-        # if we want to use a binary system of classes
+        # use a binary system of classes
         annotArray = makeClassificationBinary(annotArray)
     return annotArray
 
 
-def concatContent(listOfFilePaths):
+def concatContentTrain(listOfFilePaths, vectorDim=60):
     concatenated = None
     for fPath in listOfFilePaths:
+        # decide wether to train on the 13D or the 60D data
+        if vectorDim in [13, 15]:
+            fPath = fPath.replace(u'scoresAndMetaData', u'scores')
+        # concatenate the right data
         if concatenated is None:
             concatenated = utilsML.fromTsvToMatrix(fPath)
         else:
             concatenated = np.vstack((concatenated, utilsML.fromTsvToMatrix(fPath)))
+    return concatenated
+
+
+def concatContent(listOfFilePaths, vectorDim=60):
+    concatenated = None
+    for fPath in listOfFilePaths:
+        if concatenated is None:
+            if vectorDim in [60, 62]:
+                concatenated = utilsML.fromTsvToMatrix(fPath)
+            elif vectorDim in [13, 15]:
+                concatenated = utilsML.fromTsvToMatrix(fPath, justTheNFirstColumns=1)
+            else:
+                raise ValueError(u'the function accepts only 2 values: 13 and 60 (15 and 62 when added 2 arbitrary)')
+        else:
+            if vectorDim in [60, 62]:
+                concatenated = np.vstack((concatenated, utilsML.fromTsvToMatrix(fPath)))
+            else:
+                concatenated = np.vstack((concatenated, utilsML.fromTsvToMatrix(fPath, justTheNFirstColumns=1)))
     return concatenated
 
 
@@ -748,22 +775,194 @@ def naiveOversampling(featArray, classesArray):
     return out, outClasses
 
 
+def appendAdditionalFeat(featList):
+    """ return the feature list with 2 more features :
+    the nb of features indicating good and nb of features indicating bad """
+    goodThreshold = [1.0, 0.65]
+    badThreshold = [0.35, 0.3, 0.95, 0.1]
+    nbGood = 0
+    nbBad = 0
+    # count the goods
+    for i, feat in enumerate([featList[0], featList[9]]):
+        if feat >= goodThreshold[i]:
+            nbGood += 1
+    # count the bads
+    for i, feat in enumerate([featList[1], featList[3], featList[8], featList[11]]):
+        if feat < badThreshold[i]:
+            nbBad += 1
+    return np.append(featList, [nbGood, nbBad])
+
+
+def addArbitraryFeatures(features):
+    # add two arbitrary features : the nb of features indicating good and nb of features indicating bad
+    arrayList = []
+    for ind, featList in enumerate(features):
+        arrayList.append(appendAdditionalFeat(featList))
+    return np.asarray(arrayList)
+
+
 def dataTrainPreparation(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificationTsvFiles,
-                         makeClassifBinary=False, makeClassifType=False):
+                         makeClassifBinary=False, makeClassifGroup=False, vectorDim=60):
     # be sure the list of paths are lists of paths and not strings
     if type(listOfPathsToFeaturesTsvFiles) is str:
         listOfPathsToFeaturesTsvFiles = [listOfPathsToFeaturesTsvFiles]
     if type(listOfPathsToClassificationTsvFiles) is str:
         listOfPathsToClassificationTsvFiles = [listOfPathsToClassificationTsvFiles]
     # concatenate the content of all the feature paths
-    features = concatContent(listOfPathsToFeaturesTsvFiles)
+    features = concatContentTrain(listOfPathsToFeaturesTsvFiles, vectorDim)
+    # add two arbitrary features : the nb of features indicating good and nb of features indicating bad
+    features = addArbitraryFeatures(features)
     # concatenate the content of all the classifications paths
-    annotationClasses = concatContent(listOfPathsToClassificationTsvFiles)
+    annotationClasses = concatContentTrain(listOfPathsToClassificationTsvFiles)
     # if we want to use multiple classes
-    annotationClasses = getRightClasses(annotationClasses, makeClassifBinary, makeClassifType)
+    annotationClasses = getRightClasses(annotationClasses, makeClassifBinary, makeClassifGroup)
     # oversample
     features, annotationClasses = naiveOversampling(features, annotationClasses)
     return features, annotationClasses
+
+
+def addAndDumpMetaDataToScoreFeatures(folderPath):
+    """ instead of using the basic heuristic scores alone, use the scores and all metadata (intermeadiary)
+    So get the metadata and dump it to a separate file """
+    path = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics'
+    # get the reference for each score
+    with open(u"{0}sampleReference.tsv".format(folderPath)) as rf:
+        refLn = rf.readline()
+        while refLn:
+            refLn = b000path.anonymizePath(refLn.replace(u'\n', u''))
+            # find the right flag folder where to search for the reference
+            for flagFold in [u"ALIGNMENT-QUALITY", u"QUALITY", u"MISALIGNED", u"NOT-FLAGGED"]:
+                if flagFold in refLn:
+                    break
+            # get the count index of the line of interest
+            countInd = 0
+            # match the subset ref line to the ref line of the whole dataset
+            with open(u"{0}/{1}/reference.tsv".format(path, flagFold)) as wholeFile:
+                # try to match the reference to the whole
+                wholeLn = wholeFile.readline()
+                while wholeLn:
+                    wholeLn = wholeLn.replace(u'\n', u'')
+                    if wholeLn == refLn:
+                        break
+                    # next
+                    wholeLn = wholeFile.readline()
+                    countInd += 1
+            # look in the scores files at the right index and make a line containing all scores and metadata
+            allScores = u''
+            for heurName in [u'cog', u'fa', u'gibb', u'ion', u'len', u'mono', u'nb', u'punct', u'spell', u'strBcks',
+                             u'sw', u'tabl', u'url']:
+                with open(u"{0}/{1}/{2}/score.tsv".format(path, flagFold, heurName)) as scoreFile:
+                    # get to the right index
+                    heurCount = 0
+                    heurScLn = scoreFile.readline()
+                    while heurCount != countInd:
+                        heurCount += 1
+                        heurScLn = scoreFile.readline()
+                    # add the scores to the all scores list
+                    if allScores == u'':
+                        allScores = heurScLn.replace(u'\n', u'')
+                    else:
+                        allScores = u'{0}\t{1}'.format(allScores, heurScLn.replace(u'\n', u''))
+            # append to the output score file (where each line is one collection of the scores and metadata)
+            utilsOs.appendLineToFile(allScores, u"{0}scoresAndMetaData.tsv".format(folderPath), addNewLine=True)
+            # next Line
+            refLn = rf.readline()
+
+
+def getHeurScoresAsList(scoreFolderPath):
+    """ given a path to the folder containing the score files or sub folders, returns an array
+    containing all 13 or 60 elements (vector dim) as a feature vector """
+    scoreFolderPathList = []
+    openedFilesDict = {}
+    flagList = [u'ALIGNMENT-QUALITY', u'QUALITY', u'MISALIGNED', u'NOT-FLAGGED']
+    # make sure the folder path ends in a /
+    if scoreFolderPath[-1] != u'/':
+        scoreFolderPath = u'{0}/'.format(scoreFolderPath)
+    # if we are given a supra folder, make a list of all its contained subfolders
+    if len(set(flagList).intersection(set(utilsOs.getContentOfFolder(scoreFolderPath)))) > 0 :
+        for flag in flagList:
+            scoreFolderPathList.append(u'{0}{1}/'.format(scoreFolderPath, flag))
+    else:
+        scoreFolderPathList.append(scoreFolderPath)
+    # look into each heuristic folder for the heuristic score file
+    for flagFolder in scoreFolderPathList:
+        for heur in [u'cog', u'fa', u'gibb', u'ion', u'len', u'mono', u'nb', u'punct', u'spell', u'strBcks', u'sw',
+                     u'tabl', u'url']:
+            openedFilesDict[heur] = open(u'{0}{1}/score.tsv'.format(flagFolder, heur))
+    # go line by line, opening the files and appending the scores
+    cogLn = openedFilesDict[u'cog'].readline()
+    while cogLn:
+        # get the heur score for cog
+        scAsFeat13 = [float(cogLn.replace(u'\n', u'').replace(u'na', u'-1.0').split(u'\t')[0])]
+        scAsFeat60 = [float(e) for e in cogLn.replace(u'\n', u'').replace(u'na', u'-1.0').split(u'\t')]
+        # get the heur score for all other features
+        for heur in [u'fa', u'gibb', u'ion', u'len', u'mono', u'nb', u'punct', u'spell', u'strBcks', u'sw',
+                     u'tabl', u'url']:
+            heurLn = openedFilesDict[heur].readline()
+            features = [float(e) for e in heurLn.replace(u'\n', u'').replace(u'na', u'-1.0').split(u'\t')]
+            scAsFeat13 = scAsFeat13+[float(features[0])]
+            scAsFeat60 = scAsFeat60+features
+        # yield the list of feat
+        yield scAsFeat13, scAsFeat60
+        # next line
+        cogLn = openedFilesDict[u'cog'].readline()
+    # close each opened file
+    for heur in openedFilesDict:
+        openedFilesDict[heur].close()
+
+
+def getHeurScoresAsFeatures(folderPath):
+    '''
+    given a path to a folder, returns a list of vectors where
+    each heuristic score transformed is transformed into a numpy array
+    '''
+    for heurFeat13D, heurFeat60D in getHeurScoresAsList(folderPath):
+        feat13DArray = np.asarray(heurFeat13D)
+        feat60DArray = np.asarray(heurFeat60D)
+        # add 2 arbitrarily chose features: number of bad feat total, nb of good feat total
+        feat13DArray = appendAdditionalFeat(feat13DArray)
+        feat60DArray = appendAdditionalFeat(feat60DArray)
+        yield feat13DArray, feat60DArray
+
+
+def getSentPairFromRefFile(folderPath):
+    """ returns the sentence pair corresponding to the reference """
+    refFolderPathList = []
+    flagList = [u'ALIGNMENT-QUALITY', u'QUALITY', u'MISALIGNED', u'NOT-FLAGGED']
+    # if we are given a supra folder, make a list of all its contained subfolders
+    if len(set(flagList).intersection(set(utilsOs.getContentOfFolder(folderPath)))) > 0:
+        for flag in flagList:
+            refFolderPathList.append(u'{0}{1}/'.format(folderPath, flag))
+    else:
+        refFolderPathList.append(folderPath)
+    for refFoldPath in refFolderPathList:
+        # make the path to the ref file
+        if u'.' not in refFoldPath[-5:]:
+            if refFoldPath[-1] == u'/':
+                refFoldPath = u'{0}reference.tsv'.format(refFoldPath)
+            else:
+                refFoldPath = u'{0}/reference.tsv'.format(refFoldPath)
+        # open the ref file
+        with open(refFoldPath) as refFile:
+            refLn = refFile.readline()
+            while refLn:
+                refList = refLn.replace(u'\n', u'').split(u'\t')
+                pathToSps = b000path.desAnonymizePath(refList[0])
+                indSp = int(refList[1])
+                with open(u'{0}.en'.format(pathToSps)) as enFile:
+                    with open(u'{0}.fr'.format(pathToSps)) as frFile:
+                        indexFile = 0
+                        enLn = enFile.readline()
+                        frLn = frFile.readline()
+                        while indexFile != indSp:
+                            # next line
+                            enLn = enFile.readline()
+                            frLn = frFile.readline()
+                            # update index
+                            indexFile += 1
+                        yield enLn.replace(u'\n', u''), frLn.replace(u'\n', u''), refLn.replace(u'\n', u'')
+                # next line
+                refLn = refFile.readline()
 
 
 ########################################################################
@@ -771,7 +970,7 @@ def dataTrainPreparation(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificat
 ########################################################################
 
 def trainSvmModel(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificationTsvFiles,
-                  makeClassifBinary=False, makeClassifType=False):
+                  makeClassifBinary=False, makeClassifGroup=False, vectorDim=60):
     """ given a list of paths leading to the features files and the classification (one per vector of features)
      returns a simple trained SVM """
     from sklearn import svm
@@ -781,91 +980,105 @@ def trainSvmModel(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificationTsvF
     if type(listOfPathsToClassificationTsvFiles) is str:
         listOfPathsToClassificationTsvFiles = [listOfPathsToClassificationTsvFiles]
     # concatenate the content of all the feature paths
-    features = concatContent(listOfPathsToFeaturesTsvFiles)
+    features = concatContentTrain(listOfPathsToFeaturesTsvFiles, vectorDim)
+    features = addArbitraryFeatures(features)
     # concatenate the content of all the classifications paths
     annotationClasses = concatContent(listOfPathsToClassificationTsvFiles)
     # if we want to use multiple classes
-    annotationClasses = getRightClasses(annotationClasses, makeClassifBinary, makeClassifType)
+    annotationClasses = getRightClasses(annotationClasses, makeClassifBinary, makeClassifGroup)
     # make and train the classifier
     classifier = svm.SVC(gamma='scale', kernel='rbf')
-    classifier.fit(features, annotationClasses)
+    classifier.fit(features, annotationClasses.ravel())
     return classifier
 
 
 def trainRdmForestModel(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificationTsvFiles,
-                        makeClassifBinary=False, makeClassifType=False):
+                        makeClassifBinary=False, makeClassifType=False, vectorDim=60):
     """ given a list of paths leading to the features files and the classification (one per vector of features)
         returns a simply trained random forest classifier """
     from sklearn.ensemble import RandomForestClassifier
     features, annotationClasses = dataTrainPreparation(listOfPathsToFeaturesTsvFiles,
                                                        listOfPathsToClassificationTsvFiles,
-                                                       makeClassifBinary, makeClassifType)
+                                                       makeClassifBinary, makeClassifType, vectorDim)
     # make and train the classifier
     classifier = RandomForestClassifier(n_estimators=100, max_depth=None, random_state=0)
-    classifier.fit(features, annotationClasses)
+    classifier.fit(features, annotationClasses.ravel())
     return classifier
 
 
 def trainMaxEntLinearModel(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificationTsvFiles,
-                           makeClassifBinary=False, makeClassifType=False):
+                           makeClassifBinary=False, makeClassifType=False, vectorDim=60):
     """ given a list of paths leading to the features files and the classification (one per vector of features)
             returns a simply trained maximum entropy model """
     from sklearn.linear_model import LogisticRegression
     features, annotationClasses = dataTrainPreparation(listOfPathsToFeaturesTsvFiles,
                                                        listOfPathsToClassificationTsvFiles,
-                                                       makeClassifBinary, makeClassifType)
+                                                       makeClassifBinary, makeClassifType, vectorDim)
     # make and train the classifier
     classifier = LogisticRegression(random_state=0, solver='liblinear', fit_intercept=False)
-    classifier.fit(features, annotationClasses)
+    classifier.fit(features, annotationClasses.ravel())
     return classifier
 
 
 def trainFeedForwardNNModel(listOfPathsToFeaturesTsvFiles, listOfPathsToClassificationTsvFiles,
-                            makeClassifBinary=False, makeClassifType=False):
+                            makeClassifBinary=False, makeClassifType=False, vectorDim=60):
     """ given a list of paths leading to the features files and the classification (one per vector of features)
             returns a simply trained random forest classifier """
-    import torch.tensor as tensor
-    import torch
     features, annotationClasses = dataTrainPreparation(listOfPathsToFeaturesTsvFiles,
                                                        listOfPathsToClassificationTsvFiles,
-                                                       makeClassifBinary, makeClassifType)
+                                                       makeClassifBinary, makeClassifType, vectorDim)
     # make tensors for NN
     featTensor = tensor(features).float()
-    annotTensor = tensor(annotationClasses).float()
-    # make the model as a sequence of layers
-    model = utilsML.Feedforward(13, 2)
-    lossFuncCriterion = torch.nn.BCELoss()
-    optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
-    # train the classifier
-    model.train()
-    for epoch in range(3):
+    annotTensor = tensor([e[0] for e in annotationClasses])
+    # (based on www.deeplearningwizard.com/deep_learning/practical_pytorch/pytorch_feedforward_neuralnetwork/)
+    # hyperparams and preparation
+    input_dim = len(featTensor[0])
+    hidden_dim = 100
+    if makeClassifBinary != False:
+        output_dim = 2
+    elif makeClassifType != False:
+        output_dim = 4
+    else:
+        output_dim = 2
+    model = utilsML.FeedforwardNeuralNetModel(input_dim, hidden_dim, output_dim)
+    criterion = nn.CrossEntropyLoss()
+    learning_rate = 0.1
+    optimizer = torch.optim.SGD(model.parameters(), lr=learning_rate)
+    numEpochs = 100
+    # train the model
+    for epoch in range(numEpochs):
+        # Clear gradients w.r.t. parameters
         optimizer.zero_grad()
-        # Forward pass
-        classPredictions = model(featTensor)  # Compute Loss
-        loss = lossFuncCriterion(classPredictions.squeeze(), annotTensor)
-        print('Epoch {}: train loss: {}'.format(epoch, loss.item()))  # Backward pass
+        # Forward pass to get output/logits
+        outputs = model(featTensor)
+        # Calculate Loss: softmax --> cross entropy loss
+        loss = criterion(outputs, annotTensor.squeeze())
+        # Getting gradients w.r.t. parameters
         loss.backward()
+        # Updating parameters
         optimizer.step()
-    return model
+    return model, loss
 
 
-def getModelPredictions(modelClassifier, listOfPathsToTestFeatureFiles):
+def getModelPredictions(modelClassifier, listOfPathsToTestFeatureFiles, vectorDim=60):
     """ given a list of paths where to find the validation/test set features, returns a prediction of the class
     it belongs to"""
-    import torch.tensor as tensor
     if type(listOfPathsToTestFeatureFiles) is str:
         listOfPathsToTestFeatureFiles = [listOfPathsToTestFeatureFiles]
     # concatenate the content of all the feature paths
-    testFeatures = concatContent(listOfPathsToTestFeatureFiles)
+    testFeatures = concatContent(listOfPathsToTestFeatureFiles, vectorDim)
+    testFeatures = addArbitraryFeatures(testFeatures)
     # simple ml classifier
     try:
         predictions = modelClassifier.predict(testFeatures)
+        return predictions
     # pytorch classifier model
     except AttributeError:
+        modelClassifier, loss = modelClassifier
         modelClassifier.eval()
         testFeatures = tensor(testFeatures).float()
         predictions = modelClassifier(testFeatures)
-    return predictions
+        return predictions, loss
 
 
 ########################################################################
@@ -873,15 +1086,13 @@ def getModelPredictions(modelClassifier, listOfPathsToTestFeatureFiles):
 ########################################################################
 
 def getModelEval(listOfPathsToTestFeatureFiles, listOfPathsToTestClassificationFiles, modelClassifier,
-                 makeClassifBinary=False):
-    import torch.tensor as tensor
-    import torch
+                 makeClassifBinary=False, vectorDim=60):
     # test set
-    predictions = getModelPredictions(modelClassifier, listOfPathsToTestFeatureFiles)
+    predictions = getModelPredictions(modelClassifier, listOfPathsToTestFeatureFiles, vectorDim)
     realClasses = concatContent(listOfPathsToTestClassificationFiles)
     realClasses = getRightClasses(realClasses, makeClassifBinary)
-    # if the predictions are not pytorch tensors
-    if type(predictions) is not torch.Tensor:
+    # if the predictions are not pytorch tensors + loss
+    if type(predictions) is not tuple:
         # count
         total = 0
         good = 0
@@ -893,31 +1104,104 @@ def getModelEval(listOfPathsToTestFeatureFiles, listOfPathsToTestClassificationF
                 # print(predictions[n], (realClasses[n][0]))
                 pass
             total += 1
-        print(good / total, good, total)
+        print("ACCURACY : ", good / total, "CORRECT and TOTAL : ", good, total)
     # if the predictions are torch tensors (we used an NN)
     else:
-        import sklearn
-        lossFuncCriterion = torch.nn.BCELoss()
-        after_train = lossFuncCriterion(predictions.squeeze(), tensor(realClasses).float())
-        print('Test loss after Training', after_train.item())
+        predictions, loss = predictions
+        # Calculate Accuracy
+        correct = 0
+        total = 0
+        # Iterate through test dataset
+        annotCl = tensor([e[0] for e in realClasses])
+        # Get predictions from the maximum value
+        _, predicted = torch.max(predictions.data, 1)
+        # Total number of labels
+        total += annotCl.size(0)
+        # Total correct predictions
+        correct += (predicted == annotCl).sum()
+        accuracy = 100 * correct / total
+        # Print Loss
+        print('Iteration: {}. Loss: {}. Accuracy: {}'.format(iter, loss.item(), accuracy))
     return None
 
 
-pathsToFeaturesTsvFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/002manuallyAnnotated/scores.tsv",
-                                     "/u/alfonsda/Documents/workRALI/004tradBureau/003negativeNaiveExtractors/000manualAnnotation/scores.tsv"]
-pathsToClassificationTsvFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/002manuallyAnnotated/sampleAnnotation.tsv",
-                                       "/u/alfonsda/Documents/workRALI/004tradBureau/003negativeNaiveExtractors/000manualAnnotation/sampleAnnotation.tsv"]
-# pathsToTestFeatureFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/scores.tsv",
-#                                  "/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/problematic/scores.tsv"]
-# pathsToTestClassificationFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/sampleAnnotation.tsv",
-#                                         "/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/problematic/sampleAnnotation.tsv"]
-pathsToTestFeatureFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/scores.tsv"]
-pathsToTestClassificationFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/sampleAnnotation.tsv"]
-classifBinary = True
-classifType = False
+def getModelEvalGoodAndBad(listOfPathsToTestFeatureFiles, listOfPathsToTestClassificationFiles, modelClassifier,
+                 makeClassifBinary=False, verbose=True):
+    """ compare the predictions given by the classifier and the human annotations
+    print accuracy and precision-recall depending on wether we are analyzing the capacity of the model
+    to predict bad or good annotations"""
+    # make empty conf matrix
+    confMatrix = []
+    # test set
+    predictions = getModelPredictions(modelClassifier, listOfPathsToTestFeatureFiles)
+    realClasses = concatContent(listOfPathsToTestClassificationFiles)
+    realClasses = getRightClasses(realClasses, makeClassifBinary)
+    # if the predictions are torch tensors (we used an NN)
+    if type(predictions) is tuple:
+        model, loss = predictions
+        # Get predictions from the maximum value
+        _, predicted = torch.max(model.data, 1)
+        predictions = predicted.tolist()
+    # populate binary confusion matrix
+    for n in range(len(predictions)):
+        ################################## binary matrix ONLY (to be expanded) ########################################
+        confMatrix = utilsML.populateBinaryConfMatrix(predictions[n], realClasses[n][0], confMatrix)
+    # get results
+    truePos = confMatrix[u'real pos'][u'pred pos']
+    trueNeg = confMatrix[u'real neg'][u'pred neg']
+    falsePos = confMatrix[u'real neg'][u'pred pos']
+    falseNeg = confMatrix[u'real pos'][u'pred neg']
+    all = (truePos + trueNeg + falsePos + falseNeg)
+    # calculate the GOOD precision and recall
+    goodPrecision = truePos / (truePos + falsePos)
+    goodRecall = truePos / (truePos + falseNeg)
+    # calculate the BAD precision and recall
+    badPrecision = trueNeg / (trueNeg + falseNeg)
+    badRecall = trueNeg / (trueNeg + falsePos)
+    # calculate the accuracy
+    accuracy = (truePos + trueNeg) / all
+    # print the results
+    if verbose is True:
+        print("GOOD precision : ", goodPrecision, "    BASELINE : ", (truePos+falseNeg) / all)
+        print("GOOD recall : ", goodRecall, "    BASELINE : ", (truePos + falseNeg) / (truePos + falseNeg))
+        print("JUST accuracy : ", accuracy)
+        print("BAD precision : ", badPrecision, "    BASELINE : ", (trueNeg+falsePos) / all)
+        print("BAD recall : ", badRecall, "    BASELINE : ", (trueNeg+falsePos) / (trueNeg+falsePos))
+    return goodPrecision, goodRecall, accuracy, badPrecision, badRecall
 
-# classifier = trainSvmModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifType)
-# classifier = trainRdmForestModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifType)
-# classifier = trainMaxEntLinearModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifType)
-classifier = trainFeedForwardNNModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifType)
-getModelEval(pathsToTestFeatureFiles, pathsToTestClassificationFiles, classifier, classifBinary)
+
+def applyClassifierToExtract(modelClassifierGood, modelClassifierBad,
+                             extractingPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/',
+                             outputPath=None):
+    """
+    apply the trained classifier and extract the good and bad SPs from the corpus
+    """
+    if outputPath is None:
+        outputPath = extractingPath
+    # get scores and metadata, browse the lists and arrays
+    for (feat13D, feat60D), (enSent, frSent, ref) in zip(getHeurScoresAsFeatures(extractingPath), getSentPairFromRefFile(extractingPath)):
+        predictForBad = modelClassifierBad.predict(np.asarray([feat13D]))
+        predictForGood = modelClassifierGood.predict(np.asarray([feat60D]))
+        # use the trained model to detect the bad SPs
+        if predictForBad[0] == 0:
+            # if the sp is detected as BAD by the model for bad, dump the data
+            utilsOs.appendLineToFile(enSent, u'{0}problematic/extracted.en'.format(outputPath), addNewLine=True)
+            utilsOs.appendLineToFile(frSent, u'{0}problematic/extracted.fr'.format(outputPath), addNewLine=True)
+            utilsOs.appendLineToFile(ref, u'{0}problematic/reference.tsv'.format(outputPath), addNewLine=True)
+            sc13 = u'\t'.join([str(f) for f in feat13D.tolist()])
+            sc60 = u'\t'.join([str(f) for f in feat60D.tolist()])
+            utilsOs.appendLineToFile(sc13, u'{0}problematic/scores.tsv'.format(outputPath), addNewLine=True)
+            utilsOs.appendLineToFile(sc60, u'{0}problematic/scoresAndMetaData.tsv'.format(outputPath), addNewLine=True)
+        # if not use the trained model to detect good SPs
+        else:
+            if predictForGood[0] == 1:
+                # if the sp is detected as GOOD by the model for good, dump the data
+                utilsOs.appendLineToFile(enSent, u'{0}noProblematic/extracted.en'.format(outputPath), addNewLine=True)
+                utilsOs.appendLineToFile(frSent, u'{0}noProblematic/extracted.fr'.format(outputPath), addNewLine=True)
+                utilsOs.appendLineToFile(ref, u'{0}noProblematic/reference.tsv'.format(outputPath), addNewLine=True)
+                sc13 = u'\t'.join([str(f) for f in feat13D.tolist()])
+                sc60 = u'\t'.join([str(f) for f in feat60D.tolist()])
+                utilsOs.appendLineToFile(sc13, u'{0}noProblematic/scores.tsv'.format(outputPath), addNewLine=True)
+                utilsOs.appendLineToFile(sc60, u'{0}noProblematic/scoresAndMetaData.tsv'.format(outputPath), True)
+
+

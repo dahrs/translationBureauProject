@@ -169,7 +169,7 @@ def countAndPopulate(aFunction, functionId, ln1, ln2, annotScore, silenceRateDic
 def getAllScoreProblematicOriented(binSc0, binSc1, binSc2, binSc3, binSc4, binSc5, binSc6, binSc7, binSc8, binSc9,
                                    binSc10, binSc11, binSc99, silenceRate):
     """ use a vote system divided in 3 categories of scores divided according to their precision and trustyness """
-    mostPreciseScores = [bSc for bSc in [binSc1, binSc3, binSc8, binSc11] if bSc is not None]
+    mostPreciseScores = [bSc for bSc in [binSc1, binSc8, binSc11] if bSc is not None]
     highPreciseScores = [bSc for bSc in [binSc0, binSc4, binSc5, binSc6, binSc7, binSc9, binSc10, binSc99] if
                          bSc is not None]
     lowPreciseScores = [bSc for bSc in [binSc2] if bSc is not None]
@@ -283,7 +283,7 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
                     # annotation score
                     annotScore = getAnnotationScore(annot, focus=u'all', negativesOnly=False)
                     if annotScore is not None:
-                        # discard or not the table content and index
+                        # discard or not the table content and index`
                         if discardTableOfContent is not False:
                             cntxtScores = getContextScores(refIndex, srcLines, trgtLines)
                             docLoc = refIndex / len(srcLines)
@@ -308,7 +308,7 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
                                                                                 annotScore, silenceRate, confMatrix2,
                                                                                 fcThreshold)
                             # faux-amis coincidence #######################
-                            fcThreshold = 0.3 if inverseScores is not False else 0.6
+                            fcThreshold = float('-inf') if inverseScores is not False else 0.6
                             confMatrix3, silenceRate, score3, binSc3 = countAndPopulate(fauxAmis, 3, enLn, frLn,
                                                                                 annotScore, silenceRate, confMatrix3,
                                                                                 fcThreshold)
@@ -380,10 +380,10 @@ def checkHeuristicsAgainstAnnotatedCorpusFile(annotationFolderPath, discardTable
                                                                                                     silenceRate)
                                 # populate the confusion matrix except if there is silence
                                 if scoreAll is not None:
-                                    if scoreAll != annotScore:
-                                        print(11111, index, scoreAll, annotScore, most, high, low)
-                                        print(222, binSc0, binSc1, binSc2, binSc3, binSc4, binSc5, binSc6, binSc7, binSc9,
-                                            binSc10, binSc11, binSc99)
+                                    # if scoreAll != annotScore:
+                                    #     print(11111, index, scoreAll, annotScore, most, high, low)
+                                    #     print(222, binSc0, binSc1, binSc2, binSc3, binSc4, binSc5, binSc6, binSc7, binSc9,
+                                    #         binSc10, binSc11, binSc99)
                                     confMatrixAll = populateConfMatrix(scoreAll, annotScore, confMatrixAll)
 
     print(u'NUMBER COINCIDENCE')
@@ -602,7 +602,7 @@ annotatedFolderPathList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtra
 #         checkOneHeuristicQualAgainstManEval(annotatedFolderPathList, heurTupl[1], False, threshold, focus=u'all', inverseScores=False)
 
 # check the extractors on the annotated corpus
-checkHeuristicsAgainstAnnotatedCorpusFile(annotatedFolderPathList, discardTableOfContent=False, inverseScores=False)
+checkHeuristicsAgainstAnnotatedCorpusFile(annotatedFolderPathList, discardTableOfContent=False, inverseScores=True)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

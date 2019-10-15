@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-import sys
+import sys, random
 sys.path.append(u'../utils')
 sys.path.append(u'./utils')
 import b000path, utilsOs
@@ -329,14 +329,14 @@ def annotateFilesAfterHeurAndSelection(inputFolderPath, outputFolderPath, dumpSP
                                                          noNewLineChar=True)
         listOfAnnotations = utilsOs.readAllLinesFromFile(u'{0}sampleAnnotation.tsv'.format(outputFolderPath),
                                                          noNewLineChar=True)
-        # maintain only what we haven't saw
+        # maintain only what we haven't seen
         annotatedFiles = set(referencePathLine)
         newRefLines = []
         for ind, file in enumerate(referenceLines):
             if file.replace(u'\n', u'') not in annotatedFiles:
                 newRefLines.append( [ind, file.replace(u'\n', u'')] )
         referenceLines = newRefLines
-        print(referenceLines)
+        # print(referenceLines)
     else:
         referencePathLine = []
         listOfAnnotations = []
@@ -575,6 +575,59 @@ def showAnnotationsExamples(annotation=1.0, showTotalOnly=False):
     return
 
 
+########################################################################
+# OTHER
+########################################################################
+
+def makeAMixOf2Annotations(inputAnnotPath1, inputAnnotPath2, outputMixPath):
+    """
+    Given 2 annotations, makes a third annotation made of a mix of the two others.
+    :param inputAnnot1: path to the first annotation folder
+    :param inputAnnot2: path to the second annotation folder
+    :param outputMix: path to the mix annotation folder
+    :return:
+    """
+    # make sure the paths end in a slash
+    if inputAnnotPath1[-1] != u'/':
+        inputAnnotPath1 = u'{0}/'.format(inputAnnotPath1)
+    if inputAnnotPath2[-1] != u'/':
+        inputAnnotPath2 = u'{0}/'.format(inputAnnotPath2)
+    if outputMixPath[-1] != u'/':
+        outputMixPath = u'{0}/'.format(outputMixPath)
+    # for each input open
+    for inPath in [inputAnnotPath1, inputAnnotPath2]:
+        # open the file, read the lines
+        with open(u'{0}sample.en'.format(inPath)) as inEnFile:
+            enLns = inEnFile.readlines()
+        with open(u'{0}sample.fr'.format(inPath)) as inFrFile:
+            frLns = inFrFile.readlines()
+        with open(u'{0}sampleAnnotation.tsv'.format(inPath)) as inAnnotFile:
+            annotLns = inAnnotFile.readlines()
+        with open(u'{0}sampleReference.tsv'.format(inPath)) as inRefFile:
+            refLns = inRefFile.readlines()
+        with open(u'{0}scores.tsv'.format(inPath)) as inScFile:
+            scLns = inScFile.readlines()
+        with open(u'{0}scoresAndMetaData.tsv'.format(inPath)) as inScMetaFile:
+            scMetaLns = inScMetaFile.readlines()
+        # choose and index randomly
+        dejaVus = set([])
+        while len(dejaVus) < int(len(enLns)/2.0):
+            randomInd = randint(0, len(enLns)-1)
+            while randomInd in dejaVus:
+                randomInd = randint(0, len(enLns)-1)
+            # add to dejavus
+            dejaVus.add(randomInd)
+            # dump to output file
+            utilsOs.appendLineToFile(enLns[randomInd], u'{0}sample.en'.format(outputMixPath), addNewLine=False)
+            utilsOs.appendLineToFile(frLns[randomInd], u'{0}sample.fr'.format(outputMixPath), False)
+            utilsOs.appendLineToFile(annotLns[randomInd], u'{0}sampleAnnotation.tsv'.format(outputMixPath), False)
+            utilsOs.appendLineToFile(refLns[randomInd], u'{0}sampleReference.tsv'.format(outputMixPath), False)
+            utilsOs.appendLineToFile(scLns[randomInd], u'{0}scores.tsv'.format(outputMixPath), False)
+            utilsOs.appendLineToFile(scMetaLns[randomInd], u'{0}scoresAndMetaData.tsv'.format(outputMixPath), False)
+
+
+
+
 
 # count the time the algorithm takes to run
 
@@ -611,9 +664,16 @@ startTime = utilsOs.countTime()
 # outputFolderPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/problematic/'
 # annotateFilesAfterHeurAndSelection(inputFolderPrblm, outputFolderPrblm)
 
-inputFolderNoPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/noProblematic/'
-outputFolderNoPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/'
-annotateFilesAfterHeurAndSelection(inputFolderNoPrblm, outputFolderNoPrblm)
+# inputFolderNoPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/noProblematic/'
+# outputFolderNoPrblm = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/'
+# annotateFilesAfterHeurAndSelection(inputFolderNoPrblm, outputFolderNoPrblm)
+
+
+# make a mix made of 150 manually annotated SPs made of a random selection of the 150 problematic and 150 noProblematic
+inputAnnotPath1 = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/'
+inputAnnotPath2 = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/problematic/'
+outputMixPath = u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/mixed/'
+makeAMixOf2Annotations(inputAnnotPath1, inputAnnotPath2, outputMixPath)
 
 
 # change one type of annotation

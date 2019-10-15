@@ -46,13 +46,59 @@ def countHeur(scNb, scLen, scCog, maxScore, d=None):
     return d
 
 
+def delEmptyLinesAndDump(inPath, outPath):
+    with open(u'{0}extracted.fr'.format(inPath)) as ff:
+        with open(u'{0}extracted.en'.format(inPath)) as ef:
+            with open(u'{0}reference.tsv'.format(inPath)) as rf:
+                with open(u'{0}scores.tsv'.format(inPath)) as sf:
+                    frLn = ff.readline()
+                    enLn = ef.readline()
+                    refLn = rf.readline()
+                    scLn = sf.readline()
+                    while frLn:
+                        copyFrLn = frLn.replace(u'\n', u'').replace(u'\t', u'').replace(u' ', u'')
+                        copyEnLn = enLn.replace(u'\n', u'').replace(u'\t', u'').replace(u' ', u'')
+                        if copyFrLn == u'' or copyEnLn == u'':
+                            pass
+                        else:
+                            utilsOs.appendLineToFile(frLn, u'{0}extracted.fr'.format(outPath), addNewLine=False)
+                            utilsOs.appendLineToFile(enLn, u'{0}extracted.en'.format(outPath), addNewLine=False)
+                            utilsOs.appendLineToFile(refLn, u'{0}reference.tsv'.format(outPath), addNewLine=False)
+                            utilsOs.appendLineToFile(scLn, u'{0}scores.tsv'.format(outPath), addNewLine=False)
+                        # next line
+                        frLn = ff.readline()
+                        enLn = ef.readline()
+                        refLn = rf.readline()
+                        scLn = sf.readline()
+    return None
+
+
+def getHeurScCount4False(scoreDict, maxScore=None):
+    if maxScore is None:
+        maxScore = {u'nb': 0.5, u'len': 0.35, u'cog': 0.1, u'fa': float(u'-inf'), u'ion': 0.5, u'sw': 0.3, u'spell': 0.25,
+                    u'url': 0.9, u'mono': 0.95, u'strBcks': 0.25, u'punct': 0.5,  u'gibb': 0.1, u'tabl': 0.65}
+    # make sure the silence scores were replaced by +inf not -inf
+    for k, v in scoreDict.items():
+        if v == float('-inf') or v == u'na':
+            scoreDict[k] = float('inf')
+    # get best, high, and low score count
+    bestHeurSc = [u'len', u'fa', u'mono', u'gibb']
+    highHeurSc = [u'nb', u'ion', u'sw', u'spell', u'url', u'mono', u'strBcks', u'punct', u'tabl']
+    lowHeurSc = [u'cog']
+    # get nb of scores
+    nbOfbestScFalses = sum([1 for hn in bestHeurSc if scoreDict[hn] < maxScore[hn]])
+    nbOfHighScFalses = sum([1 for hn in highHeurSc if scoreDict[hn] < maxScore[hn]])
+    nbOfLowScFalses = sum([1 for hn in lowHeurSc if scoreDict[hn] < maxScore[hn]])
+    return nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses
+
+
 def extractVeryProblematic(folderPaths=None, maxScore=None, appendToExisting=True):
     """extracts the SPs that our heuristics show as having some kind of problem in alignement or quality
     Not to be confused with the "flagged" or "not flagged" corpus   """
     if folderPaths is None:
         folderPaths = [u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY', u'NOT-FLAGGED']
     if maxScore is None:
-        maxScore = {u'nb': 0.5, u'len': 0.35, u'cog': 0.1, u'fa': 0.3, u'ion': 0.5, u'sw': 0.3, u'spell': 0.25,
+        maxScore = {u'nb': 0.5, u'len': 0.35, u'cog': 0.1, u'fa': float(u'-inf'), u'ion': 0.5, u'sw': 0.3, u'spell': 0.25,
                     u'url': 0.9, u'mono': 0.95, u'strBcks': 0.25, u'punct': 0.5,  u'gibb': 0.1, u'tabl': 0.65}
     fileDict = {}
     heurDetectDict = {u'nb': 0, u'len': 0, u'cog': 0, u'fa': 0, u'ion': 0, u'sw': 0, u'spell': 0,
@@ -60,7 +106,7 @@ def extractVeryProblematic(folderPaths=None, maxScore=None, appendToExisting=Tru
     appendToExisting = u'a' if appendToExisting is True else 'w'
     inp = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/'
     # save to "PROBLEMATIC" because we are extracting the problematic sentence pairs, no matter the flag of the file
-    out = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/problematic/'
+    out = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D1/problematic/'
     for folder in folderPaths:
         # get the reference path
         refPath = u'{0}{1}/reference.tsv'.format(inp, folder)
@@ -92,12 +138,7 @@ def extractVeryProblematic(folderPaths=None, maxScore=None, appendToExisting=Tru
                                     if float(scHeur) < maxScore[heurName]:
                                         heurDetectDict[heurName] += 1
                                 # apply the 3-level-voting system score mix
-                                bestHeurSc = [u'len', u'fa', u'mono', u'gibb']
-                                highHeurSc = [u'nb', u'ion', u'sw', u'spell', u'url', u'mono', u'strBcks', u'punct', u'tabl']
-                                lowHeurSc = [u'cog']
-                                nbOfbestScFalses = sum([1 for hn in bestHeurSc if scoreDict[hn] < maxScore[hn]])
-                                nbOfHighScFalses = sum([1 for hn in highHeurSc if scoreDict[hn] < maxScore[hn]])
-                                nbOfLowScFalses = sum([1 for hn in lowHeurSc if scoreDict[hn] < maxScore[hn]])
+                                nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses = getHeurScCount4False(scoreDict, maxScore)
                                 # if one of the most-precise scores is lower than his threshold, infer the SP is false
                                 if nbOfbestScFalses >= 1:
                                     allSilence = False
@@ -129,11 +170,30 @@ def extractVeryProblematic(folderPaths=None, maxScore=None, appendToExisting=Tru
                                     heurDetectDict[u'all'] += 1
                                 # get the next ref line
                                 refLn = refFile.readline()
-        # open the score files
+        # close the score files
         for heurName, heurDict in fileDict.items():
             heurDict.close()
         print(heurDetectDict)
+        # save the same SPs but deleting the empty lines and dump them in a separate folder
+        delEmptyLinesAndDump(out, u'{0}withoutEmptyLines/'.format(out))
     return None
+
+
+def getHeurScCount4True(scoreDict, maxScore=None):
+    if maxScore is None:
+        maxScore = {u'nb': 1.0, u'len': 0.7, u'cog': 0.2, u'fa': 0.6, u'ion': 0.65, u'sw': 0.9, u'spell': 0.85,
+                    u'url': 0.95, u'mono': float(u'inf'), u'strBcks': 0.65, u'punct': 0.85,  u'gibb': 0.85,
+                    u'tabl': 0.75}
+    # make sure the silence scores were replaced by -inf not +inf
+    for k, v in scoreDict.items():
+        if v == float('inf') or v == u'na':
+            scoreDict[k] = float('-inf')
+    # get nb of scores
+    bestHeurSc = [u'nb', u'strBcks']
+    highHeurSc = [u'ion', u'punct']
+    nbOfbestScTrues = sum([1 for hn in bestHeurSc if scoreDict[hn] >= maxScore[hn]])
+    nbOfHighScTrues = sum([1 for hn in highHeurSc if scoreDict[hn] >= maxScore[hn]])
+    return nbOfbestScTrues, nbOfHighScTrues
 
 
 def extractVeryNonProblematic(folderPaths=None, maxScore=None, appendToExisting=True):
@@ -145,13 +205,15 @@ def extractVeryNonProblematic(folderPaths=None, maxScore=None, appendToExisting=
         maxScore = {u'nb': 1.0, u'len': 0.7, u'cog': 0.2, u'fa': 0.6, u'ion': 0.65, u'sw': 0.9, u'spell': 0.85,
                     u'url': 0.95, u'mono': float(u'inf'), u'strBcks': 0.65, u'punct': 0.85,  u'gibb': 0.85,
                     u'tabl': 0.75}
+    maxScoreForFalse = {u'nb': 0.5, u'len': 0.35, u'cog': 0.1, u'fa': float(u'-inf'), u'ion': 0.5, u'sw': 0.3,
+            u'spell': 0.25, u'url': 0.9, u'mono': 0.95, u'strBcks': 0.25, u'punct': 0.5,  u'gibb': 0.1, u'tabl': 0.65}
     fileDict = {}
     heurDetectDict = {u'nb': 0, u'len': 0, u'cog': 0, u'fa': 0, u'ion': 0, u'sw': 0, u'spell': 0,
                     u'url': 0, u'mono': 0, u'strBcks': 0, u'punct': 0, u'gibb': 0, u'tabl': 0, u'all': 0, u'total': 0}
     appendToExisting = u'a' if appendToExisting is True else 'w'
     inp = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/'
     # save to "NO PROBLEMATIC" because we are extracting the non-problematic sentence pairs, no matter the flag
-    out = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/noProblematic/'
+    out = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D1/noProblematic/'
     for folder in folderPaths:
         # get the reference path
         refPath = u'{0}{1}/reference.tsv'.format(inp, folder)
@@ -183,12 +245,16 @@ def extractVeryNonProblematic(folderPaths=None, maxScore=None, appendToExisting=
                                     if float(scHeur) >= maxScore[heurName]:
                                         heurDetectDict[heurName] += 1
                                 # apply the 3-level-voting system score mix
-                                bestHeurSc = [u'nb', u'strBcks']
-                                highHeurSc = [u'ion', u'punct']
-                                nbOfbestScTrues = sum([1 for hn in bestHeurSc if scoreDict[hn] >= maxScore[hn]])
-                                nbOfHighScTrues = sum([1 for hn in highHeurSc if scoreDict[hn] >= maxScore[hn]])
+                                nbOfbestScTrues, nbOfHighScTrues = getHeurScCount4True(scoreDict, maxScore)
+                                nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses = getHeurScCount4False(scoreDict,
+                                                                                                    maxScoreForFalse)
+                                # make sure there is no high score indicating a problematic SP
+                                if nbOfbestScFalses >= 1 or nbOfHighScFalses >= 3:
+                                    pass
+                                elif nbOfHighScFalses == 2 and nbOfLowScFalses >= 1:
+                                    pass
                                 # if two of the most-precise scores is higher than its threshold, infer the SP is True
-                                if nbOfbestScTrues >= 2:
+                                elif nbOfbestScTrues >= 2:
                                     allSilence = False
                                 # if one of the most-precise scores and at least one high-precision score is higher
                                 # than the threshold, infer the SP is True
@@ -229,10 +295,10 @@ startTime = utilsOs.countTime()
 
 # extract the very problematic
 
-print("PROBLEMATIC - FLAGGED")
-extractVeryProblematic(folderPaths=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY'])
-print("PROBLEMATIC - NOT-FLAGGED")
-extractVeryProblematic(folderPaths=[u'NOT-FLAGGED'])
+# print("PROBLEMATIC - FLAGGED")
+# extractVeryProblematic(folderPaths=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY'])
+# print("PROBLEMATIC - NOT-FLAGGED")
+# extractVeryProblematic(folderPaths=[u'NOT-FLAGGED'])
 
 # extract the not problematic at all
 
@@ -240,6 +306,10 @@ print("NOT-PROBLEMATIC - FLAGGED")
 extractVeryNonProblematic(folderPaths=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY'])
 print("NOT-PROBLEMATIC - NOT-FLAGGED")
 extractVeryNonProblematic(folderPaths=[u'NOT-FLAGGED'])
+
+# just dump in separate files the SPs without the empty lines
+# spPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D1/problematic/'
+# delEmptyLinesAndDump(spPath, u'{0}withoutEmptyLinesWithoutFAheur/'.format(spPath))
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))
