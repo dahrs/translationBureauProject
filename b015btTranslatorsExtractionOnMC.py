@@ -14,8 +14,12 @@ def getTmxFlaggedData(tmxFilePathList):
     """
     Returns the data from the tmx files
     :param tmxFilePathList:
-    :return:
+    :return: the flagged info
     """
+    try:
+        d = ET
+    except NameError:
+        import xml.etree.ElementTree as ET
     for tmxFilePath in tmxFilePathList:
         try:
             tree = ET.parse(tmxFilePath)
