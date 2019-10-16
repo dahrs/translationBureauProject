@@ -67,6 +67,7 @@ else:
 # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
 
+
 # add metadata to the basic scores
 # for foldPath in ["/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/noProblematic/",
 #                  "/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/000manualAnnotation/problematic/",
@@ -125,6 +126,7 @@ for n in range(nbOfIter):
     if modelOutputFolderPath is not None:
         utilsML.dumpModel(classifier, "{0}{1}_{2}.pickle".format(modelOutputFolderPath, scoreType, classifierType))
 
+
     # getModelEval(pathsToTestFeatureFiles, pathsToTestClassificationFiles, classifier, classifBinary)
     gp, gr, a, bp, br = getModelEvalGoodAndBad(pathsToTestFeatureFiles, pathsToTestClassificationFiles, classifier, classifBinary, verbose)
     acumulGoodPrecision += gp
@@ -132,6 +134,7 @@ for n in range(nbOfIter):
     acumulAccuracy += a
     acumulBadPrecision += bp
     acumulBadRecall += br
+
 print(u'\n{0} - {1}_______________________________\n'.format(classifierType, scoreType))
 print("GOOD MEAN precision : ", acumulGoodPrecision/nbOfIter)
 print("GOOD MEAN recall : ", acumulGoodRecall/nbOfIter)

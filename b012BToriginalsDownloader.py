@@ -497,6 +497,7 @@ def downloadSmallNbOfWholeBadNotFlaggedDocs(nbOfDocsToDownload=20):
     """ download the whole document for a small sample of
     documents tagged as not-Flagged but showing bad qual (manual annot) """
     origPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/'
+    # origPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/'
     # open BT session
     session, req = authentificateBtUseRequests()
     time.sleep(5)
