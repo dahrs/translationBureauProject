@@ -409,12 +409,12 @@ def dumpPathsToNotFlaggedFiles():
     notFlaggedFilePaths = b000path.getBtFilePaths(fileFormat=u'tmx', folders=[u'NOT-FLAGGED'])
     notFlaggedFilePaths = [b000path.anonymizePath(filePath) for filePath in notFlaggedFilePaths]
     utilsOs.dumpRawLines(notFlaggedFilePaths,
-                         '/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/notFlaggedPaths.txt',
-                         addNewline=True, rewrite=True)
+            '/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/notFlaggedPaths.txt',
+            addNewline=True, rewrite=True)
 
 
 def getNotFlaggedPaths():
-    pathToFile = '/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/notFlaggedPaths.txt'
+    pathToFile = '/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/notFlaggedPaths.txt'
     with open(pathToFile) as notFlaggedFile:
         notFlaggedFilePaths = [filePath.replace(u'\n', u'') for filePath in notFlaggedFile.readlines()]
     notFlaggedFilePaths = [b000path.desAnonymizePath(filePath) for filePath in notFlaggedFilePaths]
@@ -427,17 +427,17 @@ def searchAndDumpOriginalDocsUrls(allFilePaths=None, session=None):
         allFilePaths = b000path.getBtFilePaths(fileFormat=u'tmx',
                                                folders=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY'])
     # open the reference paths file in order to check if we already found that file's url
-    with open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/reference.paths') as refs:
+    with open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/reference.paths') as refs:
         refsPaths = refs.readlines()
     with open(
-            u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/unindexedReference.paths') as unindRefs:
+            u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/unindexedReference.paths') as unindRefs:
         unindPaths = unindRefs.readlines()
     dejaVusRefPaths = set([b000path.desAnonymizePath(ln.replace(u'\n', u'')) for ln in refsPaths + unindPaths])
     # prepare the files to append the lines
-    fileLoc = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/reference.paths', u'a')
-    unindexedLoc = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/unindexedReference.paths', u'a')
-    enDocsUrls = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/docsUrl.en', u'a')
-    frDocsUrls = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/docsUrl.fr', u'a')
+    fileLoc = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/reference.paths', u'a')
+    unindexedLoc = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/unindexedReference.paths', u'a')
+    enDocsUrls = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/docsUrl.en', u'a')
+    frDocsUrls = open(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/docsUrl.fr', u'a')
     # scrap the web to get the get the document's url where the sentence appears
     if session is None:
         session, reqA = authentificateBtUseRequests()
@@ -496,7 +496,8 @@ def searchAndDumpOriginalDocsUrls(allFilePaths=None, session=None):
 def downloadSmallNbOfWholeBadNotFlaggedDocs(nbOfDocsToDownload=20):
     """ download the whole document for a small sample of
     documents tagged as not-Flagged but showing bad qual (manual annot) """
-    origPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/'
+    origPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/'
+    # origPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/'
     # open BT session
     session, req = authentificateBtUseRequests()
     time.sleep(5)
