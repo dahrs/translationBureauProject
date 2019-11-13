@@ -6,8 +6,11 @@ sys.path.append(u'../utils')
 sys.path.append(u'./utils')
 import utilsOs, utilsML
 from b003heuristics import *
-import numpy as np
-import pandas as pd
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument(u'-s', u'--section', type=int, default=0,
+                    help=u'section of the data to apply the algorithm')
+args = parser.parse_args()
 
 
 # count the time the algorithm takes to run
@@ -27,7 +30,7 @@ pathsToClassificationTsvFiles = ["/u/alfonsda/Documents/workRALI/004tradBureau/0
 
 # paths
 extractingPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/'
-outputPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2/'
+outputPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2randForest/'
 
 # train the models
 # svmClassif = trainSvmModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifGroup, vectorDim=13)
@@ -39,11 +42,19 @@ outputPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction
 
 
 # load the models
-svmClassif = utilsML.loadModel(u'{0}svmBinMod.pickle'.format(outputPath))
-RandFClassif = utilsML.loadModel(u'{0}rfBinMod.pickle'.format(outputPath))
+# svmClassif = utilsML.loadModel(u'{0}svmBinMod.pickle'.format(outputPath))
+randFClassif = utilsML.loadModel(u'{0}rfBinMod.pickle'.format(outputPath))
 
 # get the predictions, extract the sps
-applyClassifierToExtract(RandFClassif, svmClassif, extractingPath, outputPath)
+applyClassifierToExtract(randFClassif, randFClassif, extractingPath, outputPath,
+                         featDim=(60,60), applyOnSection=args.section)
+
+# predict and dump the predict on the BT2 17K-SPs corpus instead of extracting
+# inputScFilePath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.scores"
+# inputScMetaFilePath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.scoresAndMetaData"
+# outputFilePath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.randSvmClassif.pred"
+# applyClassifierToGetPred(randFClassif, svmClassif,
+#                              inputScFilePath, inputScMetaFilePath, outputFilePath, featDim=(60,13))
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

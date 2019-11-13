@@ -5,7 +5,7 @@ import sys
 sys.path.append(u'../utils')
 sys.path.append(u'./utils')
 import utilsOs
-import b000path
+import b000path, b003heuristics
 
 
 def getEnAndFrLines(i, tmxPath):
@@ -73,10 +73,43 @@ def delEmptyLinesAndDump(inPath, outPath):
     return None
 
 
-def getHeurScCount4False(scoreDict, maxScore=None):
-    if maxScore is None:
-        maxScore = {u'nb': 0.5, u'len': 0.35, u'cog': 0.1, u'fa': float(u'-inf'), u'ion': 0.5, u'sw': 0.3, u'spell': 0.25,
-                    u'url': 0.9, u'mono': 0.95, u'strBcks': 0.25, u'punct': 0.5,  u'gibb': 0.1, u'tabl': 0.65}
+
+
+def binaryPredThreeLevelVoting(scoresNonProblmList=None, scoresProblmList=None):
+    """
+    :param scoresNonProblmList: [nbOfbestScTrues, nbOfHighScTrues]
+    :param scoresProblmList: [nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses]
+    :return: 0 if the SP is predicted BAD, 1 if it's predicted GOOD, None if there is silence
+    """
+    # predict bads
+    if scoresProblmList is not None:
+        if scoresProblmList[0] >= 1 or scoresProblmList[1] >= 3:
+            return 0
+        elif scoresProblmList[1] == 2 and scoresProblmList[2] >= 1:
+            return 0
+    # predict goods
+    if scoresNonProblmList is not None:
+        if scoresNonProblmList[0] >= 2:
+            return 1
+        # if one of the most-precise scores and at least one high-precision score is higher
+        # than the threshold, infer the SP is True
+        if scoresNonProblmList[0] == 1 and scoresNonProblmList[1] >= 1:
+            return 1
+    # if nothing can be predicted, return silence
+    return None
+
+
+def getHeurScCount4False(scoreDict, maxScoreForFalse=None):
+    if maxScoreForFalse is None:
+        trash, maxScoreForFalse = b003heuristics.getMaxScores()
+    # if score dict is a list instead of a dict
+    if type(scoreDict) is list:
+        aDict = {}
+        heuristicsList = [u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl', u'strBcks',
+                          u'punct', u'gibb']
+        for heurName, sc in zip(heuristicsList, scoreDict):
+            aDict[heurName] = float(sc)
+        scoreDict = aDict
     # make sure the silence scores were replaced by +inf not -inf
     for k, v in scoreDict.items():
         if v == float('-inf') or v == u'na':
@@ -86,20 +119,19 @@ def getHeurScCount4False(scoreDict, maxScore=None):
     highHeurSc = [u'nb', u'ion', u'sw', u'spell', u'url', u'mono', u'strBcks', u'punct', u'tabl']
     lowHeurSc = [u'cog']
     # get nb of scores
-    nbOfbestScFalses = sum([1 for hn in bestHeurSc if scoreDict[hn] < maxScore[hn]])
-    nbOfHighScFalses = sum([1 for hn in highHeurSc if scoreDict[hn] < maxScore[hn]])
-    nbOfLowScFalses = sum([1 for hn in lowHeurSc if scoreDict[hn] < maxScore[hn]])
+    nbOfbestScFalses = sum([1 for hn in bestHeurSc if scoreDict[hn] < maxScoreForFalse[hn]])
+    nbOfHighScFalses = sum([1 for hn in highHeurSc if scoreDict[hn] < maxScoreForFalse[hn]])
+    nbOfLowScFalses = sum([1 for hn in lowHeurSc if scoreDict[hn] < maxScoreForFalse[hn]])
     return nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses
 
 
-def extractVeryProblematic(folderPaths=None, maxScore=None, appendToExisting=True):
+def extractVeryProblematic(folderPaths=None, maxScoreForFalse=None, appendToExisting=True):
     """extracts the SPs that our heuristics show as having some kind of problem in alignement or quality
     Not to be confused with the "flagged" or "not flagged" corpus   """
     if folderPaths is None:
         folderPaths = [u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY', u'NOT-FLAGGED']
-    if maxScore is None:
-        maxScore = {u'nb': 0.5, u'len': 0.35, u'cog': 0.1, u'fa': float(u'-inf'), u'ion': 0.5, u'sw': 0.3, u'spell': 0.25,
-                    u'url': 0.9, u'mono': 0.95, u'strBcks': 0.25, u'punct': 0.5,  u'gibb': 0.1, u'tabl': 0.65}
+    if maxScoreForFalse is None:
+        trash, maxScoreForFalse = b003heuristics.getMaxScores()
     fileDict = {}
     heurDetectDict = {u'nb': 0, u'len': 0, u'cog': 0, u'fa': 0, u'ion': 0, u'sw': 0, u'spell': 0,
                     u'url': 0, u'mono': 0, u'strBcks': 0, u'punct': 0, u'gibb': 0, u'tabl': 0, u'all': 0, u'total': 0}
@@ -111,7 +143,7 @@ def extractVeryProblematic(folderPaths=None, maxScore=None, appendToExisting=Tru
         # get the reference path
         refPath = u'{0}{1}/reference.tsv'.format(inp, folder)
         # open the score files
-        for heurName in maxScore:
+        for heurName in maxScoreForFalse:
             fileDict[heurName] = open(u'{0}{1}/{2}/score.tsv'.format(inp, folder, heurName))
         with open(refPath) as refFile:
             # open the output files
@@ -135,20 +167,15 @@ def extractVeryProblematic(folderPaths=None, maxScore=None, appendToExisting=Tru
                                     scHeur = float(heurLn[0]) if heurLn[0] != u'na' else float('inf')
                                     scoreDict[heurName] = float(scHeur)
                                     # count nb of lines each heur detected as problematic
-                                    if float(scHeur) < maxScore[heurName]:
+                                    if float(scHeur) < maxScoreForFalse[heurName]:
                                         heurDetectDict[heurName] += 1
                                 # apply the 3-level-voting system score mix
-                                nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses = getHeurScCount4False(scoreDict, maxScore)
+                                nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses = getHeurScCount4False(scoreDict, maxScoreForFalse)
                                 # if one of the most-precise scores is lower than his threshold, infer the SP is false
-                                if nbOfbestScFalses >= 1:
-                                    allSilence = False
-                                # if at least 3 of the high-precision scores is lower than thresh, infer the SP is false
-                                elif nbOfHighScFalses >= 3:
-                                    allSilence = False
-                                elif nbOfHighScFalses == 2 and nbOfLowScFalses >= 1:
-                                    allSilence = False
+                                prediction = binaryPredThreeLevelVoting(
+                                    scoresProblmList=[nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses])
                                 # if the line scores indicate a problematic SP
-                                if not allSilence:
+                                if prediction == 0:
                                     # get the actual sentences
                                     enLn, frLn = getEnAndFrLines(refList[1], refList[0])
                                     # dump to files
@@ -181,9 +208,16 @@ def extractVeryProblematic(folderPaths=None, maxScore=None, appendToExisting=Tru
 
 def getHeurScCount4True(scoreDict, maxScore=None):
     if maxScore is None:
-        maxScore = {u'nb': 1.0, u'len': 0.7, u'cog': 0.2, u'fa': 0.6, u'ion': 0.65, u'sw': 0.9, u'spell': 0.85,
-                    u'url': 0.95, u'mono': float(u'inf'), u'strBcks': 0.65, u'punct': 0.85,  u'gibb': 0.85,
-                    u'tabl': 0.75}
+        maxScore, trash = b003heuristics.getMaxScores()
+    # if score dict is a list instead of a dict
+    if type(scoreDict) is list:
+        aDict = {}
+        heuristicsList = [u'nb', u'cog', u'len', u'fa', u'ion', u'sw', u'spell', u'url', u'mono', u'tabl',
+                          u'strBcks',
+                          u'punct', u'gibb']
+        for heurName, sc in zip(heuristicsList, scoreDict):
+            aDict[heurName] = float(sc)
+        scoreDict = aDict
     # make sure the silence scores were replaced by -inf not +inf
     for k, v in scoreDict.items():
         if v == float('inf') or v == u'na':
@@ -202,11 +236,8 @@ def extractVeryNonProblematic(folderPaths=None, maxScore=None, appendToExisting=
     if folderPaths is None:
         folderPaths = [u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY', u'NOT-FLAGGED']
     if maxScore is None:
-        maxScore = {u'nb': 1.0, u'len': 0.7, u'cog': 0.2, u'fa': 0.6, u'ion': 0.65, u'sw': 0.9, u'spell': 0.85,
-                    u'url': 0.95, u'mono': float(u'inf'), u'strBcks': 0.65, u'punct': 0.85,  u'gibb': 0.85,
-                    u'tabl': 0.75}
-    maxScoreForFalse = {u'nb': 0.5, u'len': 0.35, u'cog': 0.1, u'fa': float(u'-inf'), u'ion': 0.5, u'sw': 0.3,
-            u'spell': 0.25, u'url': 0.9, u'mono': 0.95, u'strBcks': 0.25, u'punct': 0.5,  u'gibb': 0.1, u'tabl': 0.65}
+        maxScore, trash = b003heuristics.getMaxScores()
+    trash, maxScoreForFalse = b003heuristics.getMaxScores()
     fileDict = {}
     heurDetectDict = {u'nb': 0, u'len': 0, u'cog': 0, u'fa': 0, u'ion': 0, u'sw': 0, u'spell': 0,
                     u'url': 0, u'mono': 0, u'strBcks': 0, u'punct': 0, u'gibb': 0, u'tabl': 0, u'all': 0, u'total': 0}
@@ -249,19 +280,11 @@ def extractVeryNonProblematic(folderPaths=None, maxScore=None, appendToExisting=
                                 nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses = getHeurScCount4False(scoreDict,
                                                                                                     maxScoreForFalse)
                                 # make sure there is no high score indicating a problematic SP
-                                if nbOfbestScFalses >= 1 or nbOfHighScFalses >= 3:
-                                    pass
-                                elif nbOfHighScFalses == 2 and nbOfLowScFalses >= 1:
-                                    pass
-                                # if two of the most-precise scores is higher than its threshold, infer the SP is True
-                                elif nbOfbestScTrues >= 2:
-                                    allSilence = False
-                                # if one of the most-precise scores and at least one high-precision score is higher
-                                # than the threshold, infer the SP is True
-                                elif nbOfbestScTrues == 1 and nbOfHighScTrues >= 1:
-                                    allSilence = False
+                                prediction = binaryPredThreeLevelVoting(
+                                    scoresNonProblmList=[nbOfbestScTrues, nbOfHighScTrues],
+                                    scoresProblmList=[nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses])
                                 # if the line scores indicate a not-problematic SP
-                                if not allSilence:
+                                if prediction == 1:
                                     # get the actual sentences
                                     enLn, frLn = getEnAndFrLines(refList[1], refList[0])
                                     # dump to files
@@ -283,11 +306,53 @@ def extractVeryNonProblematic(folderPaths=None, maxScore=None, appendToExisting=
                                     heurDetectDict[u'all'] += 1
                                 # get the next ref line
                                 refLn = refFile.readline()
-        # open the score files
+        # close the score files
         for heurName, heurDict in fileDict.items():
             heurDict.close()
         print(heurDetectDict)
     return None
+
+
+def getAndDumpHeurPredictions(inputFilePath, outputFilePath=None):
+    dictCount = {u"total": 0, u"zeros": 0, u"ones": 0, u"silences": 0}
+    with open(inputFilePath) as scFile:
+        # delete the previous files if need to dump
+        if outputFilePath is not None:
+            utilsOs.deleteAFile(outputFilePath)
+        else:
+            outputFilePath = u"./test"
+        maxScore, maxScoreForFalse = b003heuristics.getMaxScores()
+        with open(outputFilePath, "a") as predFile:
+            # open the score line
+            scLn = scFile.readline()
+            while scLn:
+                # transform string line into score list
+                scList = [float(sc) if sc != u"na" else float("-inf") for sc in scLn.replace(u"\n", u"").split(u'\t')]
+                # apply the 3-level-voting system score mix
+                nbOfbestScTrues, nbOfHighScTrues = getHeurScCount4True(scList, maxScore)
+                nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses = getHeurScCount4False(scList,
+                                                                                           maxScoreForFalse)
+                # make sure there is no high score indicating a problematic SP
+                prediction = binaryPredThreeLevelVoting(
+                    scoresNonProblmList=[nbOfbestScTrues, nbOfHighScTrues],
+                    scoresProblmList=[nbOfbestScFalses, nbOfHighScFalses, nbOfLowScFalses])
+                # dump to external file
+                writablePred = u'{0}\n'.format(prediction) if prediction is not None else u"na\n"
+                if outputFilePath is not None:
+                    predFile.write(writablePred)
+                # count everything
+                dictCount[u"total"] += 1
+                if prediction is None:
+                    dictCount[u"silences"] += 1
+                elif prediction == 0:
+                    dictCount[u"zeros"] += 1
+                elif prediction == 1:
+                    dictCount[u"ones"] += 1
+                # next line
+                scLn = scFile.readline()
+    print(dictCount)
+
+
 
 
 # count the time the algorithm takes to run
@@ -302,14 +367,20 @@ startTime = utilsOs.countTime()
 
 # extract the not problematic at all
 
-print("NOT-PROBLEMATIC - FLAGGED")
-extractVeryNonProblematic(folderPaths=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY'])
-print("NOT-PROBLEMATIC - NOT-FLAGGED")
-extractVeryNonProblematic(folderPaths=[u'NOT-FLAGGED'])
+# print("NOT-PROBLEMATIC - FLAGGED")
+# extractVeryNonProblematic(folderPaths=[u'ALIGNMENT-QUALITY', u'MISALIGNED', u'QUALITY'])
+# print("NOT-PROBLEMATIC - NOT-FLAGGED")
+# extractVeryNonProblematic(folderPaths=[u'NOT-FLAGGED'])
 
 # just dump in separate files the SPs without the empty lines
 # spPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D1/problematic/'
 # delEmptyLinesAndDump(spPath, u'{0}withoutEmptyLinesWithoutFAheur/'.format(spPath))
+
+# get the prediction for a specific file in a separate dumped file
+inputFilePath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.scores"
+outputFilePath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.heur.pred"
+getAndDumpHeurPredictions(inputFilePath, outputFilePath)
+
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

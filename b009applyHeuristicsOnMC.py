@@ -673,9 +673,13 @@ startTime = utilsOs.countTime()
 # inFrPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/bal_train_fr'
 # outPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/bal_train_scoresAndMetaData'
 # 17M train dataset
-inEnPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_en'
-inFrPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_fr'
-outPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_scoresAndMetaData'
+# inEnPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_en'
+# inFrPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_fr'
+# outPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_scoresAndMetaData'
+# 17K BT-annotated as bad
+inEnPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.en'
+inFrPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.fr'
+outPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.scoresAndMetaData'
 applyHeurAndDumpScoresAndMetadata(inEnPath, inFrPath, outPath)
 
 # print the time the algorithm took to run

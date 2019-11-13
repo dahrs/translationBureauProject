@@ -3,13 +3,19 @@
 
 import requests, urllib3, ssl, certifi, getpass
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import NoSuchElementException, StaleElementReferenceException, InvalidSessionIdException, MoveTargetOutOfBoundsException
 import sys, time, os, shutil, json
 from tqdm import tqdm
+import pandas as pd
 import b000path
 sys.path.append(u'../utils')
 sys.path.append(u'./utils')
 import utilsOs, utilsString
-
 
 
 def getUup(path=u'./b011pathUserPassword'):
@@ -24,8 +30,9 @@ def getUup(path=u'./b011pathUserPassword'):
 def authentificateBtUseRequests():
     baseUrl, user, passw = getUup(path=u'./b011pathUserPassword')
     loginUrl = baseUrl.replace(u'/en', u'/session/en')
+    # to be changed for each different computer or when updating firefox, type "what is my user-agent" in search engine
     headers = {
-        u'user-agent': u'Mozilla/5.0 (X11; Linux x86_64; rv:67.0) Gecko/20100101 Firefox/67.0'
+        u'user-agent': u'Mozilla/5.0 (X11; Linux x86_64; rv:70.0) Gecko/20100101 Firefox/70.0'
     }
     loginData = {
         u'LoginForm[username]': user,
@@ -34,8 +41,29 @@ def authentificateBtUseRequests():
         u'LoginForm[rememberMe]': '0'
     }
     session = requests.Session()
-    req = session.post(loginUrl, data=loginData, headers=headers, verify=False)
+    time.sleep(2)
+    req = session.post(loginUrl, data=loginData, headers=headers, verify=False, timeout=5)
     return session, req
+
+
+def authentificateBtUseSelenium():
+    baseUrl, user, passw = getUup(path=u'./b011pathUserPassword')
+    loginUrl = baseUrl.replace(u'/en', u'/session/en')
+    # open session
+    session = webdriver.Firefox(executable_path=u"/u/alfonsda/progs/geckoDriver/geckodriver")
+    session.get(loginUrl)
+    time.sleep(2)
+    # fill fields
+    userId = session.find_element_by_xpath(u'//*[@id="LoginForm_username"]')
+    userId.send_keys(user)
+    time.sleep(1.5)
+    password = session.find_element_by_xpath(u'//*[@id="LoginForm_password"]')
+    password.send_keys(passw)
+    time.sleep(1)
+    # log in
+    logInButton = session.find_element_by_xpath(u'/html/body/div/div/div[6]/form/div[1]/div[3]')
+    logInButton.click()
+    return session
 
 
 def fillForm(clientId, documentSent, session, lang=u'fr'):
@@ -529,7 +557,11 @@ def downloadSmallNbOfWholeBadNotFlaggedDocs(nbOfDocsToDownload=20):
                     if extRef in referenceSet:
                         # download english and french docs
                         enDoc = session.get(urlEn, allow_redirects=True)
+                        print(urlEn)
+                        time.sleep(15)
                         frDoc = session.get(urlFr, allow_redirects=True)
+                        print(urlFr)
+                        time.sleep(15)
                         docFolder = extRef.replace(u'**--**/', u'').replace(u'/', u'*').replace(u'.tmx', u'')
                         utilsOs.createEmptyFolder(u'{0}{1}'.format(origPath, docFolder))
                         # find out which of the english or the french docs are source and target
@@ -549,6 +581,100 @@ def downloadSmallNbOfWholeBadNotFlaggedDocs(nbOfDocsToDownload=20):
                         open(frDocPath, 'wb').write(frDoc.content)
                         # dump the french headers
                         frHeadersPath = u'{0}{1}/{2}.{3}.headers.json'.format(origPath, docFolder, frDocName.split(u'.')[0], frSrcTrgt)
+                        utilsOs.dumpDictToJsonFile(dict(frDoc.headers), frHeadersPath)
+                        time.sleep(2)
+                        # each time we find a not-flagged document with errors, we add one to the counter
+                        counter += 1
+                    # if we achieve the expected number of docs, we break the loop
+                    if counter != 0 and counter == nbOfDocsToDownload:
+                        break
+                    # next line
+                    extRef = extRefFile.readline().replace(u'\n', u'')
+                    urlEn = urlEnF.readline().replace(u'\n', u'')
+                    urlFr = urlFrF.readline().replace(u'\n', u'')
+    session.close()
+    return None
+
+
+def getCommandIdsFromDc23(pathToTsv=None):
+    if pathToTsv is None:
+        dcList = []
+        for dc23Path in [u"/data/rali8/Tmp/rali/bt/burtrad/archive2/DC-23/DC-RS-023 1415.xlsx",
+                         u"/data/rali8/Tmp/rali/bt/burtrad/archive2/DC-23/DC-RS-023 1516.xlsx",
+                         u"/data/rali8/Tmp/rali/bt/burtrad/archive2/DC-23/DC-RS-023 1617.xlsx",
+                         u"/data/rali8/Tmp/rali/bt/burtrad/archive2/DC-23/DC-RS-023 1718.xlsx",
+                         u"/data/rali8/Tmp/rali/bt/burtrad/archive2/DC-23/DC-RS-023 1819.xlsx"]:
+            dc23Df = pd.read_excel(dc23Path)
+            dc23CommandIds = dc23Df[u"Numéro de la commande"].tolist()
+            dcList = dcList + dc23CommandIds
+        return dcList
+    with open(pathToTsv) as tsvFile:
+        dcList = [ln.replace(u"\n", u"") for ln in tsvFile.readlines()]
+    return dcList
+
+
+def downloadNotFlaggedDocsInDC23(nbOfDocsToDownload=1000, dcList=None, referenceSet=None):
+    """ download the whole document for a small sample of
+    documents tagged as not-Flagged and appearing both in
+    the dc-23 metadata file and the BT1 .tmx corpus """
+    origPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/"
+    outPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/"
+    # origPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/'
+    # if we don't have the reference set, make it
+    if referenceSet is None:
+        # get the command order id number from dc 23
+        if dcList is None:
+            dcList = getCommandIdsFromDc23(pathToTsv=None)
+        dcList = set(dcList)
+        # get the reference paths of the not-flagged files
+        with open(u"{0}notFlaggedPaths.txt".format(origPath)) as notFlaggedPathsFile:
+            referenceSet = set([ln.replace(u"\n", u"") for ln in notFlaggedPathsFile.readlines()])
+        # get the intersection of the references and the ones in dc23
+        for ref in tqdm(list(referenceSet)):
+            for dc23Comm in dcList:
+                if u"{0}-".format(dc23Comm) in ref:
+                    referenceSet.remove(ref)
+                    break
+        # dump the intersection
+        utilsOs.dumpRawLines(referenceSet, u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008flaggedOriginalDocsCorpus/intersectDc23AndBT1.tsv")
+    # make sure the reference set is a set
+    else:
+        referenceSet = set(referenceSet)
+    # open BT session
+    session, req = authentificateBtUseRequests()
+    time.sleep(2)
+    # get the reference from the extracted url, if they match the reference from the annotated SPs, download
+    with open(u'{0}reference.paths'.format(origPath)) as extRefFile:
+        with open(u'{0}docsUrl.en'.format(origPath)) as urlEnF:
+            with open(u'{0}docsUrl.fr'.format(origPath)) as urlFrF:
+                extRef = extRefFile.readline().replace(u'\n', u'')
+                urlEn = urlEnF.readline().replace(u'\n', u'')
+                urlFr = urlFrF.readline().replace(u'\n', u'')
+                counter = 0
+                while extRef:
+                    if extRef in referenceSet:
+                        # download english and french docs
+                        enDoc = session.get(urlEn, allow_redirects=True)
+                        frDoc = session.get(urlFr, allow_redirects=True)
+                        docFolder = extRef.replace(u'**--**/', u'').replace(u'/', u'*').replace(u'.tmx', u'')
+                        utilsOs.createEmptyFolder(u'{0}{1}'.format(outPath, docFolder))
+                        # find out which of the english or the french docs are source and target
+                        enSrcTrgt = u'src' if u'en-fr' in docFolder else u'trgt'
+                        frSrcTrgt = u'trgt' if u'en-fr' in docFolder else u'src'
+                        # dump the english document
+                        enDocName = enDoc.headers[u'Content-Disposition'].split(u'filename="')[1].replace(u'"', u'').replace(u' ', u'_')
+                        enDocPath = u'{0}{1}/{2}'.format(outPath, docFolder, enDocName)
+                        open(enDocPath, 'wb').write(enDoc.content)
+                        # dump the english headers
+                        enHeadersPath = u'{0}{1}/{2}.{3}.headers.json'.format(outPath, docFolder, enDocName.split(u'.')[0], enSrcTrgt)
+                        utilsOs.dumpDictToJsonFile(dict(enDoc.headers), enHeadersPath)
+                        time.sleep(2)
+                        # dump the french document
+                        frDocName = frDoc.headers[u'Content-Disposition'].split(u'filename="')[1].replace(u'"', u'').replace(u' ', u'_')
+                        frDocPath = u'{0}{1}/{2}'.format(outPath, docFolder, frDocName)
+                        open(frDocPath, 'wb').write(frDoc.content)
+                        # dump the french headers
+                        frHeadersPath = u'{0}{1}/{2}.{3}.headers.json'.format(outPath, docFolder, frDocName.split(u'.')[0], frSrcTrgt)
                         utilsOs.dumpDictToJsonFile(dict(frDoc.headers), frHeadersPath)
                         time.sleep(2)
                         # each time we find a not-flagged document with errors, we add one to the counter
@@ -579,8 +705,19 @@ startTime = utilsOs.countTime()
 # searchAndDumpOriginalDocsUrls(notFlaggedFilePaths)
 
 # download the whole document for a small sample of documents tagged as not-Flagged but showing bad qual (manual annot)
-downloadSmallNbOfWholeBadNotFlaggedDocs()
+# downloadSmallNbOfWholeBadNotFlaggedDocs()
 
+# get and dump the command ids from dc23
+dcListTsv = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008flaggedOriginalDocsCorpus/dc23CommandIds.tsv"
+# dcList = getCommandIdsFromDc23(pathToTsv=None)
+# utilsOs.dumpRawLines(dcList, dcListTsv)
+# get the list of DC23 commands from the dumped tsv
+dcList = getCommandIdsFromDc23(dcListTsv)
+# download the whole document for 1000 docs in DC23 and in BT1
+interPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008flaggedOriginalDocsCorpus/intersectDc23AndBT1.tsv"
+with open(interPath) as interFile:
+    bt1bt2intersect = [f.replace(u"\n", u"") for f in interFile.readlines()]
+downloadNotFlaggedDocsInDC23(nbOfDocsToDownload=1000, dcList=dcList, referenceSet=bt1bt2intersect)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

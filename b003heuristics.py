@@ -9,6 +9,7 @@ sys.path.append(u'./utils')
 import b000path, utilsOs, utilsString, utilsML
 from collections import Counter
 import numpy as np
+from sklearn import preprocessing
 import torch.tensor as tensor
 import torch.nn as nn
 import torch
@@ -677,6 +678,15 @@ def getContextScores(srcLnIndex, srcLines, trgtLines):
     return [pre0, pre1, post0, post1]
 
 
+def getMaxScores():
+    maxScoreForTrue = {u'nb': 1.0, u'len': 0.7, u'cog': 0.2, u'fa': 0.6, u'ion': 0.65, u'sw': 0.9, u'spell': 0.85,
+                u'url': 0.95, u'mono': float(u'inf'), u'strBcks': 0.65, u'punct': 0.85, u'gibb': 0.85,
+                u'tabl': 0.75}
+    maxScoreForFalse = {u'nb': 0.5, u'len': 0.35, u'cog': 0.1, u'fa': float(u'-inf'), u'ion': 0.5, u'sw': 0.3,
+                        u'spell': 0.25, u'url': 0.9, u'mono': 0.95, u'strBcks': 0.25, u'punct': 0.5, u'gibb': 0.1,
+                        u'tabl': 0.65}
+    return maxScoreForTrue, maxScoreForFalse
+
 ########################################################################
 # META-HEURISTICS TOOLS
 ########################################################################
@@ -869,7 +879,16 @@ def addAndDumpMetaDataToScoreFeatures(folderPath):
             refLn = rf.readline()
 
 
-def getHeurScoresAsList(scoreFolderPath):
+def giveStartFinishIndexes(totalLength, section=0, numberOfSections=12):
+    girth = int(totalLength/numberOfSections)
+    start = section*girth if section != 0 else 0
+    finish = (section+1)*girth
+    if finish+(girth-1) > totalLength:
+        finish = totalLength
+    return start, finish
+
+
+def getHeurScoresAsList(scoreFolderPath, applyToSection=None):
     """ given a path to the folder containing the score files or sub folders, returns an array
     containing all 13 or 60 elements (vector dim) as a feature vector """
     scoreFolderPathList = []
@@ -886,37 +905,65 @@ def getHeurScoresAsList(scoreFolderPath):
         scoreFolderPathList.append(scoreFolderPath)
     # look into each heuristic folder for the heuristic score file
     for flagFolder in scoreFolderPathList:
+        if flagFolder not in openedFilesDict:
+            openedFilesDict[flagFolder] = {}
         for heur in [u'cog', u'fa', u'gibb', u'ion', u'len', u'mono', u'nb', u'punct', u'spell', u'strBcks', u'sw',
                      u'tabl', u'url']:
-            openedFilesDict[heur] = open(u'{0}{1}/score.tsv'.format(flagFolder, heur))
+            openedFilesDict[flagFolder][heur] = open(u'{0}{1}/score.tsv'.format(flagFolder, heur))
     # go line by line, opening the files and appending the scores
-    cogLn = openedFilesDict[u'cog'].readline()
-    while cogLn:
-        # get the heur score for cog
-        scAsFeat13 = [float(cogLn.replace(u'\n', u'').replace(u'na', u'-1.0').split(u'\t')[0])]
-        scAsFeat60 = [float(e) for e in cogLn.replace(u'\n', u'').replace(u'na', u'-1.0').split(u'\t')]
-        # get the heur score for all other features
-        for heur in [u'fa', u'gibb', u'ion', u'len', u'mono', u'nb', u'punct', u'spell', u'strBcks', u'sw',
-                     u'tabl', u'url']:
-            heurLn = openedFilesDict[heur].readline()
-            features = [float(e) for e in heurLn.replace(u'\n', u'').replace(u'na', u'-1.0').split(u'\t')]
-            scAsFeat13 = scAsFeat13+[float(features[0])]
-            scAsFeat60 = scAsFeat60+features
-        # yield the list of feat
-        yield scAsFeat13, scAsFeat60
-        # next line
-        cogLn = openedFilesDict[u'cog'].readline()
-    # close each opened file
-    for heur in openedFilesDict:
-        openedFilesDict[heur].close()
+    for flagFolder in openedFilesDict:
+        # get the total number of lines in the heuristics files
+        with open(u'{0}cog/score.tsv'.format(flagFolder)) as openedFile:
+            totalLength = utilsOs.countLines(openedFile)
+        # get the indexes to apply to just a part of the whole list
+        if applyToSection is None:
+            start, finish = 0, totalLength
+        else:
+            start, finish = giveStartFinishIndexes(totalLength, applyToSection, numberOfSections=12)
+        # counter
+        c = 0
+        # get the first line of an heuristic file, any heuristic (they all have the same length)
+        cogLn = openedFilesDict[flagFolder][u'cog'].readline()
+        while cogLn:
+            # start once we see the start index
+            if c >= start:
+                #########################################################################
+                # get an approximation of how much time there is left
+                currentPlace = c-start
+                if currentPlace % 100000:
+                    finalPlace = finish - start
+                    with open(u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2randForest/temp{0}".format(applyToSection), u"w") as f:
+                        f.write(u"{0}\t{1}\t{2}\t{3}\t{4}\t{5}".format(currentPlace/finalPlace, c, start, finish, currentPlace, finalPlace))
+                #########################################################################
+                # get the heur score for cog
+                scAsFeat13 = [float(cogLn.replace(u'\n', u'').replace(u'na', u'-1.0').split(u'\t')[0])]
+                scAsFeat60 = [float(e) for e in cogLn.replace(u'\n', u'').replace(u'na', u'-1.0').split(u'\t')]
+                # get the heur score for all other features
+                for heur in [u'fa', u'gibb', u'ion', u'len', u'mono', u'nb', u'punct', u'spell', u'strBcks', u'sw',
+                             u'tabl', u'url']:
+                    heurLn = openedFilesDict[flagFolder][heur].readline()
+                    features = [float(e) for e in heurLn.replace(u'\n', u'').replace(u'na', u'-1.0').split(u'\t')]
+                    scAsFeat13 = scAsFeat13+[float(features[0])]
+                    scAsFeat60 = scAsFeat60+features
+                # yield the list of feat
+                yield scAsFeat13, scAsFeat60
+            # next line
+            cogLn = openedFilesDict[flagFolder][u'cog'].readline()
+            c += 1
+            # break the loop once if the finish index is achieved
+            if c >= finish:
+                break
+        # close each opened file
+        for heur in openedFilesDict[flagFolder]:
+            openedFilesDict[flagFolder][heur].close()
 
 
-def getHeurScoresAsFeatures(folderPath):
+def getHeurScoresAsFeatures(folderPath, applyToSection=None):
     '''
     given a path to a folder, returns a list of vectors where
     each heuristic score transformed is transformed into a numpy array
     '''
-    for heurFeat13D, heurFeat60D in getHeurScoresAsList(folderPath):
+    for heurFeat13D, heurFeat60D in getHeurScoresAsList(folderPath, applyToSection):
         feat13DArray = np.asarray(heurFeat13D)
         feat60DArray = np.asarray(heurFeat60D)
         # add 2 arbitrarily chose features: number of bad feat total, nb of good feat total
@@ -925,7 +972,7 @@ def getHeurScoresAsFeatures(folderPath):
         yield feat13DArray, feat60DArray
 
 
-def getSentPairFromRefFile(folderPath):
+def getSentPairFromRefFile(folderPath, applyToSection=None):
     """ returns the sentence pair corresponding to the reference """
     refFolderPathList = []
     flagList = [u'ALIGNMENT-QUALITY', u'QUALITY', u'MISALIGNED', u'NOT-FLAGGED']
@@ -942,27 +989,43 @@ def getSentPairFromRefFile(folderPath):
                 refFoldPath = u'{0}reference.tsv'.format(refFoldPath)
             else:
                 refFoldPath = u'{0}/reference.tsv'.format(refFoldPath)
+        # get the total number of lines in the ref file
+        with open(refFoldPath) as openedFile:
+            totalLength = utilsOs.countLines(openedFile)
+        # get the indexes to apply to just a part of the whole list
+        if applyToSection is None:
+            start, finish = 0, float(u"inf")
+        else:
+            start, finish = giveStartFinishIndexes(totalLength, applyToSection, numberOfSections=12)
         # open the ref file
         with open(refFoldPath) as refFile:
             refLn = refFile.readline()
+            # counter
+            c = 0
             while refLn:
-                refList = refLn.replace(u'\n', u'').split(u'\t')
-                pathToSps = b000path.desAnonymizePath(refList[0])
-                indSp = int(refList[1])
-                with open(u'{0}.en'.format(pathToSps)) as enFile:
-                    with open(u'{0}.fr'.format(pathToSps)) as frFile:
-                        indexFile = 0
-                        enLn = enFile.readline()
-                        frLn = frFile.readline()
-                        while indexFile != indSp:
-                            # next line
+                # start once we see the start index
+                if c >= start:
+                    refList = refLn.replace(u'\n', u'').split(u'\t')
+                    pathToSps = b000path.desAnonymizePath(refList[0])
+                    indSp = int(refList[1])
+                    with open(u'{0}.en'.format(pathToSps)) as enFile:
+                        with open(u'{0}.fr'.format(pathToSps)) as frFile:
+                            indexFile = 0
                             enLn = enFile.readline()
                             frLn = frFile.readline()
-                            # update index
-                            indexFile += 1
-                        yield enLn.replace(u'\n', u''), frLn.replace(u'\n', u''), refLn.replace(u'\n', u'')
+                            while indexFile != indSp:
+                                # next line
+                                enLn = enFile.readline()
+                                frLn = frFile.readline()
+                                # update index
+                                indexFile += 1
+                            yield enLn.replace(u'\n', u''), frLn.replace(u'\n', u''), refLn.replace(u'\n', u'')
                 # next line
                 refLn = refFile.readline()
+                c += 1
+                # break the loop once if the finish index is achieved
+                if c >= finish:
+                    break
 
 
 ########################################################################
@@ -1172,36 +1235,111 @@ def getModelEvalGoodAndBad(listOfPathsToTestFeatureFiles, listOfPathsToTestClass
 
 def applyClassifierToExtract(modelClassifierGood, modelClassifierBad,
                              extractingPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/',
-                             outputPath=None):
+                             outputPath=None, featDim=(60,13), applyOnSection=None):
     """
     apply the trained classifier and extract the good and bad SPs from the corpus
     """
     if outputPath is None:
         outputPath = extractingPath
+    if applyOnSection is None:
+        section = ''
+    else:
+        section = int(applyOnSection)
     # get scores and metadata, browse the lists and arrays
-    for (feat13D, feat60D), (enSent, frSent, ref) in zip(getHeurScoresAsFeatures(extractingPath), getSentPairFromRefFile(extractingPath)):
-        predictForBad = modelClassifierBad.predict(np.asarray([feat13D]))
-        predictForGood = modelClassifierGood.predict(np.asarray([feat60D]))
+    for (feat13D, feat60D), (enSent, frSent, ref) in zip(getHeurScoresAsFeatures(extractingPath, applyOnSection),
+                                                         getSentPairFromRefFile(extractingPath, applyOnSection)):
+        # if we want to change the dimensions
+        if featDim[0] == 13:
+            feat60D = feat13D
+        if featDim[1] == 60:
+            feat13D = feat60D
+        # get the predictions if there is only one model for good and bad
+        if modelClassifierGood == modelClassifierBad:
+            predictForGood = modelClassifierGood.predict(np.asarray([feat60D]))
+            predictForBad = predictForGood
+        # get the predictions if there are two models for good and bad
+        else:
+            predictForGood = modelClassifierGood.predict(np.asarray([feat60D]))
+            predictForBad = modelClassifierBad.predict(np.asarray([feat13D]))
         # use the trained model to detect the bad SPs
         if predictForBad[0] == 0:
             # if the sp is detected as BAD by the model for bad, dump the data
-            utilsOs.appendLineToFile(enSent, u'{0}problematic/extracted.en'.format(outputPath), addNewLine=True)
-            utilsOs.appendLineToFile(frSent, u'{0}problematic/extracted.fr'.format(outputPath), addNewLine=True)
-            utilsOs.appendLineToFile(ref, u'{0}problematic/reference.tsv'.format(outputPath), addNewLine=True)
+            utilsOs.appendLineToFile(enSent, u'{0}problematic/extracted{1}.en'.format(outputPath, section), addNewLine=True)
+            utilsOs.appendLineToFile(frSent, u'{0}problematic/extracted{1}.fr'.format(outputPath, section), addNewLine=True)
+            utilsOs.appendLineToFile(ref, u'{0}problematic/reference{1}.tsv'.format(outputPath, section), addNewLine=True)
             sc13 = u'\t'.join([str(f) for f in feat13D.tolist()])
             sc60 = u'\t'.join([str(f) for f in feat60D.tolist()])
-            utilsOs.appendLineToFile(sc13, u'{0}problematic/scores.tsv'.format(outputPath), addNewLine=True)
-            utilsOs.appendLineToFile(sc60, u'{0}problematic/scoresAndMetaData.tsv'.format(outputPath), addNewLine=True)
+            utilsOs.appendLineToFile(sc13, u'{0}problematic/scores{1}.tsv'.format(outputPath, section), addNewLine=True)
+            utilsOs.appendLineToFile(sc60, u'{0}problematic/scoresAndMetaData{1}.tsv'.format(outputPath, section), addNewLine=True)
         # if not use the trained model to detect good SPs
         else:
             if predictForGood[0] == 1:
                 # if the sp is detected as GOOD by the model for good, dump the data
-                utilsOs.appendLineToFile(enSent, u'{0}noProblematic/extracted.en'.format(outputPath), addNewLine=True)
-                utilsOs.appendLineToFile(frSent, u'{0}noProblematic/extracted.fr'.format(outputPath), addNewLine=True)
-                utilsOs.appendLineToFile(ref, u'{0}noProblematic/reference.tsv'.format(outputPath), addNewLine=True)
+                utilsOs.appendLineToFile(enSent, u'{0}noProblematic/extracted{1}.en'.format(outputPath, section), addNewLine=True)
+                utilsOs.appendLineToFile(frSent, u'{0}noProblematic/extracted{1}.fr'.format(outputPath, section), addNewLine=True)
+                utilsOs.appendLineToFile(ref, u'{0}noProblematic/reference{1}.tsv'.format(outputPath, section), addNewLine=True)
                 sc13 = u'\t'.join([str(f) for f in feat13D.tolist()])
                 sc60 = u'\t'.join([str(f) for f in feat60D.tolist()])
-                utilsOs.appendLineToFile(sc13, u'{0}noProblematic/scores.tsv'.format(outputPath), addNewLine=True)
-                utilsOs.appendLineToFile(sc60, u'{0}noProblematic/scoresAndMetaData.tsv'.format(outputPath), True)
+                utilsOs.appendLineToFile(sc13, u'{0}noProblematic/scores{1}.tsv'.format(outputPath, section), addNewLine=True)
+                utilsOs.appendLineToFile(sc60, u'{0}noProblematic/scoresAndMetaData{1}.tsv'.format(outputPath, section), True)
 
+
+def applyClassifierToGetPred(modelClassifierGood, modelClassifierBad,
+                             inputScFilePath, inputScMetaFilePath, outputFilePath=None, featDim=(60,13)):
+    """
+    apply the trained classifier, predict the good and bad SPs from the corpus and dump the resulting prediction
+    """
+    dictCount = {u"total": 0, u"zeros": 0, u"ones": 0, u"silences": 0}
+    with open(inputScFilePath) as scFile:
+        scoresInList = [scLn.replace(u"\n", u"").split(u"\t") for scLn in scFile.readlines()]
+        for i, scList in enumerate(scoresInList):
+            for ie, sc in enumerate(scList):
+                scoresInList[i][ie] = float(sc) if sc != u"na" else float(-1.0)
+            # transform into array and add 2 arbitrarily chose features: number of bad feat total, nb of good feat total
+            scoresInList[i] = appendAdditionalFeat(np.asarray(scoresInList[i]))
+    with open(inputScMetaFilePath) as scFile:
+        scoresMetaDataInList = [scLn.replace(u"\n", u"").split(u"\t") for scLn in scFile.readlines()]
+        for i, scMtList in enumerate(scoresMetaDataInList):
+            for ie, scMt in enumerate(scMtList):
+                scoresMetaDataInList[i][ie] = float(scMt) if scMt != u"na" else float(-1.0)
+            # transform into array and add 2 arbitrarily chose features: number of bad feat total, nb of good feat total
+            scoresMetaDataInList[i] = appendAdditionalFeat(np.asarray(scoresMetaDataInList[i]))
+    # open the ouput file
+    utilsOs.deleteAFile(outputFilePath)
+    with open(outputFilePath, u"a") as outFile:
+        # get scores and metadata, browse the lists and arrays
+        for feat13D, feat60D in zip(scoresInList, scoresMetaDataInList):
+            # if we want to change the dimensions
+            if featDim[0] == 13:
+                feat60D = feat13D
+            if featDim[1] == 60:
+                feat13D = feat60D
+            # get the predictions if there is only one model for good and bad
+            if modelClassifierGood == modelClassifierBad:
+                predictForGood = modelClassifierGood.predict(np.asarray([feat60D]))
+                predictForBad = predictForGood
+            # get the predictions if there are two models for good and bad
+            else:
+                predictForGood = modelClassifierGood.predict(np.asarray([feat60D]))
+                predictForBad = modelClassifierBad.predict(np.asarray([feat13D]))
+            # count
+            dictCount[u"total"] += 1
+            # use the trained model to detect the bad SPs
+            if predictForBad[0] == 0:
+                # if the sp is detected as GOOD
+                outFile.write(u"0\n")
+                # count
+                dictCount[u"zeros"] += 1
+            # if not use the trained model to detect good SPs
+            else:
+                if predictForGood[0] == 1:
+                    # if the sp is detected as GOOD
+                    outFile.write(u"1\n")
+                    # count
+                    dictCount[u"ones"] += 1
+                else:
+                    # if the sp is silence
+                    outFile.write(u"na\n")
+                    dictCount[u"silences"] += 1
+    print(dictCount)
 

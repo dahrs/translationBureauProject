@@ -56,3 +56,31 @@ def makeLocalFolderPaths(listOfFilePaths):
         localFileList = localFilePath.split(u'/')
         folderPath = localFilePath.replace(localFileList[-1], u'')
         utilsOs.createEmptyFolder(folderPath)
+
+
+def generateCmd(nHours=1, machineList=None):
+    if machineList is None:
+        machineList = [u'octal06', u'octal03', u'octal04', u'octal05', u'octal07', u'octal17', u'ilar01', u'ilar02',
+                        u'bart2', u'bart3', u'bart4', u'bart5', u'bart6', u'bart7', u'bart10',  u'kakia1',
+                        u'kakia2', u'kakib2', u'kakic2', u'kakid1', u'kakid2', u'kakie2', u'kakif1', u'kakif2']
+    schedule = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/NOT-FLAGGED/heurSchedule.json'
+    scheduleDict = utilsOs.openJsonFileAsDict(schedule)
+    scheduleIdList = list(scheduleDict.keys())
+    commandLns = []
+    for machine in machineList:
+        commandLns.append(u'#########################################################')
+        commandLns.append(u'ssh {0}'.format(machine))
+        commandLns.append(u'source .bashrc')
+        commandLns.append(u'cd ~/Documents/workRALI/004tradBureau')
+        simultaneousRuns = 4
+        # if the machine is high end, run more
+        if machine in [u'bart2', u'bart3', u'bart4', u'bart5', u'bart6', u'bart7', u'bart10', u'kakid2']:
+            simultaneousRuns = 6
+        if machine in [u'kakia1', u'kakia2', u'kakic2', u'kakid1', u'kakie2', u'kakif1', u'kakif2']:
+            simultaneousRuns = 8
+        for n in range(simultaneousRuns):
+            commandLns.append(u'python b009applyHeuristicsOnMC.py -ap True -w {0} -li {1} &'.format(n*20, u'*'.join(scheduleIdList[:nHours])))
+            scheduleIdList = [nId for nId in scheduleIdList if nId not in scheduleIdList[:nHours]]
+        # commandLns[-1] = commandLns[-1].replace(u' &', u'')
+        commandLns.append(u'\nENDSSH\n')
+    print(u'\n'.join(commandLns))
