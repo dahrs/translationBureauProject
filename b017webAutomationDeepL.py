@@ -214,9 +214,10 @@ def launchForOneDay(tokLimit=4000,
                     outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/",
                     coffeeBreak=1650):
     """
-    launches the deppL bot for one day's worth
+    launches the deepL bot for one day's worth
     :param tokLimit: maximum number of tokens to treat in the day
     :param outputFolderPath: path to the folder where will be output the files
+
     :param coffeeBreak: time in seconds when to take a break and start a new deppL session
     :return: tokCount: number of total tokens translated
     """
@@ -259,6 +260,8 @@ def launchForOneDay(tokLimit=4000,
                                      u"{0}timestamp.fr".format(outputFolderPath), addNewLine=True)
             # add number of tokens
             tokCount += nbOfTok
+            # add nb of iterations
+            iterCount += 1
             # take a coffee break if it's time
             if coffeeBreak is not None and utilsOs.countTime(start) >= coffeeBreak:
                 session.close()
@@ -273,7 +276,7 @@ def launchForOneDay(tokLimit=4000,
             time.sleep(random.uniform(1.0, 1.5))
         # close the driver
         session.close()
-        return tokCount
+        return tokCount, iterCount
 
 
 def launchForOneWeek(tokLimit=20000,
@@ -288,15 +291,19 @@ def launchForOneWeek(tokLimit=20000,
     """
     dailyTokLimit = int(tokLimit/5.0)
     totalTokCount = 0
-    # take not of the launch day
+    # take note of the launch day
     launchDay = datetime.datetime.today().weekday()
     today = None
     while today != launchDay:
-        tokCount = launchForOneDay(dailyTokLimit, outputFolderPath, coffeeBreak)
+        tokCount, lnCount = launchForOneDay(dailyTokLimit, outputFolderPath, coffeeBreak)
         # break the loop if we do more than the limit
         totalTokCount += tokCount
         if totalTokCount >= tokLimit:
             break
+        # print the day nb and the number of lines translated
+        print(u"\nday : ", datetime.datetime.today().weekday(), u"lines translated : ", lnCount)
+        # wait for approx one day (btw 22 and 25 hours)
+        time.sleep(random.randint(79200, 90000))
         # get what day is today
         today = datetime.datetime.today().weekday()
     return totalTokCount
@@ -308,8 +315,13 @@ startTime = utilsOs.countTime()
 # makeARefFile()
 
 # launch downloader for one day
-launchForOneDay(tokLimit=4000,
-                outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/")
+# launchForOneDay(tokLimit=4000,
+#                 outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/")
+
+# launch downloader for one week
+launchForOneWeek(tokLimit=20000,
+                 outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/",
+                 coffeeBreak=1650)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))
