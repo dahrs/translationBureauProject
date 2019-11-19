@@ -1,19 +1,93 @@
 #!/usr/bin/python
 #-*- coding:utf-8 -*- 
 
+import pickle
 import fastText
 import numpy as np
 import pandas as pd
 import torch
+import torch.nn as nn
 
 import utilsOs, utilsString
+
+
+##################################################################################
+# MODEL HANDLING
+##################################################################################
+
+def dumpModel(model, modelFilePath):
+	'''
+	Using pickle.
+	:param model: sklearn machine learning model
+	:param modelFilePath: path to the output file
+	:return: dumped model
+	'''
+	with open(modelFilePath, u'wb') as modelFile:
+		pickle.dump(model, modelFile)
+
+
+def loadModel(modelFilePath):
+	'''
+	Using pickle.
+	:param modelFilePath: path to the input file
+	:return: load model
+	'''
+	with open(modelFilePath, u'rb') as modelFile:
+		pickleModel = pickle.load(modelFile)
+	return pickleModel
+
+
+##################################################################################
+# MAKE AND MANUPULATE CONFUSION MATRICES
+##################################################################################
+
+
+def transformScoreToBool(sc):
+	# if the pred and real scores are not boolean transform into boolean
+	if type(sc) in [int, np.int64]:
+		if sc in [0, 1]:
+			sc = True if sc == 1 else False
+		else:
+			raise TypeError("the scores must be binary. only 0 and 1 are accepted")
+	elif type(sc) is float:
+		sc = True if sc == 1.0 else False
+	else:
+		raise TypeError("the type is neither a bool, int or float")
+	return sc
+
+
+def populateBinaryConfMatrix(pred, real, confMatrix=None):
+	if confMatrix is None:
+		confMatrix = []
+	# when the matrix is empty
+	if len(confMatrix) == 0:
+		content = np.zeros(shape=(2, 2))
+		confMatrix = pd.DataFrame(content, index=[u'pred pos', u'pred neg'], columns=[u'real pos', u'real neg'])
+	# if the pred and real scores are not boolean transform into boolean
+	pred = transformScoreToBool(pred)
+	# compare and populate
+	if pred == real:
+		if pred == False:
+			# true negative
+			confMatrix[u'real neg'][u'pred neg'] += 1
+		else:
+			# true positive
+			confMatrix[u'real pos'][u'pred pos'] += 1
+	else:
+		if pred == False:
+			# false negative
+			confMatrix[u'real pos'][u'pred neg'] += 1
+		else:
+			# false positive
+			confMatrix[u'real neg'][u'pred pos'] += 1
+	return confMatrix
 
 
 ##################################################################################
 # MAKE NUMPY OBJECTS
 ##################################################################################
 
-def fromTsvToMatrix(path):
+def fromTsvToMatrix(path, justTheNFirstColumns='all'):
 	""" given the path to a tsv file of scores (with no header), transforms them into a numpy array """
 	listOfLists = []
 	with open(path) as heurFile:
@@ -22,7 +96,12 @@ def fromTsvToMatrix(path):
 		while ln:
 			lnList = ln.replace(u'\n', u'').replace(u'na', u'-1.0').split(u'\t')
 			if lnList != '':
-				listOfLists.append([float(sc) for sc in lnList])
+				# take all the columns
+				if justTheNFirstColumns == u'all':
+					listOfLists.append([float(sc) for sc in lnList])
+				else:
+					listOfLists.append([float(sc) for sc in lnList[:justTheNFirstColumns]])
+				# take only the n first columns
 			# next line
 			ln = heurFile.readline()
 	return np.asarray(listOfLists)
@@ -112,7 +191,7 @@ def unifyListOfTestSetsIntoOne(listOfTestFiles, outputUnifiedFilePath=None):
 
 
 ##################################################################################
-#TOKEN DATASETS FOR MACHINE LEARNING MODELS
+# TOKEN DATASETS FOR MACHINE LEARNING MODELS
 ##################################################################################
 
 def makeSimpleTokenDatasetFromTsv(tsvInputFilePath, originalStringColumnName, correctStringColumnName, outputFilePath,
@@ -159,7 +238,7 @@ def makeSimpleTokenDatasetFromTsv(tsvInputFilePath, originalStringColumnName, co
 
 
 ##################################################################################
-#EMBEDDING NEAREST NEIGHBOURS
+# EMBEDDING NEAREST NEIGHBOURS
 ##################################################################################
 
 class ftTools:
@@ -234,22 +313,24 @@ class FastTextNN:
 # FEED FORWARD NEURAL NETWORK
 ##################################################################################
 
-class Feedforward(torch.nn.Module):
-	def __init__(self, input_size, hidden_size):
-		super(Feedforward, self).__init__()
-		self.input_size = input_size
-		self.hidden_size = hidden_size
-		self.fc1 = torch.nn.Linear(self.input_size, self.hidden_size)
-		self.relu = torch.nn.ReLU()
-		self.fc2 = torch.nn.Linear(self.hidden_size, 1)
-		self.sigmoid = torch.nn.Sigmoid()
+class FeedforwardNeuralNetModel(nn.Module):
+	""" from  www.deeplearningwizard.com/deep_learning/practical_pytorch/pytorch_feedforward_neuralnetwork/ """
+	def __init__(self, input_dim, hidden_dim, output_dim):
+		super(FeedforwardNeuralNetModel, self).__init__()
+		# Linear function
+		self.fc1 = nn.Linear(input_dim, hidden_dim)
+		# Non-linearity
+		self.sigmoid = nn.Sigmoid()
+		# Linear function (readout)
+		self.fc2 = nn.Linear(hidden_dim, output_dim)
 
 	def forward(self, x):
-		try:
-			hidden = self.fc1(x)
-		except RuntimeError:
-			hidden = self.fc1(x.float())
-		relu = self.relu(hidden)
-		output = self.fc2(relu)
-		output = self.sigmoid(output)
-		return output
+		# Linear function  # LINEAR
+		out = self.fc1(x)
+		# Non-linearity  # NON-LINEAR
+		out = self.sigmoid(out)
+		# Linear function (readout)  # LINEAR
+		out = self.fc2(out)
+		return out
+
+

@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-import re, codecs, nltk, itertools
+import re, codecs, nltk, itertools, time, datetime, random
 from langdetect import detect
 from nltk.metrics import distance
 from nltk.tokenize import word_tokenize
@@ -12,6 +12,11 @@ import numpy as np
 import multiprocessing as mp
 import utilsDataStruct
 import utilsOs
+from tkinter import Tk
+from tkinter import TclError
+from selenium import webdriver
+from selenium.common.exceptions import NoSuchElementException
+from googletrans import Translator
 
 
 ##################################################################################
@@ -482,6 +487,11 @@ def englishOrFrench(string):
     if (frenchTokScore + frenchNgramScore) < (englishTokScore + englishNgramScore):
         return u'fr'
     return u'en'
+
+
+def googleTranslateLangDetection(string):
+    translator = Translator()
+    return translator.detect(string)
 
 
 ##################################################################################
@@ -1051,6 +1061,222 @@ def naiveNgramSpellChecker(string, n=3, lang=u'en'):
         len([ngrm for ngrm in correctedStringNgramList if ngrm not in stringTok3gramList])) / float(
         len(stringTok3gramList))
     return u' '.join(correctedStringNgramList), correctedNgramScore
+
+
+##################################################################################
+# TRANSLATORS
+##################################################################################
+
+def googletransLibTransl(string, srcLang=u"en", trgtLang=u"fr"):
+    """
+    translates a string from a src language to a target language
+    the language codes appear in googletrans.LANGUAGES
+    :param string: string to be translated
+    :param srcLang: language code for the source (e.g., 'en', 'fr', 'es', 'de', 'it', 'ja', 'la', 'hi', 'zh-cn')
+    :param trgtLang: language code for the target
+    :return: the string translated into the target language
+    """
+    translator = Translator()
+    return translator.translate(string, src=srcLang, dest=trgtLang).text
+
+
+def langSelectClicker(session, langSelectXpath, langOptionXpath):
+    # click on the language selector
+    langSelector = session.find_element_by_xpath(langSelectXpath)
+    langSelector.click()
+    time.sleep(random.uniform(0.7, 1.1))
+    # click on the english language option
+    lang = session.find_element_by_xpath(langOptionXpath)
+    lang.click()
+    time.sleep(random.uniform(0.9, 1.5))
+    return session
+
+
+def selectLangDeepL(session, srcLang=u'en'):
+    """
+    given a language and its classification as src or trgt
+    selects the right language for the combination en-fr or fr-en
+    :param session: selenium opened session
+    :param srcLang: language to click on as source
+    :return: session: selenium session with the selection made
+    """
+    srcLangSelectXpath = u"/html/body/div[2]/div[1]/div[1]/div[2]/div[1]/div/button/div"
+    trgtLangSelectXpath = u"/html/body/div[2]/div[1]/div[1]/div[3]/div[1]/div/button/div"
+    if srcLang == u"en":
+        srcXpath = u"//div[2]/div[1]/div/div/button[@dl-value='EN']"
+        trgtXpath = u"//div[3]/div[1]/div/div/button[@dl-value='FR']"
+    elif srcLang == u"fr":
+        srcXpath = u"//div[2]/div[1]/div/div/button[@dl-value='FR']"
+        trgtXpath = u"//div[3]/div[1]/div/div/button[@dl-value='EN']"
+    # select language for the source
+    session = langSelectClicker(session, srcLangSelectXpath, srcXpath)
+    # select language for the target
+    session = langSelectClicker(session, trgtLangSelectXpath, trgtXpath)
+    return session
+
+
+def deepLSeleniumTranslEnFr(stringOrListOfString, sourceLang=u"en", noAlternatives=True):
+    """
+    Given a string of list of strings returns the translation
+    :param stringOrListOfString: string or list of strings to be translated
+    :param sourceLang: language of the source string(s) (en or fr)
+    :return: the string(s) translated
+    """
+    finalTranslations = []
+    if type(stringOrListOfString) is str:
+        stringOrListOfString = [stringOrListOfString]
+    # count the time
+    start = utilsOs.countTime()
+    # info
+    deepLUrl = u"https://www.deepl.com/translator"
+    # open the driver
+    session = webdriver.Firefox()
+    session.get(deepLUrl)
+    time.sleep(random.uniform(1.3, 3.1))
+    # select english as source in deepL
+    session = selectLangDeepL(session, sourceLang)
+    for srcString in stringOrListOfString:
+        translAndAlt = []
+        # click on the source text area and paste the english sentence
+        textArea = session.find_element_by_xpath(u"/html/body/div[2]/div[1]/div[1]/div[2]/div[2]/div/textarea")
+        textArea.click()
+        time.sleep(random.uniform(0.4, 0.9))
+        textArea.clear()
+        textArea.send_keys(srcString)
+        # click on the copy to clipboard button to copy the target text
+        cpButton = session.find_element_by_xpath(u"/html/body/div[2]/div[1]/div[1]/div[3]/div[3]/div[3]/div[1]/button")
+        time.sleep(random.uniform(0.2, 0.7))
+        cpButton.click()
+        mainTransl = None
+        # close the tkinter window
+        tkinterRoot = Tk()
+        tkinterRoot.withdraw()
+        while mainTransl is None:
+            time.sleep(random.uniform(0.5, 0.8))
+            cpButton.click()
+            time.sleep(random.uniform(1.2, 1.9))
+            try:
+                mainTransl = tkinterRoot.clipboard_get()
+                break
+            except TclError:
+                pass
+        # get the text from the clipboard
+        mainTransl = tkinterRoot.clipboard_get()
+        print(1111, mainTransl)
+        if noAlternatives is True:
+            translAndAlt = mainTransl
+        else:
+            translAndAlt.append(mainTransl)
+            # look for alternative translations
+            for n in range(2, 10):
+                try:
+                    alt = session.find_element_by_xpath(
+                        u"/html/body/div[2]/div[1]/div[1]/div[3]/div[3]/div[2]/p[{0}]/button[1]".format(n))
+                    translAndAlt.append(alt.text)
+                    print(2222, translAndAlt)
+                except NoSuchElementException:
+                    break
+        # take a coffee break if it's been near half an hour
+        if utilsOs.countTime(start) >= 1650:
+            session.close()
+            time.sleep(random.uniform(60, 80))
+            start = utilsOs.countTime()
+            # open the driver
+            session = webdriver.Firefox()
+            session.get(deepLUrl)
+            time.sleep(random.uniform(1.3, 3.1))
+            # select english as source in deepL
+            session = selectLangDeepL(session, sourceLang)
+        # delete the content of the text area
+        textArea.click()
+        time.sleep(random.uniform(0.3, 0.6))
+        textArea.clear()
+        # add to the final list of translations
+        finalTranslations.append(translAndAlt)
+    session.close()
+    return finalTranslations
+
+
+def googleTranslateSeleniumEnFr(stringOrListOfString, sourceLang=u"en", noAlternatives=True):
+    """
+    Given a string of list of strings returns the translation
+    :param stringOrListOfString: string or list of strings to be translated
+    :param sourceLang: language of the source string(s) (en or fr)
+    :return: the string(s) translated
+    """
+    finalTranslations = []
+    if type(stringOrListOfString) is str:
+        stringOrListOfString = [stringOrListOfString]
+    # count the time
+    start = utilsOs.countTime()
+    # info
+    deepLUrl = u"https://www.deepl.com/translator"
+    # open the driver
+    session = webdriver.Firefox()
+    session.get(deepLUrl)
+    time.sleep(random.uniform(1.3, 3.1))
+    # select english as source in deepL
+    session = selectLangDeepL(session, sourceLang)
+    for srcString in stringOrListOfString:
+        translAndAlt = []
+        # click on the source text area and paste the english sentence
+        textArea = session.find_element_by_xpath(u"/html/body/div[2]/div[1]/div[1]/div[2]/div[2]/div/textarea")
+        textArea.click()
+        time.sleep(random.uniform(0.4, 0.9))
+        textArea.clear()
+        textArea.send_keys(srcString)
+        # click on the copy to clipboard button to copy the target text
+        cpButton = session.find_element_by_xpath(u"/html/body/div[2]/div[1]/div[1]/div[3]/div[3]/div[3]/div[1]/button")
+        time.sleep(random.uniform(0.2, 0.7))
+        cpButton.click()
+        mainTransl = None
+        # close the tkinter window
+        tkinterRoot = Tk()
+        tkinterRoot.withdraw()
+        while mainTransl is None:
+            time.sleep(random.uniform(0.5, 0.8))
+            cpButton.click()
+            time.sleep(random.uniform(1.2, 1.9))
+            try:
+                mainTransl = tkinterRoot.clipboard_get()
+                break
+            except TclError:
+                pass
+        # get the text from the clipboard
+        mainTransl = tkinterRoot.clipboard_get()
+        if noAlternatives is True:
+            translAndAlt = mainTransl
+        else:
+            translAndAlt.append(mainTransl)
+            # look for alternative translations
+            for n in range(2, 10):
+                try:
+                    alt = session.find_element_by_xpath(
+                        u"/html/body/div[2]/div[1]/div[1]/div[3]/div[3]/div[2]/p[{0}]/button[1]".format(n))
+                    translAndAlt.append(alt.text)
+                    print(2222, translAndAlt)
+                except NoSuchElementException:
+                    break
+        # take a coffee break if it's been near half an hour
+        if utilsOs.countTime(start) >= 1650:
+            session.close()
+            time.sleep(random.uniform(60, 80))
+            start = utilsOs.countTime()
+            # open the driver
+            session = webdriver.Firefox()
+            session.get(deepLUrl)
+            time.sleep(random.uniform(1.3, 3.1))
+            # select english as source in deepL
+            session = selectLangDeepL(session, sourceLang)
+        # delete the content of the text area
+        textArea.click()
+        time.sleep(random.uniform(0.3, 0.6))
+        textArea.clear()
+        # add to the final list of translations
+        finalTranslations.append(translAndAlt)
+    session.close()
+    return finalTranslations
+
 
 
 ##################################################################################

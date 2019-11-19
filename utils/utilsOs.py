@@ -4,6 +4,7 @@
 
 import os, sys, shutil, json, codecs, gzip, time
 import pandas as pd
+from datetime import datetime
 
 ##################################################################################
 # FOLDERS
@@ -45,7 +46,10 @@ def getContentOfFolder(folderPath):
 	'''
 	Gets a list of all the files present in a specific folder
 	'''
-	return [file for file in os.listdir(folderPath)]
+	try:
+		return [file for file in os.listdir(folderPath)]
+	except FileNotFoundError:
+		return None
 
 
 def goDeepGetFiles(folderPath, fileList=[], format=None):
@@ -312,11 +316,12 @@ def deleteFileContent(pathToFile, openAnAppendFile=False):
 	openedFile.close()
 	if openAnAppendFile != False:
 		openedFile = codecs.open(pathToFile, 'a', encoding='utf8')
-	return openedFile
+		return openedFile
 
 
 def appendLineToFile(stringLine, filePath, addNewLine=True):
 	if theFileExists(filePath) != True:
+		createEmptyFolder(filePath.replace(filePath.split(u"/")[-1], u""))
 		with open(filePath, 'w') as emptyFile:
 			emptyFile.write(u'')
 	if addNewLine == True:
@@ -325,10 +330,40 @@ def appendLineToFile(stringLine, filePath, addNewLine=True):
 		file.write(stringLine)
 
 
+def appendMultLinesToFile(linesList, filePath, addNewLine=True):
+	with open(filePath, 'a') as file:
+		for stringLine in linesList:
+			if addNewLine == True:
+				stringLine = u'{0}\n'.format(stringLine)
+			file.write(stringLine)
+
+
 def countLines(openedFile):
 	for i, l in enumerate(openedFile):
 		pass
 	return i + 1
+
+
+def getFileTimestampMetadata(pathToFile):
+	"""
+	gives the human-readable time of access, modification and file creation
+	:param pathToFile: string path to the file
+	:return: accessTime, modificationTime, change_creationTime
+	"""
+	accessTime = os.path.getatime(pathToFile)
+	# depending on the OS (Unix or Windows) the modification and creation time might get inverted
+	modificationTime = os.path.getmtime(pathToFile)
+	change_creationTime = os.path.getctime(pathToFile)
+	# change if needed
+	if modificationTime < change_creationTime:
+		temp = float(change_creationTime)
+		change_creationTime = modificationTime
+		modificationTime = temp
+	# transform into human readeable
+	accessTime = datetime.fromtimestamp(accessTime).strftime('%Y-%m-%d %H:%M:%S')
+	modificationTime = datetime.fromtimestamp(modificationTime).strftime('%Y-%m-%d %H:%M:%S')
+	change_creationTime = datetime.fromtimestamp(change_creationTime).strftime('%Y-%m-%d %H:%M:%S')
+	return accessTime, modificationTime, change_creationTime
 
 
 ##################################################################################
