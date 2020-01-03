@@ -429,6 +429,38 @@ def countNbSpInTmx(pathsList):
     print(sps)
 
 
+def findNbOfTagsInHtml(htmlFilePath, tagStringName):
+    with open(htmlFilePath) as htmlFile:
+        html = htmlFile.read()
+    soup = BeautifulSoup(html, 'html.parser')
+    allTags = soup.find_all(tagStringName)
+    # eliminate empty spaces
+    for tagEl in list(allTags):
+        tagText = tagEl.text
+        nonWhiteSpaceText = (tagText).replace(u" ", u"").replace(u"\t", u"").replace(u"\n", u"").replace(u"\ufeff", u"")
+        if bool(nonWhiteSpaceText) is False:
+            allTags.remove(tagEl)
+    # count the sub-sentences inside the paragraphs
+    if tagStringName == u"p":
+        nbSent = 0
+        for tagEl in list(allTags):
+            tagText = tagEl.text
+            allSpans = tagEl.find_all(u"span")
+            # count span sentences and in-between sentences
+            for spanEl in allSpans:
+                tagText = tagText.replace(spanEl.text, u"***---***")
+            tagList = tagText.split(u"***---***")
+            if u"***---***" in tagText:
+                nbSent += len(tagList) - 1
+            else:
+                nbSent += 1
+        return nbSent
+    # return the nb of tags
+    return len(allTags)
+
+
+
+
 ########################################################################
 
 # count the time the algorithm takes to run
@@ -437,16 +469,16 @@ startTime = utilsOs.countTime()
 
 # docsPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/'
 # docsPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/FLAGGED/'
-docsPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/'
+# docsPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/'
 
 # selectNRandomFlaggedOrigDocs(n=10)
 
-pathList = convertDocFilesToHtml(docsPath, dump=False, fileFormat=u"txt")
+# pathList = convertDocFilesToHtml(docsPath, dump=False, fileFormat=u"txt")
 
 # highlightHtmlAlign([u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/FLAGGED/QUALITY*032-IND_AFF_AND_NORTH_DEV*en-fr*9550529/9550529_001_FR_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT/9550529_001_FR_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT.txt',
 #                     u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/FLAGGED/QUALITY*032-IND_AFF_AND_NORTH_DEV*en-fr*9550529/9550529_001_EN_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT/9550529_001_EN_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT.txt"])
 
-highlightHtmlAlign(pathList)
+# highlightHtmlAlign(pathList)
 
 ########################################################################3
 # pathsList = utilsOs.goDeepGetFiles(u'/data/rali8/Tmp/rali/bt/burtrad/archive2/DC-24/', fileList=[], format=None)
@@ -455,6 +487,22 @@ highlightHtmlAlign(pathList)
 # pathsList = [f for f in pathsList if u'QUALITY' in f]
 # print(len(pathsList))
 # # countNbSpInTmx(pathsList)
+
+### COUNT THE NB OF SP, NOT FOUND SENT and REMNANTS
+howMuchTmxIsInOrig = []
+intersectionPaths = utilsOs.goDeepGetFiles(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/', fileList=[], format=u".html")
+for htmlFilePath in intersectionPaths:
+    # get the rough number of elements
+    inOrig = findNbOfTagsInHtml(htmlFilePath, u"p")
+    inOrigAndTmx = findNbOfTagsInHtml(htmlFilePath, u"span")
+    inOrigNotTmx = inOrig - inOrigAndTmx
+    with open(htmlFilePath.replace(u".highlight.html", u".remnant")) as remnFile:
+        inTmx = utilsOs.countLines(remnFile) + inOrigAndTmx
+    # calculate how many sentences from the tmx appear in the orig file
+    ratioTmxInOrig = float(inOrigAndTmx)/float(inOrig)
+    print(ratioTmxInOrig)
+    howMuchTmxIsInOrig.append(ratioTmxInOrig)
+print(u"MEAN = ", sum(howMuchTmxIsInOrig)/len(howMuchTmxIsInOrig))
 #########################################################################3
 
 # print the time the algorithm took to run

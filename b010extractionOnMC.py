@@ -322,6 +322,8 @@ def getAndDumpHeurPredictions(inputFilePath, outputFilePath=None):
         else:
             outputFilePath = u"./test"
         maxScore, maxScoreForFalse = b003heuristics.getMaxScores()
+        with open(outputFilePath, "w") as predFile:
+            predFile.write("")
         with open(outputFilePath, "a") as predFile:
             # open the score line
             scLn = scFile.readline()

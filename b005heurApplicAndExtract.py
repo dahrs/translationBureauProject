@@ -7,11 +7,66 @@ import sys
 sys.path.append(u'../utils')
 sys.path.append(u'./utils')
 import b000path, utilsOs, utilsString
+from random import randint
 from b003heuristics import *
 
 ########################################################################
 # HEURISTIC APPLICATION
 ########################################################################
+
+def pickNRandomly(pathToSourceEnFile, pathToEnOutputFile, n=17000):
+    dejaVus = set([])
+    # maxSelect = utilsOs.countLines(pathToSourceEnFile)
+    maxSelect = 500000
+    # source paths
+    pathToSourceFrFile = pathToSourceEnFile.replace(".en", ".fr")
+    folderPath = "/".join(pathToSourceEnFile.split("/")[:-1])
+    pathToRefFile = "{0}/reference.tsv".format(folderPath)
+    pathToScFile = "{0}/scores.tsv".format(folderPath)
+    # output paths
+    pathToFrOutputFile = pathToEnOutputFile.replace(".en", ".fr")
+    folderOutPath = "/".join(pathToEnOutputFile.split("/")[:-1])
+    pathToRefOutputFile = "{0}/reference.tsv".format(folderOutPath)
+    pathToScOutputFile = "{0}/scores.tsv".format(folderOutPath)
+    # delete previous content of the output files
+    for outPf in [pathToEnOutputFile, pathToFrOutputFile, pathToRefOutputFile, pathToScOutputFile]:
+        with open(outPf, "w") as outF:
+            outF.write("")
+    # open the output files
+    with open(pathToEnOutputFile, "a") as enOutFile:
+        with open(pathToFrOutputFile, "a") as frOutFile:
+            with open(pathToRefOutputFile, "a") as refOutFile:
+                with open(pathToScOutputFile, "a") as scOutFile:
+                    # because the source files are probably too large, open them for each random line
+                    for nb in range(n):
+                        # if nb%10 == 0:
+                        #     print(nb)
+                        # get a random index indicating the line to take
+                        randomInd = randint(0, int(maxSelect/n)*nb)
+                        while randomInd in dejaVus:
+                            randomInd = randint(0, maxSelect)
+                        dejaVus.add(randomInd)
+                        currentInd = 0
+                        # open source paths
+                        with open(pathToSourceEnFile) as enSrcFile:
+                            with open(pathToSourceFrFile) as frSrcFile:
+                                with open(pathToRefFile) as refSrcFile:
+                                    with open(pathToScFile) as scSrcFile:
+                                        enLn = enSrcFile.readline()
+                                        frLn = frSrcFile.readline()
+                                        refLn = refSrcFile.readline()
+                                        scLn = scSrcFile.readline()
+                                        while currentInd != randomInd:
+                                            enLn = enSrcFile.readline()
+                                            frLn = frSrcFile.readline()
+                                            refLn = refSrcFile.readline()
+                                            scLn = scSrcFile.readline()
+                                            currentInd += 1
+                                        # write out the lines
+                                        enOutFile.write(enLn)
+                                        frOutFile.write(frLn)
+                                        refOutFile.write(refLn)
+                                        scOutFile.write(scLn)
 
 
 def addToDict(extractedSp, filePath, index, extrType=0):
@@ -272,6 +327,7 @@ def randomSPselectionForAnnotation(enPath, frPath, refPath, scPath, outputFolder
         utilsOs.appendLineToFile(scLn, u'{0}scores.tsv'.format(outputFolderPath), addNewLine=False)
     return None
 
+
     # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
 
@@ -288,18 +344,23 @@ startTime = utilsOs.countTime()
 #     randomlyExtractAndDumpHeuristicallyExtracted(extractedSp, extractionSize=100, subsetName=subsetName)
 
 
-# if we already tuned the heuristics, applied them to the MC and now we wish to select random SPs to annotate them
-paths = [u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/problematic/withoutEmptyLinesWithoutFAheur/',
-         u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/noProblematic/']
-outFoldPaths = [u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/problematic/',
-                u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/noProblematic/']
-randomSPselectionForAnnotation(u'{0}extracted.en'.format(paths[0]), u'{0}extracted.fr'.format(paths[0]),
-                               u'{0}reference.tsv'.format(paths[0]), u'{0}scores.tsv'.format(paths[0]),
-                               outFoldPaths[0], nbSp=150)
+# # if we already tuned the heuristics, applied them to the MC and now we wish to select random SPs to annotate them
+# paths = [u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/problematic/withoutEmptyLinesWithoutFAheur/',
+#          u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/noProblematic/']
+# outFoldPaths = [u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/problematic/',
+#                 u'/u/alfonsda/Documents/workRALI/004tradBureau/007corpusExtraction/sampleSelection/noProblematic/']
+# randomSPselectionForAnnotation(u'{0}extracted.en'.format(paths[0]), u'{0}extracted.fr'.format(paths[0]),
+#                                u'{0}reference.tsv'.format(paths[0]), u'{0}scores.tsv'.format(paths[0]),
+#                                outFoldPaths[0], nbSp=150)
 
 # randomSPselectionForAnnotation(u'{0}extracted.en'.format(paths[1]), u'{0}extracted.fr'.format(paths[1]),
 #                                u'{0}reference.tsv'.format(paths[1]), u'{0}scores.tsv'.format(paths[1]),
 #                                outFoldPaths[1], nbSp=150)
+
+
+# make a subset of 17K no problematic based on the original non problematic heuristic output
+foldPath = "/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D1/noProblematic/"
+pickNRandomly("{0}extracted.en".format(foldPath), "{0}17kRandom/extracted.en".format(foldPath), n=17867)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

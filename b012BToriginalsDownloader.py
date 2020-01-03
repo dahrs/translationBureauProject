@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding:utf-8 -*-
 
-import requests, urllib3, ssl, certifi, getpass
+import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 from selenium import webdriver
 from selenium.webdriver.common.by import By

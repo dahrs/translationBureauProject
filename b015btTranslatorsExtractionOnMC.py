@@ -89,6 +89,10 @@ def getInfoFromArchiv1File(archive1Path):
         return None
 
 
+# count the time the algorithm takes to run
+startTime = utilsOs.countTime()
+
+
 docsPath = u'{0}DC-24/'.format(b000path.getBtOriginalDocsPath())
 btExtractPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT1/'
 
@@ -160,16 +164,6 @@ for flag in utilsOs.getContentOfFolder(docsPath):
                         # # get the metadata from the txtFile
                         # for txtData in getTxtFlaggedData([u'{0}{1}'.format(commandPath, tf) for tf in txtFiles]):
                         #     (origDocName, flaggedAs, timestamp, flaggedAtInd) = txtData
-
-
-
-
-
-# count the time the algorithm takes to run
-startTime = utilsOs.countTime()
-
-
-
 
 
 # print the time the algorithm took to run

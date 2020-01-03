@@ -972,6 +972,18 @@ def getHeurScoresAsFeatures(folderPath, applyToSection=None):
         yield feat13DArray, feat60DArray
 
 
+def findSafeFileEncoding(filePath):
+    for enc in ["utf-8", "ISO-8859-1", "ISO-8859-2"]:
+        with open(filePath, encoding=enc) as file:
+            try:
+                content = file.read()
+                content = None
+                return enc
+            except UnicodeDecodeError:
+                pass
+    return None
+
+
 def getSentPairFromRefFile(folderPath, applyToSection=None):
     """ returns the sentence pair corresponding to the reference """
     refFolderPathList = []
@@ -997,6 +1009,7 @@ def getSentPairFromRefFile(folderPath, applyToSection=None):
             start, finish = 0, float(u"inf")
         else:
             start, finish = giveStartFinishIndexes(totalLength, applyToSection, numberOfSections=12)
+        breakIt = False
         # open the ref file
         with open(refFoldPath) as refFile:
             refLn = refFile.readline()
@@ -1008,17 +1021,31 @@ def getSentPairFromRefFile(folderPath, applyToSection=None):
                     refList = refLn.replace(u'\n', u'').split(u'\t')
                     pathToSps = b000path.desAnonymizePath(refList[0])
                     indSp = int(refList[1])
-                    with open(u'{0}.en'.format(pathToSps)) as enFile:
-                        with open(u'{0}.fr'.format(pathToSps)) as frFile:
+                    # find the right encoding to avoid encoding errors
+                    enEnc = findSafeFileEncoding(u'{0}.en'.format(pathToSps))
+                    frEnc = findSafeFileEncoding(u'{0}.fr'.format(pathToSps))
+                    if enEnc is None or frEnc is None:
+                        break
+                    # open the english and french file line by line
+                    with open(u'{0}.en'.format(pathToSps), encoding=enEnc) as enFile:
+                        with open(u'{0}.fr'.format(pathToSps), encoding=frEnc) as frFile:
                             indexFile = 0
                             enLn = enFile.readline()
                             frLn = frFile.readline()
                             while indexFile != indSp:
                                 # next line
-                                enLn = enFile.readline()
-                                frLn = frFile.readline()
+                                try:
+                                    enLn = enFile.readline()
+                                    frLn = frFile.readline()
+                                except UnicodeDecodeError:
+                                    breakIt = True
+                                    break
                                 # update index
                                 indexFile += 1
+                            if breakIt is True:
+                                breakIt = False
+                                break
+                            # yield the line content
                             yield enLn.replace(u'\n', u''), frLn.replace(u'\n', u''), refLn.replace(u'\n', u'')
                 # next line
                 refLn = refFile.readline()
@@ -1249,9 +1276,9 @@ def applyClassifierToExtract(modelClassifierGood, modelClassifierBad,
     for (feat13D, feat60D), (enSent, frSent, ref) in zip(getHeurScoresAsFeatures(extractingPath, applyOnSection),
                                                          getSentPairFromRefFile(extractingPath, applyOnSection)):
         # if we want to change the dimensions
-        if featDim[0] == 13:
+        if featDim[0] in [13, 15]:
             feat60D = feat13D
-        if featDim[1] == 60:
+        if featDim[1] in [60, 62]:
             feat13D = feat60D
         # get the predictions if there is only one model for good and bad
         if modelClassifierGood == modelClassifierBad:

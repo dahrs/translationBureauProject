@@ -8,7 +8,7 @@ import time, datetime, random, b000path, utilsOs
 from tkinter import Tk
 from tkinter import TclError
 from selenium import webdriver
-from selenium.common.exceptions import NoSuchElementException
+from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException
 
 
 def authentificateBtUseSelenium(user, passw, session=None):
@@ -92,7 +92,14 @@ def translateOneLang(session, srcLang, langSent, nbTok, translAndAlt):
     # click on the copy to clipboard button to copy the target text
     cpButton = session.find_element_by_xpath(u"/html/body/div[2]/div[1]/div[1]/div[3]/div[3]/div[3]/div[1]/button")
     time.sleep(random.uniform(0.2, 0.7))
-    cpButton.click()
+    # if the button is viewable, click
+    try:
+        cpButton.click()
+    # otherwise scroll down before clicking
+    except ElementClickInterceptedException:
+        # Scroll down to bottom
+        session.execute_script('window.scrollTo(0, document.body.scrollHeight);')
+        cpButton.click()
     mainTransl = None
     # close the tkinter window
     tkinterRoot = Tk()
@@ -276,14 +283,15 @@ def launchForOneDay(tokLimit=4000,
             time.sleep(random.uniform(1.0, 1.5))
         # close the driver
         session.close()
-        return tokCount, iterCount
+        time.sleep(random.uniform(10.0, 15.0))
+    return tokCount, iterCount
 
 
 def launchForOneWeek(tokLimit=20000,
                      outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/",
                      coffeeBreak=1650):
     """
-
+    launches the one day launch during the business days of the week
     :param tokLimit: maximum number of tokens to translate
     :param outputFolderPath:
     :param coffeeBreak:
@@ -295,13 +303,15 @@ def launchForOneWeek(tokLimit=20000,
     launchDay = datetime.datetime.today().weekday()
     today = None
     while today != launchDay:
-        tokCount, lnCount = launchForOneDay(dailyTokLimit, outputFolderPath, coffeeBreak)
-        # break the loop if we do more than the limit
-        totalTokCount += tokCount
-        if totalTokCount >= tokLimit:
-            break
-        # print the day nb and the number of lines translated
-        print(u"\nday : ", datetime.datetime.today().weekday(), u"lines translated : ", lnCount)
+        # launch only on business days
+        if today not in [5, 6]:
+            tokCount, lnCount = launchForOneDay(dailyTokLimit, outputFolderPath, coffeeBreak)
+            # break the loop if we do more than the limit
+            totalTokCount += tokCount
+            if totalTokCount >= tokLimit:
+                break
+            # print the day nb and the number of lines translated
+            print(u"\nday : ", datetime.datetime.today().weekday(), u"lines translated : ", lnCount)
         # wait for approx one day (btw 22 and 25 hours)
         time.sleep(random.randint(79200, 90000))
         # get what day is today
@@ -318,11 +328,16 @@ startTime = utilsOs.countTime()
 # launchForOneDay(tokLimit=4000,
 #                 outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/")
 
-# launch downloader for one week
-launchForOneWeek(tokLimit=20000,
-                 outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/",
-                 coffeeBreak=1650)
+# # launch downloader for one week
+# launchForOneWeek(tokLimit=20000,
+#                  outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/",
+#                  coffeeBreak=1650)
 
+# launch downloader until stopped
+while True:
+    launchForOneWeek(tokLimit=20000,
+                     outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/",
+                     coffeeBreak=1650)
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))
 

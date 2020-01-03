@@ -667,7 +667,7 @@ startTime = utilsOs.countTime()
 
 
 
-# apply the heuristics score to shivendra's train set
+# # apply the heuristics score to shivendra's train set
 # 7M train dataset
 # inEnPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/bal_train_en'
 # inFrPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/bal_train_fr'
@@ -676,11 +676,17 @@ startTime = utilsOs.countTime()
 # inEnPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_en'
 # inFrPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_fr'
 # outPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_scoresAndMetaData'
-# 17K BT-annotated as bad
-inEnPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.en'
-inFrPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.fr'
-outPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.scoresAndMetaData'
-applyHeurAndDumpScoresAndMetadata(inEnPath, inFrPath, outPath)
+# # 17K BT-annotated as bad
+# inEnPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.en'
+# inFrPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.fr'
+# outPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.scoresAndMetaData'
+# applyHeurAndDumpScoresAndMetadata(inEnPath, inFrPath, outPath)
+
+# # apply the heuristics score to 17K randomly extracted fron D1 "no problematic"
+# inEnPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D1/noProblematic/17kRandom/extracted.en'
+# inFrPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D1/noProblematic/17kRandom/extracted.fr'
+# outPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D1/noProblematic/17kRandom/extracted.scoresAndMetaData'
+# applyHeurAndDumpScoresAndMetadata(inEnPath, inFrPath, outPath)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

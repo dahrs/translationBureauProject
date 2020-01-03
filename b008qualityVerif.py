@@ -6,7 +6,6 @@ sys.path.append(u'../utils')
 sys.path.append(u'./utils')
 import utilsOs
 from b003heuristics import *
-from scipy.stats import pearsonr
 import numpy as np
 import pandas as pd
 
@@ -586,6 +585,83 @@ def checkOneHeuristicQualAgainstManEval(annotFolderPathList, heuristicId, discar
     print(u'{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(thresholdLimit, precision, recall, f1, accuracy, silenceRate))
 
 
+# compare to human annot
+def comparePredictionsToGoldStandard(pathPred, pathGold, countSilenceAsBadlyPredicted=True):
+    confMatrix = []
+    with open(pathPred) as predFile:
+        with open(pathGold) as goldFile:
+            pred = predFile.readline().replace(u"\n", u"")
+            gold = goldFile.readline().replace(u"\n", u"")
+            while pred:
+                # make pred and gold comparable
+                gold = getAnnotationScore(gold, focus=u'all', negativesOnly=False)
+                # if the prediction is a silence
+                if pred == u"na":
+                    if countSilenceAsBadlyPredicted is True:
+                        if gold is None:
+                            pred = None
+                        else:
+                            pred = False if gold is True else True
+                    else:
+                        pred = None
+                # if the prediction is a number
+                elif int(pred) == 1:
+                    pred = True
+                else:
+                    pred = False
+                # compare the two
+                confMatrix = populateConfMatrix(pred, gold, confMatrix)
+                # next line
+                pred = predFile.readline().replace(u"\n", u"")
+                gold = goldFile.readline().replace(u"\n", u"")
+    getPrecisionRecallAccuracy(confMatrix, True)
+    getInversePrecisionRecallAccuracy(confMatrix, True)
+
+
+def checkTmopAgainstAnnotatedCorpusFile(tmopPaths, annotationPath):
+    # if there is only one tmop pred path, put it in a list
+    if type(tmopPaths) is str:
+        tmopPaths = [tmopPaths]
+    # open the manual annotation file
+    with open(annotationPath) as annotFile:
+        # save the gold annot in a list
+        annotList = []
+        annotLn = annotFile.readline()
+        while annotLn:
+            # annotation score
+            annotScore = getAnnotationScore(annotLn.replace(u"\n", u""))
+            # add to the list
+            annotList.append([annotScore, None])
+            # next line
+            annotLn = annotFile.readline()
+    for tPath in tmopPaths:
+        tmopPred = True if u"accept_" in tPath else False
+        # open the tmop prediction file
+        with open(tPath) as tmopPredFile:
+            # get the index of the accepted/rejected lines
+            tmopLn = tmopPredFile.readline()
+            while tmopLn:
+                index = int(tmopLn.split(u'\t')[0])
+                annotList[index][1] = tmopPred
+                # next line
+                tmopLn = tmopPredFile.readline()
+    # complete the annot list if one amongst accepter/rejected is missing
+    if len(tmopPaths) != 1:
+        tmopPred = False if tmopPred is True else True
+        annotList = map(lambda x: [x[0], tmopPred] if x[1] is None else x, annotList)
+    # make the confusion matrix
+    confMatrx = []
+    for annotPred in annotList:
+        print(annotPred)
+        confMatrx = populateConfMatrix(annotPred[1], annotPred[0], confMatrx)
+    # print
+    print(confMatrx, u'\n')
+    print(getPrecisionRecallAccuracy(confMatrx), u'\n')
+    print(getInversePrecisionRecallAccuracy(confMatrx))
+
+
+
+
 # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
 
@@ -602,7 +678,20 @@ annotatedFolderPathList = [u'./002manuallyAnnotated/', u'./003negativeNaiveExtra
 #         checkOneHeuristicQualAgainstManEval(annotatedFolderPathList, heurTupl[1], False, threshold, focus=u'all', inverseScores=False)
 
 # check the extractors on the annotated corpus
-checkHeuristicsAgainstAnnotatedCorpusFile(annotatedFolderPathList, discardTableOfContent=False, inverseScores=True)
+# checkHeuristicsAgainstAnnotatedCorpusFile(annotatedFolderPathList, discardTableOfContent=False, inverseScores=True)
+
+# check a prediction file against the annotated corpus 2021
+# predFilePath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/sample2021/train7Msample2021randSvmClassif.pred"
+# goldFilePath = u"/u/alfonsda/Documents/workRALI/004tradBureau/002manuallyAnnotated/wholeAnnotated2021SP/sampleAnnotation.tsv"
+# comparePredictionsToGoldStandard(predFilePath, goldFilePath, countSilenceAsBadlyPredicted=True)
+
+# check the TMOP results on the 2021 annotated corpus
+tmopPathAccept = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/TMOP/output/output2021noWordAlign/accept_TwentyNo__sample.en"
+tmopPathReject = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/TMOP/output/output2021noWordAlign/reject_TwentyNo__sample.en"
+# tmopPathAccept = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/TMOP/output/accept_TwentyNo__sample.en"
+# tmopPathReject = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/TMOP/output/reject_TwentyNo__sample.en"
+annotPath = u"/u/alfonsda/Documents/workRALI/004tradBureau/002manuallyAnnotated/wholeAnnotated2021SP/sampleAnnotation.tsv"
+checkTmopAgainstAnnotatedCorpusFile([tmopPathAccept, tmopPathReject], annotPath)
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))
