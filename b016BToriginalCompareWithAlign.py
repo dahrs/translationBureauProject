@@ -167,6 +167,7 @@ def findTheAlignFiles(path):
     # if we found more than one, return None
     return None, None
 
+
 def guessLang(htmlLns, enLns, frLns, counter, flaggedEn, flaggedFr):
     enSet = list2Set(enLns)
     frSet = list2Set(frLns)
@@ -459,6 +460,153 @@ def findNbOfTagsInHtml(htmlFilePath, tagStringName):
     return len(allTags)
 
 
+def tenMoreLines(ln, openFile, ind, fileIndexes, fileSentences):
+    for x in range(10):
+        if ln:
+            fileIndexes.append(ind)
+            fileSentences.append(ln)
+            # next line
+            ind += 1
+            ln = openFile.readline()
+    return ln, openFile, ind, fileIndexes, fileSentences
+
+
+def getData(alignaInd, i, aFileIndexes, aFileSentences, aCuts, aSent, aRef):
+    if alignaInd is None:
+        aSent.append(u"***∅***")
+        return float("inf"), aFileIndexes, aFileSentences, aCuts, aSent, aRef
+    if alignaInd in aFileIndexes:
+        whereItIs = aFileIndexes.index(alignaInd)
+        # get data
+        if i != 0:
+            aCuts.append(len(" ".join(aSent)))
+        aSent.append(aFileSentences[whereItIs].replace(u"\n", u""))
+        aRef.append(alignaInd)
+        # delete gotten data
+        del aFileIndexes[whereItIs]
+        del aFileSentences[whereItIs]
+    else:
+        while alignaInd not in aFileIndexes:
+            aLn, aFile, aIndex, aFileIndexes, aFileSentences = tenMoreLines(aLn, aFile,
+                                                                                      aIndex,
+                                                                                      aFileIndexes,
+                                                                                      aFileSentences)
+            if len(aFileIndexes) >= 500:
+                break
+        try:
+            whereItIs = aFileIndexes.index(alignaInd)
+            # get data
+            if i != 0:
+                aCuts.append(len(" ".join(aSent)))
+            aSent.append(aFileSentences[whereItIs].replace(u"\n", u""))
+            aRef.append(alignaInd)
+            # delete gotten data
+            del aFileIndexes[whereItIs]
+            del aFileSentences[whereItIs]
+        except ValueError:
+            whereItIs = None
+    return whereItIs, aFileIndexes, aFileSentences, aCuts, aSent, aRef
+
+
+def getYasaAlign(srcFilePath, trgtFilePath, outputFolderPath):
+    """
+    use YASA to align two parallel files and output the result in a human readeable fashion
+    :param srcFilePath: path to the source file
+    :param trgtFilePath: path to the target file
+    :param outputFolderPath:
+    :return:
+    """
+    # apply the yasa script
+    subprocess.call(["/u/alfonsda/Documents/workRALI/004tradBureau/yasa-master/src/yasa", "-i", "o", "-o", "a",
+                     srcFilePath, trgtFilePath, u"{0}yasa.output.arcadeformat".format(outputFolderPath)])
+    subprocess.call(["/u/alfonsda/Documents/workRALI/004tradBureau/yasa-master/src/yasa", "-i", "o", "-o", "r",
+                     srcFilePath, trgtFilePath, u"{0}yasa.output.raliformat".format(outputFolderPath)])
+    # open the arcade format and get the index of the aligned sentences
+    indexInfo = []
+    with open(u"{0}yasa.output.arcadeformat".format(outputFolderPath)) as arcadeFile:
+        with open(u"{0}yasa.output.raliformat".format(outputFolderPath)) as raliFile:
+            # first line
+            arcadeLn = arcadeFile.readline()
+            raliLn = raliFile.readline()
+            while arcadeLn:
+                # split the different sections of the output data
+                arcadeSplit = arcadeLn.split(u'"')
+                raliSplit = raliLn.split(u" ")
+                # get the line indexes and score
+                indexSect = arcadeSplit[1].split(";")
+                indexSrc = [int(s)-1 if s != "" else None for s in indexSect[0].split(" ")]
+                indexTgrt = [int(s)-1 if s != "" else None for s in indexSect[1].split(" ")]
+                arcadeScore = float(arcadeSplit[3])
+                raliScore = float(raliSplit[1].replace(u"\n", ""))
+                indexInfo.append({u"src": indexSrc, "trgt": indexTgrt, "scores": [arcadeScore, raliScore]})
+                # next line
+                arcadeLn = arcadeFile.readline()
+                raliLn = raliFile.readline()
+    # prepare the output files
+    srcRefOutputPath = u"{0}yasa.output.source.reference".format(outputFolderPath)
+    srcOutputPath = u"{0}yasa.output.source".format(outputFolderPath)
+    srcOutputPathCutIndex = u"{0}yasa.output.source.cut.index".format(outputFolderPath)
+    trgtRefOutputPath = u"{0}yasa.output.target.reference".format(outputFolderPath)
+    trgtOutputPath = u"{0}yasa.output.target".format(outputFolderPath)
+    trgtOutputPathCutIndex = u"{0}yasa.output.target.cut.index".format(outputFolderPath)
+    scoreOutputPath = u"{0}yasa.output.score".format(outputFolderPath)
+    for filePath in [srcRefOutputPath, srcOutputPath, srcOutputPathCutIndex, trgtRefOutputPath, trgtOutputPath,
+                     trgtOutputPathCutIndex, scoreOutputPath]:
+        with open(filePath, u"w") as openFile:
+            openFile.write("")
+    # browse the index list
+    srcFileIndexes, srcFileSentences, srcIndex = [], [], 0
+    trgtFileIndexes, trgtFileSentences, trgtIndex = [], [], 0
+    with open(srcFilePath) as srcFile:
+        # prepare the window of sentences for the source file
+        srcLn = srcFile.readline()
+        srcLn, srcFile, srcIndex, srcFileIndexes, srcFileSentences = tenMoreLines(srcLn, srcFile, srcIndex,
+                                                                                  srcFileIndexes, srcFileSentences)
+        with open(trgtFilePath) as trgtFile:
+            # prepare the window of sentences for the source file
+            trgtLn = trgtFile.readline()
+            trgtLn, trgtFile, trgtIndex, trgtFileIndexes, trgtFileSentences = tenMoreLines(trgtLn, trgtFile, trgtIndex,
+                                                                                    trgtFileIndexes, trgtFileSentences)
+            # browse the aling index data
+            for alignDict in indexInfo:
+                srcCuts, srcSent, srcRef, trgtCuts, trgtSent, trgtRef = [], [], [], [], [], []
+                # src data
+                for i, alignSrcInd in enumerate(alignDict["src"]):
+                    whereItIs, srcFileIndexes, srcFileSentences, srcCuts, srcSent, srcRef = getData(alignSrcInd, i,
+                                                                                                        srcFileIndexes,
+                                                                                                        srcFileSentences,
+                                                                                                        srcCuts, srcSent,
+                                                                                                        srcRef)
+
+                # dump all src data
+                if whereItIs is not None:
+                    with open(srcRefOutputPath, "a") as refFile:
+                        refFile.write(u"{0}\t{1}\n".format(srcFilePath, srcRef))
+                    with open(srcOutputPath, "a") as srcSentFile:
+                        srcSentFile.write(u"{0}\n".format(u" ".join(srcSent)))
+                    with open(srcOutputPathCutIndex, "a") as cutsFile:
+                        cutsFile.write(u"{0}\n".format(srcCuts))
+                # trgt data
+                for i, alignTrgtInd in enumerate(alignDict["trgt"]):
+                    whereItIs, trgtFileIndexes, trgtFileSentences, trgtCuts, trgtSent, trgtRef = getData(alignTrgtInd, i,
+                                                                                                    trgtFileIndexes,
+                                                                                                    trgtFileSentences,
+                                                                                                    trgtCuts, trgtSent,
+                                                                                                    trgtRef)
+                # dump all trgt data
+                if whereItIs is not None:
+                    with open(trgtRefOutputPath, "a") as refFile:
+                        refFile.write(u"{0}\t{1}\n".format(trgtFilePath, trgtRef))
+                    with open(trgtOutputPath, "a") as trgtSentFile:
+                        trgtSentFile.write(u"{0}\n".format(u" ".join(trgtSent)))
+                    with open(trgtOutputPathCutIndex, "a") as cutsFile:
+                        cutsFile.write(u"{0}\n".format(trgtCuts))
+                # dump the scores
+                with open(scoreOutputPath, "a") as refFile:
+                    refFile.write(u"{0}\n".format(alignDict["scores"]))
+                    
+
+
 
 
 ########################################################################
@@ -488,22 +636,29 @@ startTime = utilsOs.countTime()
 # print(len(pathsList))
 # # countNbSpInTmx(pathsList)
 
-### COUNT THE NB OF SP, NOT FOUND SENT and REMNANTS
-howMuchTmxIsInOrig = []
-intersectionPaths = utilsOs.goDeepGetFiles(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/', fileList=[], format=u".html")
-for htmlFilePath in intersectionPaths:
-    # get the rough number of elements
-    inOrig = findNbOfTagsInHtml(htmlFilePath, u"p")
-    inOrigAndTmx = findNbOfTagsInHtml(htmlFilePath, u"span")
-    inOrigNotTmx = inOrig - inOrigAndTmx
-    with open(htmlFilePath.replace(u".highlight.html", u".remnant")) as remnFile:
-        inTmx = utilsOs.countLines(remnFile) + inOrigAndTmx
-    # calculate how many sentences from the tmx appear in the orig file
-    ratioTmxInOrig = float(inOrigAndTmx)/float(inOrig)
-    print(ratioTmxInOrig)
-    howMuchTmxIsInOrig.append(ratioTmxInOrig)
-print(u"MEAN = ", sum(howMuchTmxIsInOrig)/len(howMuchTmxIsInOrig))
+# ### COUNT THE NB OF SP, NOT FOUND SENT and REMNANTS
+# howMuchTmxIsInOrig = []
+# intersectionPaths = utilsOs.goDeepGetFiles(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/', fileList=[], format=u".html")
+# for htmlFilePath in intersectionPaths:
+#     # get the rough number of elements
+#     inOrig = findNbOfTagsInHtml(htmlFilePath, u"p")
+#     inOrigAndTmx = findNbOfTagsInHtml(htmlFilePath, u"span")
+#     inOrigNotTmx = inOrig - inOrigAndTmx
+#     with open(htmlFilePath.replace(u".highlight.html", u".remnant")) as remnFile:
+#         inTmx = utilsOs.countLines(remnFile) + inOrigAndTmx
+#     # calculate how many sentences from the tmx appear in the orig file
+#     ratioTmxInOrig = float(inOrigAndTmx)/float(inOrig)
+#     print(ratioTmxInOrig)
+#     howMuchTmxIsInOrig.append(ratioTmxInOrig)
+# print(u"MEAN = ", sum(howMuchTmxIsInOrig)/len(howMuchTmxIsInOrig))
 #########################################################################3
+getYasaAlign("/u/alfonsda/Documents/workRALI/004tradBureau/yasa/testA.txt",
+             "/u/alfonsda/Documents/workRALI/004tradBureau/yasa/testB.txt",
+             "/u/alfonsda/Documents/workRALI/004tradBureau/yasa/yasaOrigDocsOutput/")
+##### ALIGN USING YASA
+
+################################
+
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

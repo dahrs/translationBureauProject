@@ -304,7 +304,7 @@ def launchForOneWeek(tokLimit=20000,
     today = None
     while today != launchDay:
         # launch only on business days
-        if today not in [5, 6]:
+        if today not in [2, 4]: # not on wednesdays / fridays[2, 4] # not on weekends : [5, 6]
             tokCount, lnCount = launchForOneDay(dailyTokLimit, outputFolderPath, coffeeBreak)
             # break the loop if we do more than the limit
             totalTokCount += tokCount
