@@ -5,11 +5,11 @@ import sys
 sys.path.append(u'../utils')
 sys.path.append(u'./utils')
 import subprocess, os
-import b000path, utilsOs
+import b000path, utilsOs, utilsString
 from bs4 import BeautifulSoup
 from random import randint
 from shutil import copyfile
-import xml.etree.ElementTree as ET
+from nltk.metrics import distance
 
 
 def getTmxFlaggedData(tmxFilePathList):
@@ -431,6 +431,7 @@ def countNbSpInTmx(pathsList):
 
 
 def findNbOfTagsInHtml(htmlFilePath, tagStringName):
+    allSent, tagSent = [], []
     with open(htmlFilePath) as htmlFile:
         html = htmlFile.read()
     soup = BeautifulSoup(html, 'html.parser')
@@ -449,15 +450,95 @@ def findNbOfTagsInHtml(htmlFilePath, tagStringName):
             allSpans = tagEl.find_all(u"span")
             # count span sentences and in-between sentences
             for spanEl in allSpans:
+                allSent.append(spanEl.text)
+                tagSent.append((spanEl.text))
                 tagText = tagText.replace(spanEl.text, u"***---***")
             tagList = tagText.split(u"***---***")
+            allSent += [s for s in tagList if s not in [u"", " ", "  ", "\t", "\n"]]
             if u"***---***" in tagText:
                 nbSent += len(tagList) - 1
             else:
                 nbSent += 1
+                allSent.append(tagText)
         return nbSent
     # return the nb of tags
     return len(allTags)
+
+
+def getSentences(htmlFilePath):
+    allSent, commonSent = [], []
+    with open(htmlFilePath) as htmlFile:
+        html = htmlFile.read()
+    soup = BeautifulSoup(html, 'html.parser')
+    allTags = soup.find_all(u"p")
+    # eliminate empty spaces
+    for tagEl in list(allTags):
+        tagText = tagEl.text
+        nonWhiteSpaceText = (tagText).replace(u" ", u"").replace(u"\t", u"").replace(u"\n", u"").replace(u"\ufeff", u"")
+        if bool(nonWhiteSpaceText) is False:
+            allTags.remove(tagEl)
+    # count the sub-sentences inside the paragraphs
+    for tagEl in list(allTags):
+        tagText = tagEl.text
+        allSpans = tagEl.find_all(u"span")
+        # get span sentences
+        for spanEl in allSpans:
+            allSent.append(spanEl.text)
+            commonSent.append((spanEl.text))
+        # get in-between sentences
+        tagList = tagText.split(u"***---***")
+        if len(tagList) != 0 and len([s for s in tagList if s not in [u"", " ", "  ", "\t", "\n"]]) != 0:
+            allSent += [s for s in tagList if s not in [u"", " ", "  ", "\t", "\n"]]
+        # get non span sentences
+        else:
+            allSent.append(tagText)
+    # get remnant sentences
+    with open(htmlFilePath.replace(".highlight.html", ".remnant")) as remnFile:
+        tmxExclusivSent = [s.replace("\n", "") for s in remnFile.readlines()]
+    # finish adding to sent
+    origExclusivSent = [s for s in allSent if s not in set(commonSent)]
+    allSent += tmxExclusivSent
+    # return the nb of tags
+    return allSent, origExclusivSent, commonSent, tmxExclusivSent
+
+
+def getTypeOfMismatch(htmlFilePath):
+    typeOfMismatch = {"elision in tmx": 0, "augmentation in tmx": 0, "displacement": 0, "deletion in tmx": 0}
+    allSent, origExclusivSent, commonSent, tmxExclusivSent = getSentences(htmlFilePath)
+    origExclusivSent, tmxExclusivSent = set(origExclusivSent), set(tmxExclusivSent)
+    for origSent in origExclusivSent:
+        mostSimilarTmxSent = [float("-inf"), None, 0]
+        the = None
+        for tmxSent in tmxExclusivSent:
+            # origTmxDist = distance.edit_distance(origSent, tmxSent)
+            correspond, origNgrams, tmxNgrams = utilsString.makeNgramInterceptionList(origSent, tmxSent, ngramSize=6,
+                                                                                       returnNgramsLists=True)
+            origTmxSimil = len(correspond)
+            if origTmxSimil > mostSimilarTmxSent[0]:
+                mostSimilarTmxSent = [origTmxSimil, tmxSent, origNgrams, tmxNgrams]
+                the = tmxSent
+        if mostSimilarTmxSent[1] is not None and len(origNgrams) != 0:
+            # both orig and tmx sent have more than 80% ngrams in common
+            ngramSimilSc = (mostSimilarTmxSent[0]*2)/(len(mostSimilarTmxSent[2])+len(mostSimilarTmxSent[3]))
+            if ngramSimilSc >= 0.8:
+                if len(tmxSent) in range(len(origSent) - 3, len(origSent) + 4) and tmxNgrams[0] != origNgrams[0] and tmxNgrams[-1] != origNgrams[-1]:
+                    typeOfMismatch["displacement"] += 1
+                    # print(111, repr(origSent))
+                    # print(222, repr(the))
+                elif len(tmxSent) <= len(origSent):
+                    typeOfMismatch["elision in tmx"] += 1
+                elif len(tmxSent) > len(origSent):
+                    typeOfMismatch["augmentation in tmx"] += 1
+            # the orig and tmx sents ressemble somehow, between 50 and 79%:
+            elif ngramSimilSc >= 0.5:
+                typeOfMismatch["displacement"] += 1
+            # if they're are too dissimilar classify them as a deletion
+            else:
+                typeOfMismatch["deletion in tmx"] += 1
+        else:
+            typeOfMismatch["deletion in tmx"] += 1
+    return typeOfMismatch
+
 
 
 def tenMoreLines(ln, openFile, ind, fileIndexes, fileSentences):
@@ -636,27 +717,38 @@ startTime = utilsOs.countTime()
 # print(len(pathsList))
 # # countNbSpInTmx(pathsList)
 
-# ### COUNT THE NB OF SP, NOT FOUND SENT and REMNANTS
-# howMuchTmxIsInOrig = []
-# intersectionPaths = utilsOs.goDeepGetFiles(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/', fileList=[], format=u".html")
-# for htmlFilePath in intersectionPaths:
-#     # get the rough number of elements
-#     inOrig = findNbOfTagsInHtml(htmlFilePath, u"p")
-#     inOrigAndTmx = findNbOfTagsInHtml(htmlFilePath, u"span")
-#     inOrigNotTmx = inOrig - inOrigAndTmx
-#     with open(htmlFilePath.replace(u".highlight.html", u".remnant")) as remnFile:
-#         inTmx = utilsOs.countLines(remnFile) + inOrigAndTmx
-#     # calculate how many sentences from the tmx appear in the orig file
-#     ratioTmxInOrig = float(inOrigAndTmx)/float(inOrig)
-#     print(ratioTmxInOrig)
-#     howMuchTmxIsInOrig.append(ratioTmxInOrig)
-# print(u"MEAN = ", sum(howMuchTmxIsInOrig)/len(howMuchTmxIsInOrig))
-#########################################################################3
-getYasaAlign("/u/alfonsda/Documents/workRALI/004tradBureau/yasa/testA.txt",
-             "/u/alfonsda/Documents/workRALI/004tradBureau/yasa/testB.txt",
-             "/u/alfonsda/Documents/workRALI/004tradBureau/yasa/yasaOrigDocsOutput/")
-##### ALIGN USING YASA
+### COUNT THE NB OF SP, NOT FOUND SENT and REMNANTS
+howMuchTmxIsInOrig = []
+# intersectionPaths = ["/data/rali5/sans-bkp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/NOT-FLAGGED*046-National_Film_Board_of_Canada*en-fr*7840302-308045/7840302_EN_7835255_TG_IT_EN/7840302_EN_7835255_TG_IT_EN.txt.highlight.html"]
+intersectionPaths = utilsOs.goDeepGetFiles(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/',
+                                           fileList=[], format=u".html")
+wholeMismatch = {"elision in tmx": 0, "augmentation in tmx": 0, "displacement": 0, "deletion in tmx": 0}
 
+for ind, htmlFilePath in enumerate(intersectionPaths):
+    # get the rough number of elements
+    inOrig = findNbOfTagsInHtml(htmlFilePath, u"p")
+    inOrigAndTmx = findNbOfTagsInHtml(htmlFilePath, u"span")
+    inOrigNotTmx = inOrig - inOrigAndTmx
+    with open(htmlFilePath.replace(u".highlight.html", u".remnant")) as remnFile:
+        inTmx = utilsOs.countLines(remnFile) + inOrigAndTmx
+    # calculate how many sentences from the tmx appear in the orig file
+    ratioTmxInOrig = float(inOrigAndTmx)/float(inOrig)
+    print(u"file{0}\t{1}".format(ind, ratioTmxInOrig))
+    howMuchTmxIsInOrig.append(ratioTmxInOrig)
+    # get the sentences and compare them to see what is the nature of the non match
+    mismatch = getTypeOfMismatch(htmlFilePath)
+    wholeMismatch["elision in tmx"] += mismatch["elision in tmx"]
+    wholeMismatch["augmentation in tmx"] += mismatch["augmentation in tmx"]
+    wholeMismatch["displacement"] += mismatch["displacement"]
+    wholeMismatch["deletion in tmx"] += mismatch["deletion in tmx"]
+print(u"MEAN = ", sum(howMuchTmxIsInOrig)/len(howMuchTmxIsInOrig))
+print(u"TYPE OF MISMATCH : ", wholeMismatch)
+#########################################################################3
+
+##### ALIGN USING YASA
+# getYasaAlign("/data/rali5/Tmp/alfonsda/workRali/004tradBureau/yasa/testA.txt",
+#              "/data/rali5/Tmp/alfonsda/workRali/004tradBureau/yasa/testB.txt",
+#              "/data/rali5/Tmp/alfonsda/workRali/004tradBureau/yasaOrigDocsOutput/")
 ################################
 
 

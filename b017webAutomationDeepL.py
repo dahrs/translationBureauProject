@@ -90,7 +90,11 @@ def translateOneLang(session, srcLang, langSent, nbTok, translAndAlt):
     textArea.send_keys(langSent)
     time.sleep(random.uniform(nbTok/4.0, nbTok/2.0))
     # click on the copy to clipboard button to copy the target text
-    cpButton = session.find_element_by_xpath(u"/html/body/div[2]/div[1]/div[1]/div[3]/div[3]/div[3]/div[1]/button")
+    try:
+        cpButton = session.find_element_by_xpath(u"/html/body/div[2]/div[1]/div[1]/div[3]/div[3]/div[3]/div[1]/button")
+    except NoSuchElementException:
+        time.sleep(random.uniform(2.0, 5.0))
+        cpButton = session.find_element_by_xpath(u"/html/body/div[2]/div[1]/div[1]/div[3]/div[3]/div[3]/div[1]/button")
     time.sleep(random.uniform(0.2, 0.7))
     # if the button is viewable, click
     try:
