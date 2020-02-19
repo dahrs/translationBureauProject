@@ -507,6 +507,7 @@ def findAvgLengthOfTagSentInHtml(htmlFilePath, tagStringName, findInHtmlSection=
         sectionContent = "\n".join(["<html>", "<body>"] + [str(t) for t in sectionContent] + ["</body>", "</html>"])
         soup = BeautifulSoup(sectionContent, 'html.parser')
     allTags = soup.find_all(tagStringName)
+    allTagsCopy = [t.text for t in allTags]
     # eliminate empty spaces
     for tagEl in list(allTags):
         tagText = tagEl.text
@@ -540,8 +541,8 @@ def findAvgLengthOfTagSentInHtml(htmlFilePath, tagStringName, findInHtmlSection=
     # return the nb of tags
     lengthSum = sum([len(t.text) for t in allTags])
     if len(allTags) == 0:
-        return 0, lengthSum, len(allTags), [len(s) for s in allSent]
-    return lengthSum/len(allTags), lengthSum, len(allTags), [len(s) for s in allSent]
+        return 0, lengthSum, len(allTags), [len(s) for s in allTagsCopy]
+    return lengthSum/len(allTags), lengthSum, len(allTags), [len(s) for s in allTagsCopy]
 
 
 def getSentences(htmlFilePath):
@@ -738,7 +739,6 @@ def getYasaAlign(srcFilePath, trgtFilePath, outputFolderPath):
                                                                                                     srcFileSentences,
                                                                                                     srcCuts, srcSent,
                                                                                                     srcRef)
-
                 # dump all src data
                 if whereItIs is not None:
                     with open(srcRefOutputPath, "a") as refFile:
@@ -769,7 +769,7 @@ def getYasaAlign(srcFilePath, trgtFilePath, outputFolderPath):
                     refFile.write(u"{0}\n".format(alignDict["scores"]))
 
 
-def getData(counter, htmlFilePath, ind, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths, section=None,
+def getLenData(counter, htmlFilePath, ind, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths, section=None,
             countInChars=True):
     counter += 1
     section = (1, 1) if section is None else section
@@ -786,12 +786,10 @@ def getData(counter, htmlFilePath, ind, howMuchTmxIsInOrig, origLenths, bothLeng
         lengthInOrigNotTmx = float(lengthInOrig[1] - lengthInOrigAndTmx[1]) / float(
             lengthInOrig[2] - lengthInOrigAndTmx[2])
     origLenths.append(lengthInOrig[0])
-    # origLenths += lengthInOrig[3]
+    totalLengthInOrig = sum(lengthInOrig[3])
     bothLengths.append(lengthInOrigAndTmx[0])
-    # bothLengths.append(lengthInOrigAndTmx[3])
+    totalLengthInBoth = sum(lengthInOrigAndTmx[3])
     notTmxLengths.append(lengthInOrigNotTmx)
-    with open(htmlFilePath.replace(u".highlight.html", u".remnant")) as remnFile:
-        inTmx = utilsOs.countLines(remnFile) + inOrigAndTmx
     # calculate how many sentences from the tmx appear in the orig file
     if inOrigAndTmx != 0 and inOrig != 0:
         ratioTmxInOrig = float(inOrigAndTmx) / float(inOrig)
@@ -799,14 +797,16 @@ def getData(counter, htmlFilePath, ind, howMuchTmxIsInOrig, origLenths, bothLeng
         ratioTmxInOrig = 0.0
     print(u"file{0}\t{1}".format(ind, ratioTmxInOrig))
     howMuchTmxIsInOrig.append(ratioTmxInOrig)
-    return counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths
+    return counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths, [totalLengthInOrig, totalLengthInBoth]
 
 
-def getLengthRemnant(htmlFilePath, remnList=[]):
+def getLengthRemnant(htmlFilePath, remnList=None):
     remnantFilePath = htmlFilePath.replace(".highlight.html", ".remnant")
     with open(remnantFilePath) as remnantFile:
         # get the lengths
         lnLengths = [len(ln.replace("\n", "")) for ln in remnantFile.readlines()]
+        if remnList is None:
+            return lnLengths
         return remnList + lnLengths
 
 
@@ -818,7 +818,7 @@ def getAlignDataStats(intersectionPaths, classifyByMismatchType=False, sourceLan
     origLenths = []
     bothLengths = []
     notTmxLengths = []
-    notOrigLengths = []
+    totalLenTmxBeforeAfter = []
     for ind, htmlFilePath in enumerate(intersectionPaths):
         # launch only for files of one lang
         fileName = htmlFilePath.split("/")[-1]
@@ -826,7 +826,7 @@ def getAlignDataStats(intersectionPaths, classifyByMismatchType=False, sourceLan
             catch, notCatch, srcLang, trgtLang = r"[0-9]{1,2}_EN[_\.]", r"[0-9]{1,2}_FR[_\.]", "_EN", "_FR"
             if re.search(catch, fileName) is not None:
                 if trgtLang not in fileName or fileName.index(srcLang) < fileName.index(trgtLang):
-                    counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths = getData(counter, htmlFilePath,
+                    counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths, t = getLenData(counter, htmlFilePath,
                                                                                                   ind,
                                                                                                   howMuchTmxIsInOrig,
                                                                                                   origLenths,
@@ -834,12 +834,13 @@ def getAlignDataStats(intersectionPaths, classifyByMismatchType=False, sourceLan
                                                                                                   notTmxLengths,
                                                                                                   section,
                                                                                                   countInChars)
-                    notOrigLengths = getLengthRemnant(htmlFilePath, notOrigLengths)
+                    totalLengthInOrig, totalLengthInBoth = t
+                    notOrigLen = getLengthRemnant(htmlFilePath)
         elif sourceLang == "fr":
             catch, notCatch, srcLang, trgtLang = r"[0-9]{1,2}_FR[_\.]", r"[0-9]{1,2}_EN[_\.]", "_FR", "_EN"
             if re.search(catch, fileName) is not None:
                 if trgtLang not in fileName or fileName.index(srcLang) < fileName.index(trgtLang):
-                    counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths = getData(counter, htmlFilePath,
+                    counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths, t = getLenData(counter, htmlFilePath,
                                                                                                   ind,
                                                                                                   howMuchTmxIsInOrig,
                                                                                                   origLenths,
@@ -847,18 +848,21 @@ def getAlignDataStats(intersectionPaths, classifyByMismatchType=False, sourceLan
                                                                                                   notTmxLengths,
                                                                                                   section,
                                                                                                   countInChars)
-                    notOrigLengths = getLengthRemnant(htmlFilePath, notOrigLengths)
+                    totalLengthInOrig, totalLengthInBoth = t
+                    notOrigLen = getLengthRemnant(htmlFilePath)
         elif sourceLang is None:
-            counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths = getData(counter, htmlFilePath, ind,
+            counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths, t = getLenData(counter, htmlFilePath, ind,
                                                                                           howMuchTmxIsInOrig,
                                                                                           origLenths, bothLengths,
                                                                                           notTmxLengths, section)
-            notOrigLengths = getLengthRemnant(htmlFilePath, notOrigLengths)
+            totalLengthInOrig, totalLengthInBoth = t
+            notOrigLen = getLengthRemnant(htmlFilePath)
             # # show the filepaths with disbalance (probably)
             # if ind != 0 and ind % 2 == 0:
             #     if abs(howMuchTmxIsInOrig[ind - 2] - howMuchTmxIsInOrig[-1]) > 0.25:
             #         print(howMuchTmxIsInOrig[ind - 2], intersectionPaths[ind - 2])
             #         print(howMuchTmxIsInOrig[-1], intersectionPaths[ind - 1])
+        totalLenTmxBeforeAfter.append([totalLengthInBoth+sum(notOrigLen), sum(notOrigLen)])
         if classifyByMismatchType is not False:
             # get the sentences and compare them to see what is the nature of the non match
             mismatch = getTypeOfMismatch(htmlFilePath)
@@ -871,11 +875,11 @@ def getAlignDataStats(intersectionPaths, classifyByMismatchType=False, sourceLan
     print(u"MEAN = ", sum(howMuchTmxIsInOrig) / len(howMuchTmxIsInOrig))
     print(u"TOTAL FILES = ", counter)
     print(u"MEAN LENGTH OF ORIG CONTENT = ", sum(origLenths) / len(origLenths))
-    print(u"MEAN LENGTH OF TMX CONTENT = ", (sum(notOrigLengths)+sum(bothLengths)) / (len(notOrigLengths)+len(bothLengths)))
+    print(u"MEAN LENGTH OF TMX CONTENT = ", (sum([n[0] for n in totalLenTmxBeforeAfter])) / (len(totalLenTmxBeforeAfter)))
     print(u"MEAN LENGTH OF ORIG AND TMX CONTENT = ", sum(bothLengths) / len(bothLengths))
     print(u"MEAN LENGTH OF CONTENT NOT IN TMX = ", sum(notTmxLengths) / len(notTmxLengths))
-    print(u"MEAN LENGTH OF CONTENT NOT IN ORIG = ", sum(notOrigLengths) / len(notOrigLengths))
-    print(u"RATIO OF CONTENT (char) REMAINING IN THE TMX = ", sum(notOrigLengths)/(sum(notOrigLengths)+sum(bothLengths)))
+    print(u"MEAN LENGTH OF CONTENT NOT IN ORIG = ", sum([n[1] for n in totalLenTmxBeforeAfter]) / len(totalLenTmxBeforeAfter))
+    print(u"RATIO OF CONTENT (char) REMAINING IN THE TMX = ", sum([n[1] for n in totalLenTmxBeforeAfter])/sum([n[0] for n in totalLenTmxBeforeAfter]))
 
 
 ########################################################################
