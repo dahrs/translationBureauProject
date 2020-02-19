@@ -688,5 +688,6 @@ startTime = utilsOs.countTime()
 # outPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D1/noProblematic/17kRandom/extracted.scoresAndMetaData'
 # applyHeurAndDumpScoresAndMetadata(inEnPath, inFrPath, outPath)
 
+
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))

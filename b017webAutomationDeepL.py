@@ -309,6 +309,15 @@ def launchForOneWeek(tokLimit=20000,
     while today != launchDay:
         # launch only on business days
         if today not in [2, 4]: # not on wednesdays / fridays[2, 4] # not on weekends : [5, 6]
+            # launch between 22h and 8h
+            actualHour = datetime.datetime.today().hour
+            while actualHour not in [22, 23, 24, 0, 1, 2, 3, 4, 5, 6, 7, 8]:
+                time.sleep(random.randint(3600, 7200))
+                actualHour = datetime.datetime.today().hour
+                # break the loop if we barely exceeded the hour
+                if actualHour in [9, 10]:
+                    break
+            # launch for one day
             tokCount, lnCount = launchForOneDay(dailyTokLimit, outputFolderPath, coffeeBreak)
             # break the loop if we do more than the limit
             totalTokCount += tokCount

@@ -2,9 +2,10 @@
 # -*- coding:utf-8 -*-
 
 import sys
+
 sys.path.append(u'../utils')
 sys.path.append(u'./utils')
-import subprocess, os
+import subprocess, os, re
 import b000path, utilsOs, utilsString
 from bs4 import BeautifulSoup
 from random import randint
@@ -38,6 +39,9 @@ def getTmxFlaggedData(tmxFilePathList):
                         else:
                             frSent = tuv[0].text
                     try:
+                        # replace nonbreaking hyphens and spaces
+                        enSent = enSent.replace("‑", "-").replace(" ", " ")
+                        frSent = frSent.replace("‑", "-").replace(" ", " ")
                         yield flagType, indChild, enSent, frSent, segmentNb, flagDate
                     except UnboundLocalError:
                         yield None
@@ -101,8 +105,10 @@ def selectNRandomFlaggedOrigDocs(n=10):
 
 def cleanStr(string):
     string = string.replace(u'\n', u' ').replace(u'\t', u' ')
+    # replace non breaking chars
+    string = string.replace("‑", "-").replace(" ", " ")
     for n in reversed(range(2, 51)):
-        string = string.replace(u' '*n, u' ')
+        string = string.replace(u' ' * n, u' ')
     if string is None:
         string = u''
     return string
@@ -208,7 +214,7 @@ def useBeautifulSoup(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter
     with open(alignedPathFr) as frFile:
         frLns = [cleanStr(ln.replace(u'\n', u'')) for ln in frFile.readlines()]
     # guess the language
-    htmlLns = soup.get_text().split(u'\n')
+    htmlLns = [cleanStr(ln) for ln in soup.get_text().split(u'\n')]
     langLns, langSet, langFlagged, counter, lang = guessLang(htmlLns, enLns, frLns, counter, flaggedEn, flaggedFr)
     # highlight in the html the sentences appearing in the aligned file
     for bs4Elem in soup.find_all(u'p'):
@@ -269,7 +275,7 @@ def useBeautifulSoup(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter
 
 
 def getLinesAsHtml(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter,
-                                                       flaggedEn, flaggedFr):
+                   flaggedEn, flaggedFr):
     hlNb = 0
     # add the header data
     lnList.append(u'<html>')
@@ -301,13 +307,14 @@ def getLinesAsHtml(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter,
             cleanElemStr = cleanStr(elemString)
             if cleanElemStr in set(langLns):
                 # if the sentence is one of the flagged lines put the string between highlight tags
-                typeOfHighlight = u'highlightFlagged' if cleanElemStr in langFlagged else u'highlightMatch{0}'.format(hlNb)
+                typeOfHighlight = u'highlightFlagged' if cleanElemStr in langFlagged else u'highlightMatch{0}'.format(
+                    hlNb)
                 hlNb = hlNb + 1 if hlNb < 4 else 0
                 # put the string between highlight tags
                 elemString = u'<p><span class="{0}">{1}</span></p>'.format(typeOfHighlight, cleanElemStr)
                 ##################################################################
-                total+=1
-                aligned+=1
+                total += 1
+                aligned += 1
                 ##################################################################
                 # remove from the aligned list
                 try:
@@ -327,15 +334,16 @@ def getLinesAsHtml(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter,
                                 start = 0 if dejavu == float(u'-inf') else dejavu + 1
                                 # if the sentence is one of the flagged lines put the string between highlight tags
                                 typeOfHighlight = u'highlightFlagged' if cleanElemStr[
-                                                                         i:i + n + 1] in langFlagged else u'highlightMatch{0}'.format(hlNb)
+                                                                         i:i + n + 1] in langFlagged else u'highlightMatch{0}'.format(
+                                    hlNb)
                                 hlNb = hlNb + 1 if hlNb < 4 else 0
                                 # add the partial element (perhaps preceded by the not found segment)
                                 subElemString = u'{0}{1}{2}'.format(subElemString, cleanElemStr[start:i],
                                                                     u'<span class="{0}">{1}</span>'.format(
                                                                         typeOfHighlight, cleanElemStr[i:i + n + 1]))
                                 ##################################################################
-                                total+=1
-                                aligned+=1
+                                total += 1
+                                aligned += 1
                                 dejavu = i + n
                                 ##################################################################
                                 # remove from the aligned list
@@ -345,7 +353,7 @@ def getLinesAsHtml(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter,
                                     pass
                 # if there wasn't even a partial match
                 ##################################################################
-                total+=1
+                total += 1
                 ##################################################################
                 if dejavu == float(u'-inf'):
                     elemString = u'<p>{0}</p>'.format(elemString)
@@ -380,7 +388,8 @@ def highlightHtmlAlign(listOfHtmlFilePaths):
                 fpSplit = htmlFilePath.split(u'/')
                 flagSect = u'{0}/{1}'.format(fpSplit[-2], fpSplit[-1])
                 flaggedFilePaths = [file for file in os.listdir(htmlFilePath.replace(flagSect, u'')) if u'.tmx' in file]
-                flaggedFilePaths = [u'{0}{1}'.format(htmlFilePath.replace(flagSect, u''), flaggedFile) for flaggedFile in flaggedFilePaths]
+                flaggedFilePaths = [u'{0}{1}'.format(htmlFilePath.replace(flagSect, u''), flaggedFile) for flaggedFile
+                                    in flaggedFilePaths]
                 flaggedEn, flaggedFr = [], []
                 if len(flaggedFilePaths) != 0:
                     for infoTupl in getTmxFlaggedData(flaggedFilePaths):
@@ -430,11 +439,21 @@ def countNbSpInTmx(pathsList):
     print(sps)
 
 
-def findNbOfTagsInHtml(htmlFilePath, tagStringName):
+def findNbOfTagsInHtml(htmlFilePath, tagStringName, findInHtmlSection=(1, 1), countInChars=True):
     allSent, tagSent = [], []
     with open(htmlFilePath) as htmlFile:
         html = htmlFile.read()
     soup = BeautifulSoup(html, 'html.parser')
+    # if only count tads in the first one third use (1,3), in the first half (1,2), in the last quarter (4,4)
+    if findInHtmlSection != (1, 1):
+        body = soup.find('body')
+        bodyContent = body.findChildren(recursive=False)
+        sectionSize = int(len(bodyContent) / findInHtmlSection[1])
+        start = (findInHtmlSection[0] - 1) * sectionSize
+        end = (findInHtmlSection[0]) * sectionSize if findInHtmlSection[0] != findInHtmlSection[1] else len(bodyContent)
+        sectionContent = bodyContent[start:end]
+        sectionContent = "\n".join(["<html>", "<body>"] + [str(t) for t in sectionContent] + ["</body>", "</html>"])
+        soup = BeautifulSoup(sectionContent, 'html.parser')
     allTags = soup.find_all(tagStringName)
     # eliminate empty spaces
     for tagEl in list(allTags):
@@ -456,13 +475,73 @@ def findNbOfTagsInHtml(htmlFilePath, tagStringName):
             tagList = tagText.split(u"***---***")
             allSent += [s for s in tagList if s not in [u"", " ", "  ", "\t", "\n"]]
             if u"***---***" in tagText:
-                nbSent += len(tagList) - 1
+                if countInChars != True:
+                    nbSent += len(tagList) - 1
+                else:
+                    nbSent += sum([len(clearSent) for clearSent in tagList]+[len(spanSent.text) for spanSent in allSpans])
             else:
                 nbSent += 1
                 allSent.append(tagText)
         return nbSent
     # return the nb of tags
-    return len(allTags)
+    if countInChars != True:
+        nbSent = len(allTags)
+    else:
+        nbSent = sum([len(spanSent.text) for spanSent in allTags])
+    return nbSent
+
+
+def findAvgLengthOfTagSentInHtml(htmlFilePath, tagStringName, findInHtmlSection=(1, 1)):
+    allSent, tagSent = [], []
+    with open(htmlFilePath) as htmlFile:
+        html = htmlFile.read()
+    soup = BeautifulSoup(html, 'html.parser')
+    # if only count tads in the first one third use (1,3), in the first half (1,2), in the last quarter (4,4)
+    if findInHtmlSection != (1, 1):
+        body = soup.find('body')
+        bodyContent = body.findChildren(recursive=False)
+        sectionSize = int(len(bodyContent) / findInHtmlSection[1])
+        start = (findInHtmlSection[0] - 1) * sectionSize
+        end = (findInHtmlSection[0]) * sectionSize if findInHtmlSection[0] != findInHtmlSection[1] else len(bodyContent)
+        sectionContent = bodyContent[start:end]
+        sectionContent = "\n".join(["<html>", "<body>"] + [str(t) for t in sectionContent] + ["</body>", "</html>"])
+        soup = BeautifulSoup(sectionContent, 'html.parser')
+    allTags = soup.find_all(tagStringName)
+    # eliminate empty spaces
+    for tagEl in list(allTags):
+        tagText = tagEl.text
+        nonWhiteSpaceText = (tagText).replace(u" ", u"").replace(u"\t", u"").replace(u"\n", u"").replace(u"\ufeff", u"")
+        if bool(nonWhiteSpaceText) is False:
+            allTags.remove(tagEl)
+    # count the sub-sentences inside the paragraphs
+    if tagStringName == u"p":
+        nbSent = 0
+        sentLength = 0
+        for tagEl in list(allTags):
+            tagText = tagEl.text
+            allSpans = tagEl.find_all(u"span")
+            # count span sentences and in-between sentences
+            for spanEl in allSpans:
+                allSent.append(spanEl.text)
+                tagSent.append((spanEl.text))
+                tagText = tagText.replace(spanEl.text, u"***---***")
+                sentLength += len(spanEl.text)
+            tagList = tagText.split(u"***---***")
+            allSent += [s for s in tagList if s not in [u"", " ", "  ", "\t", "\n"]]
+            sentLength += sum([len(s) for s in tagList if s not in [u"", " ", "  ", "\t", "\n"]])
+            if u"***---***" in tagText:
+                nbSent += len(tagList) - 1
+            else:
+                nbSent += 1
+                allSent.append(tagText)
+        if nbSent == 0:
+            return 0, sentLength, nbSent, [len(s) for s in allSent]
+        return sentLength/nbSent, sentLength, nbSent, [len(s) for s in allSent]
+    # return the nb of tags
+    lengthSum = sum([len(t.text) for t in allTags])
+    if len(allTags) == 0:
+        return 0, lengthSum, len(allTags), [len(s) for s in allSent]
+    return lengthSum/len(allTags), lengthSum, len(allTags), [len(s) for s in allSent]
 
 
 def getSentences(htmlFilePath):
@@ -512,16 +591,17 @@ def getTypeOfMismatch(htmlFilePath):
         for tmxSent in tmxExclusivSent:
             # origTmxDist = distance.edit_distance(origSent, tmxSent)
             correspond, origNgrams, tmxNgrams = utilsString.makeNgramInterceptionList(origSent, tmxSent, ngramSize=6,
-                                                                                       returnNgramsLists=True)
+                                                                                      returnNgramsLists=True)
             origTmxSimil = len(correspond)
             if origTmxSimil > mostSimilarTmxSent[0]:
                 mostSimilarTmxSent = [origTmxSimil, tmxSent, origNgrams, tmxNgrams]
                 the = tmxSent
         if mostSimilarTmxSent[1] is not None and len(origNgrams) != 0:
             # both orig and tmx sent have more than 80% ngrams in common
-            ngramSimilSc = (mostSimilarTmxSent[0]*2)/(len(mostSimilarTmxSent[2])+len(mostSimilarTmxSent[3]))
+            ngramSimilSc = (mostSimilarTmxSent[0] * 2) / (len(mostSimilarTmxSent[2]) + len(mostSimilarTmxSent[3]))
             if ngramSimilSc >= 0.8:
-                if len(tmxSent) in range(len(origSent) - 3, len(origSent) + 4) and tmxNgrams[0] != origNgrams[0] and tmxNgrams[-1] != origNgrams[-1]:
+                if len(tmxSent) in range(len(origSent) - 3, len(origSent) + 4) and tmxNgrams[0] != origNgrams[0] and \
+                        tmxNgrams[-1] != origNgrams[-1]:
                     typeOfMismatch["displacement"] += 1
                     # print(111, repr(origSent))
                     # print(222, repr(the))
@@ -538,7 +618,6 @@ def getTypeOfMismatch(htmlFilePath):
         else:
             typeOfMismatch["deletion in tmx"] += 1
     return typeOfMismatch
-
 
 
 def tenMoreLines(ln, openFile, ind, fileIndexes, fileSentences):
@@ -569,9 +648,9 @@ def getData(alignaInd, i, aFileIndexes, aFileSentences, aCuts, aSent, aRef):
     else:
         while alignaInd not in aFileIndexes:
             aLn, aFile, aIndex, aFileIndexes, aFileSentences = tenMoreLines(aLn, aFile,
-                                                                                      aIndex,
-                                                                                      aFileIndexes,
-                                                                                      aFileSentences)
+                                                                            aIndex,
+                                                                            aFileIndexes,
+                                                                            aFileSentences)
             if len(aFileIndexes) >= 500:
                 break
         try:
@@ -615,8 +694,8 @@ def getYasaAlign(srcFilePath, trgtFilePath, outputFolderPath):
                 raliSplit = raliLn.split(u" ")
                 # get the line indexes and score
                 indexSect = arcadeSplit[1].split(";")
-                indexSrc = [int(s)-1 if s != "" else None for s in indexSect[0].split(" ")]
-                indexTgrt = [int(s)-1 if s != "" else None for s in indexSect[1].split(" ")]
+                indexSrc = [int(s) - 1 if s != "" else None for s in indexSect[0].split(" ")]
+                indexTgrt = [int(s) - 1 if s != "" else None for s in indexSect[1].split(" ")]
                 arcadeScore = float(arcadeSplit[3])
                 raliScore = float(raliSplit[1].replace(u"\n", ""))
                 indexInfo.append({u"src": indexSrc, "trgt": indexTgrt, "scores": [arcadeScore, raliScore]})
@@ -647,17 +726,18 @@ def getYasaAlign(srcFilePath, trgtFilePath, outputFolderPath):
             # prepare the window of sentences for the source file
             trgtLn = trgtFile.readline()
             trgtLn, trgtFile, trgtIndex, trgtFileIndexes, trgtFileSentences = tenMoreLines(trgtLn, trgtFile, trgtIndex,
-                                                                                    trgtFileIndexes, trgtFileSentences)
+                                                                                           trgtFileIndexes,
+                                                                                           trgtFileSentences)
             # browse the aling index data
             for alignDict in indexInfo:
                 srcCuts, srcSent, srcRef, trgtCuts, trgtSent, trgtRef = [], [], [], [], [], []
                 # src data
                 for i, alignSrcInd in enumerate(alignDict["src"]):
                     whereItIs, srcFileIndexes, srcFileSentences, srcCuts, srcSent, srcRef = getData(alignSrcInd, i,
-                                                                                                        srcFileIndexes,
-                                                                                                        srcFileSentences,
-                                                                                                        srcCuts, srcSent,
-                                                                                                        srcRef)
+                                                                                                    srcFileIndexes,
+                                                                                                    srcFileSentences,
+                                                                                                    srcCuts, srcSent,
+                                                                                                    srcRef)
 
                 # dump all src data
                 if whereItIs is not None:
@@ -669,11 +749,13 @@ def getYasaAlign(srcFilePath, trgtFilePath, outputFolderPath):
                         cutsFile.write(u"{0}\n".format(srcCuts))
                 # trgt data
                 for i, alignTrgtInd in enumerate(alignDict["trgt"]):
-                    whereItIs, trgtFileIndexes, trgtFileSentences, trgtCuts, trgtSent, trgtRef = getData(alignTrgtInd, i,
-                                                                                                    trgtFileIndexes,
-                                                                                                    trgtFileSentences,
-                                                                                                    trgtCuts, trgtSent,
-                                                                                                    trgtRef)
+                    whereItIs, trgtFileIndexes, trgtFileSentences, trgtCuts, trgtSent, trgtRef = getData(alignTrgtInd,
+                                                                                                         i,
+                                                                                                         trgtFileIndexes,
+                                                                                                         trgtFileSentences,
+                                                                                                         trgtCuts,
+                                                                                                         trgtSent,
+                                                                                                         trgtRef)
                 # dump all trgt data
                 if whereItIs is not None:
                     with open(trgtRefOutputPath, "a") as refFile:
@@ -685,29 +767,143 @@ def getYasaAlign(srcFilePath, trgtFilePath, outputFolderPath):
                 # dump the scores
                 with open(scoreOutputPath, "a") as refFile:
                     refFile.write(u"{0}\n".format(alignDict["scores"]))
-                    
 
 
+def getData(counter, htmlFilePath, ind, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths, section=None,
+            countInChars=True):
+    counter += 1
+    section = (1, 1) if section is None else section
+    # get the rough number of elements
+    inOrig = findNbOfTagsInHtml(htmlFilePath, u"p", section, countInChars)
+    inOrigAndTmx = findNbOfTagsInHtml(htmlFilePath, u"span", section, countInChars)
+    inOrigNotTmx = inOrig - inOrigAndTmx
+    # get the average length of the tag sentences
+    lengthInOrig = findAvgLengthOfTagSentInHtml(htmlFilePath, u"p", section)
+    lengthInOrigAndTmx = findAvgLengthOfTagSentInHtml(htmlFilePath, u"span", section)
+    if lengthInOrig[2] - lengthInOrigAndTmx[2] == 0:
+        lengthInOrigNotTmx = 0
+    else:
+        lengthInOrigNotTmx = float(lengthInOrig[1] - lengthInOrigAndTmx[1]) / float(
+            lengthInOrig[2] - lengthInOrigAndTmx[2])
+    origLenths.append(lengthInOrig[0])
+    # origLenths += lengthInOrig[3]
+    bothLengths.append(lengthInOrigAndTmx[0])
+    # bothLengths.append(lengthInOrigAndTmx[3])
+    notTmxLengths.append(lengthInOrigNotTmx)
+    with open(htmlFilePath.replace(u".highlight.html", u".remnant")) as remnFile:
+        inTmx = utilsOs.countLines(remnFile) + inOrigAndTmx
+    # calculate how many sentences from the tmx appear in the orig file
+    if inOrigAndTmx != 0 and inOrig != 0:
+        ratioTmxInOrig = float(inOrigAndTmx) / float(inOrig)
+    else:
+        ratioTmxInOrig = 0.0
+    print(u"file{0}\t{1}".format(ind, ratioTmxInOrig))
+    howMuchTmxIsInOrig.append(ratioTmxInOrig)
+    return counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths
+
+
+def getLengthRemnant(htmlFilePath, remnList=[]):
+    remnantFilePath = htmlFilePath.replace(".highlight.html", ".remnant")
+    with open(remnantFilePath) as remnantFile:
+        # get the lengths
+        lnLengths = [len(ln.replace("\n", "")) for ln in remnantFile.readlines()]
+        return remnList + lnLengths
+
+
+def getAlignDataStats(intersectionPaths, classifyByMismatchType=False, sourceLang=None, section=None,
+                      countInChars=True):
+    howMuchTmxIsInOrig = []
+    wholeMismatch = {"elision in tmx": 0, "augmentation in tmx": 0, "displacement": 0, "deletion in tmx": 0}
+    counter = 0
+    origLenths = []
+    bothLengths = []
+    notTmxLengths = []
+    notOrigLengths = []
+    for ind, htmlFilePath in enumerate(intersectionPaths):
+        # launch only for files of one lang
+        fileName = htmlFilePath.split("/")[-1]
+        if sourceLang == "en":
+            catch, notCatch, srcLang, trgtLang = r"[0-9]{1,2}_EN[_\.]", r"[0-9]{1,2}_FR[_\.]", "_EN", "_FR"
+            if re.search(catch, fileName) is not None:
+                if trgtLang not in fileName or fileName.index(srcLang) < fileName.index(trgtLang):
+                    counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths = getData(counter, htmlFilePath,
+                                                                                                  ind,
+                                                                                                  howMuchTmxIsInOrig,
+                                                                                                  origLenths,
+                                                                                                  bothLengths,
+                                                                                                  notTmxLengths,
+                                                                                                  section,
+                                                                                                  countInChars)
+                    notOrigLengths = getLengthRemnant(htmlFilePath, notOrigLengths)
+        elif sourceLang == "fr":
+            catch, notCatch, srcLang, trgtLang = r"[0-9]{1,2}_FR[_\.]", r"[0-9]{1,2}_EN[_\.]", "_FR", "_EN"
+            if re.search(catch, fileName) is not None:
+                if trgtLang not in fileName or fileName.index(srcLang) < fileName.index(trgtLang):
+                    counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths = getData(counter, htmlFilePath,
+                                                                                                  ind,
+                                                                                                  howMuchTmxIsInOrig,
+                                                                                                  origLenths,
+                                                                                                  bothLengths,
+                                                                                                  notTmxLengths,
+                                                                                                  section,
+                                                                                                  countInChars)
+                    notOrigLengths = getLengthRemnant(htmlFilePath, notOrigLengths)
+        elif sourceLang is None:
+            counter, howMuchTmxIsInOrig, origLenths, bothLengths, notTmxLengths = getData(counter, htmlFilePath, ind,
+                                                                                          howMuchTmxIsInOrig,
+                                                                                          origLenths, bothLengths,
+                                                                                          notTmxLengths, section)
+            notOrigLengths = getLengthRemnant(htmlFilePath, notOrigLengths)
+            # # show the filepaths with disbalance (probably)
+            # if ind != 0 and ind % 2 == 0:
+            #     if abs(howMuchTmxIsInOrig[ind - 2] - howMuchTmxIsInOrig[-1]) > 0.25:
+            #         print(howMuchTmxIsInOrig[ind - 2], intersectionPaths[ind - 2])
+            #         print(howMuchTmxIsInOrig[-1], intersectionPaths[ind - 1])
+        if classifyByMismatchType is not False:
+            # get the sentences and compare them to see what is the nature of the non match
+            mismatch = getTypeOfMismatch(htmlFilePath)
+            wholeMismatch["elision in tmx"] += mismatch["elision in tmx"]
+            wholeMismatch["augmentation in tmx"] += mismatch["augmentation in tmx"]
+            wholeMismatch["displacement"] += mismatch["displacement"]
+            wholeMismatch["deletion in tmx"] += mismatch["deletion in tmx"]
+    if classifyByMismatchType is not False:
+        print(u"TYPE OF MISMATCH : ", wholeMismatch)
+    print(u"MEAN = ", sum(howMuchTmxIsInOrig) / len(howMuchTmxIsInOrig))
+    print(u"TOTAL FILES = ", counter)
+    print(u"MEAN LENGTH OF ORIG CONTENT = ", sum(origLenths) / len(origLenths))
+    print(u"MEAN LENGTH OF TMX CONTENT = ", (sum(notOrigLengths)+sum(bothLengths)) / (len(notOrigLengths)+len(bothLengths)))
+    print(u"MEAN LENGTH OF ORIG AND TMX CONTENT = ", sum(bothLengths) / len(bothLengths))
+    print(u"MEAN LENGTH OF CONTENT NOT IN TMX = ", sum(notTmxLengths) / len(notTmxLengths))
+    print(u"MEAN LENGTH OF CONTENT NOT IN ORIG = ", sum(notOrigLengths) / len(notOrigLengths))
+    print(u"RATIO OF CONTENT (char) REMAINING IN THE TMX = ", sum(notOrigLengths)/(sum(notOrigLengths)+sum(bothLengths)))
 
 
 ########################################################################
+### HIGHLIGHT THE SENT IN THE TMX APPEARING IN THE ORIGINAL
 
 # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
 
-
+########################################################################
+### HIGHLIGHT THE SENT IN THE TMX APPEARING IN THE ORIGINAL
 # docsPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/'
 # docsPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/FLAGGED/'
 # docsPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/'
 
 # selectNRandomFlaggedOrigDocs(n=10)
 
+# extract a sample
 # pathList = convertDocFilesToHtml(docsPath, dump=False, fileFormat=u"txt")
 
-# highlightHtmlAlign([u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/FLAGGED/QUALITY*032-IND_AFF_AND_NORTH_DEV*en-fr*9550529/9550529_001_FR_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT/9550529_001_FR_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT.txt',
-#                     u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/FLAGGED/QUALITY*032-IND_AFF_AND_NORTH_DEV*en-fr*9550529/9550529_001_EN_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT/9550529_001_EN_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT.txt"])
-
+# # get the path of the files in the sample
+# highl_folder = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23_exact_match/"
+# # highl_folder = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/"
+# pathList = utilsOs.goDeepGetFiles(highl_folder, fileList=[], format=u".txt")
+#
 # highlightHtmlAlign(pathList)
+# # highlightHtmlAlign([u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/FLAGGED/QUALITY*032-IND_AFF_AND_NORTH_DEV*en-fr*9550529/9550529_001_FR_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT/9550529_001_FR_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT.txt',
+# #                     u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/FLAGGED/QUALITY*032-IND_AFF_AND_NORTH_DEV*en-fr*9550529/9550529_001_EN_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT/9550529_001_EN_NCR-#9522375-v4-ESDPP_-_AIAI_NR_JOINT.txt"])
+
 
 ########################################################################3
 # pathsList = utilsOs.goDeepGetFiles(u'/data/rali8/Tmp/rali/bt/burtrad/archive2/DC-24/', fileList=[], format=None)
@@ -717,32 +913,13 @@ startTime = utilsOs.countTime()
 # print(len(pathsList))
 # # countNbSpInTmx(pathsList)
 
-### COUNT THE NB OF SP, NOT FOUND SENT and REMNANTS
-howMuchTmxIsInOrig = []
+### COUNT THE NB OF SP, NOT FOUND SENT and REMNANTS #################### UNCOMMENT
 # intersectionPaths = ["/data/rali5/sans-bkp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/NOT-FLAGGED*046-National_Film_Board_of_Canada*en-fr*7840302-308045/7840302_EN_7835255_TG_IT_EN/7840302_EN_7835255_TG_IT_EN.txt.highlight.html"]
-intersectionPaths = utilsOs.goDeepGetFiles(u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/',
-                                           fileList=[], format=u".html")
-wholeMismatch = {"elision in tmx": 0, "augmentation in tmx": 0, "displacement": 0, "deletion in tmx": 0}
+highl_folder = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23_exact_match/"
+# highl_folder = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/"
+intersectionPaths = utilsOs.goDeepGetFiles(highl_folder, fileList=[], format=u".highlight.html")
+getAlignDataStats(intersectionPaths, classifyByMismatchType=False, sourceLang=None, section=(1, 1), countInChars=True)
 
-for ind, htmlFilePath in enumerate(intersectionPaths):
-    # get the rough number of elements
-    inOrig = findNbOfTagsInHtml(htmlFilePath, u"p")
-    inOrigAndTmx = findNbOfTagsInHtml(htmlFilePath, u"span")
-    inOrigNotTmx = inOrig - inOrigAndTmx
-    with open(htmlFilePath.replace(u".highlight.html", u".remnant")) as remnFile:
-        inTmx = utilsOs.countLines(remnFile) + inOrigAndTmx
-    # calculate how many sentences from the tmx appear in the orig file
-    ratioTmxInOrig = float(inOrigAndTmx)/float(inOrig)
-    print(u"file{0}\t{1}".format(ind, ratioTmxInOrig))
-    howMuchTmxIsInOrig.append(ratioTmxInOrig)
-    # get the sentences and compare them to see what is the nature of the non match
-    mismatch = getTypeOfMismatch(htmlFilePath)
-    wholeMismatch["elision in tmx"] += mismatch["elision in tmx"]
-    wholeMismatch["augmentation in tmx"] += mismatch["augmentation in tmx"]
-    wholeMismatch["displacement"] += mismatch["displacement"]
-    wholeMismatch["deletion in tmx"] += mismatch["deletion in tmx"]
-print(u"MEAN = ", sum(howMuchTmxIsInOrig)/len(howMuchTmxIsInOrig))
-print(u"TYPE OF MISMATCH : ", wholeMismatch)
 #########################################################################3
 
 ##### ALIGN USING YASA

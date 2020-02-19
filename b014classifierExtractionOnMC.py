@@ -95,51 +95,54 @@ classifGroup = False
 #                          featDim=(60,60), applyOnSection=args.section)
 
 ################################################################
-# # TRAIN SET - NON PROBLEMATIC + PROBLEMATIC = 7M balanced Shiv
-# pathsToFeaturesTsvFiles = ["/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/bal_train_scoresAndMetaData"]
-# pathsToClassificationTsvFiles = ["/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/bal_train_anno"]
-#
-# # paths
-# outputPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/'
+# TRAIN SET - NON PROBLEMATIC + PROBLEMATIC = 7M balanced Shiv
+pathsToFeaturesTsvFiles = ["/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/bal_train_scoresAndMetaData"]
+pathsToClassificationTsvFiles = ["/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/bal_train_anno"]
 
-# train the models
+# paths
+outputPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/'
+
+# # train the models
 # RandFClassif13 = trainRdmForestModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifGroup, vectorDim=13)
 # RandFClassif60 = trainRdmForestModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifGroup, vectorDim=60)
 # svmClassif13 = trainSvmModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifGroup, vectorDim=13)
 # svmClassif60 = trainSvmModel(pathsToFeaturesTsvFiles, pathsToClassificationTsvFiles, classifBinary, classifGroup, vectorDim=60)
 
 # Dump the models
-### utilsML.dumpModel(RandFClassif13, u'{0}bal_train_scores_rdmForest.pickle'.format(outputPath))
-### utilsML.dumpModel(RandFClassif60, u'{0}bal_train_scoresAndMetaData_rdmForest.pickle'.format(outputPath))
-### utilsML.dumpModel(svmClassif13, u'{0}bal_train_scores_svm.pickle'.format(outputPath))
-### utilsML.dumpModel(svmClassif60, u'{0}bal_train_scoresAndMetaData_svm.pickle'.format(outputPath))
+## utilsML.dumpModel(RandFClassif13, u'{0}bal_train_scores_rdmForest.pickle'.format(outputPath))
+## utilsML.dumpModel(RandFClassif60, u'{0}bal_train_scoresAndMetaData_rdmForest.pickle'.format(outputPath))
+## utilsML.dumpModel(svmClassif13, u'{0}bal_train_scores_svm.pickle'.format(outputPath))
+## utilsML.dumpModel(svmClassif60, u'{0}bal_train_scoresAndMetaData_svm.pickle'.format(outputPath))
 
 
 # # load the models
-# randFClassif13 = utilsML.loadModel(u'{0}bal_train_scores_rdmForest.pickle'.format(outputPath))
-# randFClassif60 = utilsML.loadModel(u'{0}bal_train_scoresAndMetaData_rdmForest.pickle'.format(outputPath))
+# # randFClassif13 = utilsML.loadModel(u'{0}bal_train_scores_rdmForest.pickle'.format(outputPath))
+# # randFClassif60 = utilsML.loadModel(u'{0}bal_train_scoresAndMetaData_rdmForest.pickle'.format(outputPath))
 # svmClassif13 = utilsML.loadModel(u'{0}bal_train_scores_svm.pickle'.format(outputPath))
-# svmClassif60 = utilsML.loadModel(u'{0}bal_train_scoresAndMetaData_svm.pickle'.format(outputPath))
-
-
+# # svmClassif60 = utilsML.loadModel(u'{0}bal_train_scoresAndMetaData_svm.pickle'.format(outputPath))
+#
+#
 # # paths
 # extractingPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/006appliedHeuristics/'
-# outputPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2/'
-# outputPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2randForest/'
+# # outputPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2/'
+# # outputPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2randForest/'
+# outputPath=u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2svm/'
+#
+# # get the predictions, extract the sps
+# # applyClassifierToExtract(randFClassif60, svmClassif13, extractingPath, outputPath,
+# #                          featDim=(60,13), applyOnSection=args.section)
+# # applyClassifierToExtract(randFClassif60, randFClassif60, extractingPath, outputPath,
+# #                          featDim=(60,60), applyOnSection=args.section)
+# applyClassifierToExtract(svmClassif13, svmClassif13, extractingPath, outputPath,
+#                          featDim=(13,13), applyOnSection=args.section)
 
-# get the predictions, extract the sps
-# applyClassifierToExtract(randFClassif, svmClassif, extractingPath, outputPath,
-#                          featDim=(60,13), applyOnSection=args.section)
-# applyClassifierToExtract(randFClassif, randFClassif, extractingPath, outputPath,
-#                          featDim=(60,60), applyOnSection=args.section)
 
-
-# predict and dump the predict on the BT2 17K-SPs corpus instead of extracting
+# # predict and dump the predict on the BT2 17K-SPs corpus instead of extracting
 # inputScFilePath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.scores"
 # inputScMetaFilePath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.scoresAndMetaData"
 # outputFilePath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/BT2/problematic/extracted.randSvmClassif.pred"
-
-# applyClassifierToGetPred(randFClassif, svmClassif,
+#
+# applyClassifierToGetPred(randFClassif60, svmClassif13,
 #                              inputScFilePath, inputScMetaFilePath, outputFilePath, featDim=(60,13))
 
 
@@ -205,10 +208,12 @@ classifGroup = False
 # problm = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2/problematic/"
 # noProblm = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2randForest/noProblematic/"
 # problm = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2randForest/problematic/"
+noProblm = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2svm/noProblematic/"
+problm = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D2svm/problematic/"
 # noProblm = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D3/noProblematic/"
 # problm = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D3/problematic/"
-noProblm = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D3randForest/noProblematic/"
-problm = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D3randForest/problematic/"
+# noProblm = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D3randForest/noProblematic/"
+# problm = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/D3randForest/problematic/"
 
 unifier(noProblm, problm)
 

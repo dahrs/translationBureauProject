@@ -52,6 +52,13 @@ def makeFreqDict(pathToFile, lang=None):
     return freqTokDict
 
 
+def makeIdDict(orderedKeysList):
+    idTokDict = {}
+    for indKv, kv in enumerate(orderedKeysList):
+        idTokDict[kv[0]] = indKv+2
+    return idTokDict
+
+
 def makeSPfreqDict(pathToEn, pathToFr):
     spFreq = {}
     with open(pathToEn) as enFile:
@@ -94,7 +101,7 @@ def transformStringToGizaFormat(string, tokDict, lang, pathToFile):
                     try:
                         idString.append(tokDict[tok.replace(u"'", u"")])
                     except KeyError:
-                        print(tok, 11111, repr(tok), type(tok))
+                        print(tok, "ERROR with token: ", repr(tok), type(tok))
     idString = [str(id) for id in idString]
     return u" ".join(idString)
 
@@ -135,30 +142,43 @@ def reformatFilesPreGiza(pathToEnFile, pathToFrFile, overwrite=True):
     outputEnDictPath = prepareOutPutFile(pathToEnFile, fileName=u"en.json")
     outputFrDictPath = prepareOutPutFile(pathToEnFile, fileName=u"fr.json")
     outputSpDictPath = prepareOutPutFile(pathToEnFile, fileName=u"sp.json")
+    outputEnIdDictPath = prepareOutPutFile(pathToEnFile, fileName=u"enId.json")
+    outputFrIdDictPath = prepareOutPutFile(pathToEnFile, fileName=u"frId.json")
     # if there is not a file there yet, open the corpus Files, count the frequency of each token
     if overwrite is True or os.path.isfile(outputEnDictPath) is False:
+        # make the frequency dict
         enTokFreqDict = makeFreqDict(pathToEnFile, lang=u"en")
         frTokFreqDict = makeFreqDict(pathToFrFile, lang=u"fr")
         # open the corpus files count the frequency of the sentence pairs
         spFreqDict = makeSPfreqDict(pathToEnFile, pathToFrFile)
+        # sort the dict by freq
+        orderedKeysValuesEn = sorted(enTokFreqDict.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)
+        orderedKeysValuesFr = sorted(frTokFreqDict.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)
+        # make the id dict
+        enIdDict = makeIdDict(orderedKeysValuesEn)
+        frIdDict = makeIdDict(orderedKeysValuesFr)
         # dump dicts
         utilsOs.dumpDictToJsonFile(enTokFreqDict, outputEnDictPath, overwrite)
         utilsOs.dumpDictToJsonFile(frTokFreqDict, outputFrDictPath, overwrite)
         utilsOs.dumpDictToJsonFile(spFreqDict, outputSpDictPath, overwrite)
+        utilsOs.dumpDictToJsonFile(enIdDict, outputEnIdDictPath, overwrite)
+        utilsOs.dumpDictToJsonFile(frIdDict, outputFrIdDictPath, overwrite)
     # if the file already exists or if overwrite is false
     else:
         enTokFreqDict = utilsOs.openJsonFileAsDict(outputEnDictPath)
         frTokFreqDict = utilsOs.openJsonFileAsDict(outputFrDictPath)
         spFreqDict = utilsOs.openJsonFileAsDict(outputSpDictPath)
-        # dump the empty tok voc file
+        enIdDict = utilsOs.openJsonFileAsDict(outputEnIdDictPath)
+        frIdDict = utilsOs.openJsonFileAsDict(outputFrIdDictPath)
+        # sort the dict by freq
+        orderedKeysValuesEn = sorted(enTokFreqDict.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)
+        orderedKeysValuesFr = sorted(frTokFreqDict.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)
+    # dump the empty tok voc file
     if overwrite is True:
         firstLine = u"1\tUNK\t0"
         utilsOs.createEmptyFile(outputEnPath, headerLine=firstLine)
         utilsOs.createEmptyFile(outputFrPath, headerLine=firstLine)
         utilsOs.createEmptyFile(outputPathGizaFormatCorpus)
-    # sort the dict by freq
-    orderedKeysValuesEn = sorted(enTokFreqDict.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)
-    orderedKeysValuesFr = sorted(frTokFreqDict.items(), key=lambda kv: (kv[1], kv[0]), reverse=True)
     # dump the dict in the tok voc file
     for indKv, kv in enumerate(orderedKeysValuesEn):
         stringLine = u"{0}\t{1}\t{2}".format(indKv+2, kv[0], kv[1])
@@ -168,19 +188,20 @@ def reformatFilesPreGiza(pathToEnFile, pathToFrFile, overwrite=True):
         utilsOs.appendLineToFile(stringLine, outputFrPath, addNewLine=True)
     # transform and dump the corpus into the GIZA format
     appendToDumpInGizaFormat(pathToEnFile, pathToFrFile, outputPathGizaFormatCorpus,
-                             enTokFreqDict, frTokFreqDict, spFreqDict)
+                             enIdDict, frIdDict, spFreqDict)
     return outputEnPath, outputFrPath, outputPathGizaFormatCorpus, outputEnDictPath, outputFrDictPath, outputSpDictPath
 
 
 def joinIntoPharaohFormat(mgizaBaseFilePath):
     outputPharaohFilePath = u"{0}.pharaoh".format(mgizaBaseFilePath)
     outputTokFilePath = u"{0}_tok".format(mgizaBaseFilePath)
+    outputViterbiFilePath = u"{0}.A3.final".format(mgizaBaseFilePath)
     # erase previous existing
     with open(outputPharaohFilePath, 'w') as tokAlignoutFile:
         tokAlignoutFile.write('')
     with open(outputTokFilePath, 'w') as tokAlignoutFile:
         tokAlignoutFile.write('')
-    allDataDict = {}
+    allDataDict, vitList = {}, []
     # open the output of mgiza (different format)
     for nb in range(99):
         if len(str(nb)) == 1:
@@ -195,6 +216,11 @@ def joinIntoPharaohFormat(mgizaBaseFilePath):
                         # read lines
                         ln1 = outDiffFormFile.readline()
                         ln2 = outDiffFormFile.readline()
+                        # add to viterbi list
+                        idVit = int(re.split(r"\(|\)", ln0)[1])
+                        if len(vitList) < idVit:
+                            vitList += [None]*(idVit-len(vitList))
+                        vitList[idVit-1] = [ln0, ln1, ln2]
                         # get data
                         sentInd = ln0.split('# Sentence pair (')[1].split(')')[0]
                         frSent = ln1.replace(' \n', '').replace('\n', '')
@@ -226,6 +252,15 @@ def joinIntoPharaohFormat(mgizaBaseFilePath):
                         break
         except FileNotFoundError:
             break
+
+    # open the final concatenated file
+    with open(outputViterbiFilePath, u"w") as vitFile:
+        vitFile.write(u"") ######################################3
+        for lns in vitList:
+            # dump concatenation in a single file in order
+            vitFile.write(lns[0])
+            vitFile.write(lns[1])
+            vitFile.write(lns[2])
     # prepare files for output
     with open(outputPharaohFilePath, 'a') as tokAlignoutFile:
         with open(outputTokFilePath, 'a') as tokFile:
@@ -264,8 +299,11 @@ def applyMgiza(mgizaMasterEnvPath, pathToEnFile, pathToFrFile, overwrite=True):
     vcbEnPath, vcbFrPath, sentPath, enFreqPath, frFreqPath, spFreqPath = reformatFilesPreGiza(pathToEnFile,
                                                                                                     pathToFrFile,
                                                                                                     overwrite)
-    generalPath = u"{0}MGIZA/".format(sentPath.replace(u"sentenceFile.giza", ""))
+    # generalPath = u"{0}MGIZA/".format(sentPath.replace(u"sentenceFile.giza", ""))
+    generalPath = u"{0}".format(sentPath.replace(u"sentenceFile.giza", ""))
     utilsOs.createEmptyFolder(generalPath)
+    # configure the nb of cpus
+    subprocess.run([mgizaCom, u"{0}119-12-05.194630.alfonsda.gizacfg".format(mgizaMasterEnvPath), u"-ncpus", u"1"])
     # make classes for hmm and ibm4 models
     classesEnPath = u"{0}{1}.classes".format(generalPath, vcbEnPath.split(u"/")[-1])
     classesFrPath = u"{0}{1}.classes".format(generalPath, vcbFrPath.split(u"/")[-1])
@@ -279,8 +317,8 @@ def applyMgiza(mgizaMasterEnvPath, pathToEnFile, pathToFrFile, overwrite=True):
     utilsOs.createEmptyFolder(outputMgiza)
     outputMgiza = u"{0}{1}_{2}".format(outputMgiza, vcbEnPath.split(u"/")[-1].split(u".")[0],
                                        vcbFrPath.split(u"/")[-1].split(u".")[0])
-    subprocess.run([mgizaCom, u"-s", vcbEnPath, u"-t", vcbFrPath, u"-c", sentPath, u"-CoocurrenceFile", coocurrencePath, u"-o", outputMgiza])
-    # u"-m1", "-1", u"-m2", u"1", u"-m3", u"-1", u"-m4", u"-1", u"-m5", u"-1", u"-m6", u"-1", u"-mh", u"-1"]) #############################################
+    subprocess.run([mgizaCom, u"-s", vcbEnPath, u"-t", vcbFrPath, u"-c", sentPath, u"-CoocurrenceFile", coocurrencePath, u"-m1", "5", u"-m2", u"5", u"-m3", u"5", u"-m4", u"5", u"-m5", u"5",
+                    u"-o", outputMgiza]) #u"-m1", "5", u"-m2", u"5", u"-m3", u"5", u"-m4", u"5", u"-m5", u"5", u"-m6", u"5", u"-mh", u"5"
     pharaohFilePath, tokFilePath = joinIntoPharaohFormat(outputMgiza)
     return pharaohFilePath, tokFilePath
 
@@ -333,12 +371,45 @@ def getConfigTemplate():
 
 def launchTmop(inputFilePath, pharaohFilePath, tokFilePath, outputFolderPath, **kwargs):
     utilsOs.createEmptyFolder(outputFolderPath)
+    ##########
     # get and modif the config file
     configDict = getConfigTemplate()
     configDict["options"]["input file"] = inputFilePath
     configDict["options"]["align file"] = pharaohFilePath
     configDict["options"]["token file"] = tokFilePath
     configDict["options"]["output folder"] = outputFolderPath
+    ##########
+    # add a policy
+    configDict["policies"].append(["FourNo", "on"])
+    configDict["policies"].append(["ThreeNo", "on"])
+    configDict["policies"].append(["TwoNo", "on"])
+    ##########
+    # turn off certain heuristics to launch only the interesting ones
+    # # configDict["filters"][0][1] = "off" # "SampleFilter"
+    # configDict["filters"][1][1] = "off" # "LengthStats"
+    # # configDict["filters"][2][1] = "off" # "LengthRatio"
+    # # configDict["filters"][3][1] = "off" # "ReverseLengthRatio"
+    # # configDict["filters"][4][1] = "off" # "WordRatio"
+    # # configDict["filters"][5][1] = "off" # "ReverseWordRatio"
+    # # configDict["filters"][6][1] = "off" # "WordLength"
+    # # configDict["filters"][7][1] = "off" # "TagFinder"
+    # # configDict["filters"][8][1] = "off" # "RepeatedChars"
+    # # configDict["filters"][9][1] = "off" # "RepeatedWords"
+    # # configDict["filters"][10][1] = "off" # "Lang_Identifier"
+    # configDict["filters"][11][1] = "off" # "AlignedProportion"
+    # # configDict["filters"][12][1] = "off" # "BigramAlignedProportion"
+    # configDict["filters"][13][1] = "off" # "NumberOfUnalignedSequences"
+    # configDict["filters"][14][1] = "off" # "LongestAlignedSequence"
+    # configDict["filters"][15][1] = "off" # "LongestUnalignedSequence"
+    # configDict["filters"][16][1] = "off" # "AlignedSequenceLength"
+    # configDict["filters"][17][1] = "off" # "UnalignedSequenceLength"
+    # configDict["filters"][18][1] = "off" # "FirstUnalignedWord"
+    # configDict["filters"][19][1] = "off" # "LastUnalignedWord"
+    # configDict["filters"][20][1] = "off" # "WE_Average"
+    # configDict["filters"][21][1] = "off" # "WE_Median"
+    # configDict["filters"][22][1] = "off" # "WE_BestAlignScore"
+    # configDict["filters"][23][1] = "off" # "WE_ScoreOtherAlignment"
+    # configDict["filters"][24][1] = "off" # "WE_ScoreAlign_BestForRest"
     for k, v in kwargs:
         configDict["options"][k] = v
     # dump the config.json file
@@ -353,15 +424,19 @@ def launchTmop(inputFilePath, pharaohFilePath, tokFilePath, outputFolderPath, **
 ###############################################################################
 if __name__ == "__main__":
     mgizaMaster = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/MGIZA++/mgiza-master/"
-    # gizafy a sample
-    pathToEnFile = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/018gizMtopSample/sample_en"
-    pathToFrFile = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/018gizMtopSample/sample_fr"
-    outputFolderPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/018gizMtopSample/TMOP_output"
+
+    # # gizafy a sample
+    # pathToEnFile = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/018gizMtopSample/sample_en_compote"
+    # pathToFrFile = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/018gizMtopSample/sample_fr_compote"
+    # outputFolderPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/018gizMtopSample/TMOP_output"
 
     # gizafy the 14M corpus
-    # pathToEnFile = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_14M_en"
-    # pathToFrFile = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_14M_fr"
-    # outputFolderPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/018gizMtopSample/TMOP_output_14M"
+    pathToEnFile = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_14M_noEmpty_en"
+    pathToFrFile = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/009ShivsTrainSubset/train/train_14M_noEmpty_fr"
+    outputFolderPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/007corpusExtraction/TMOP/output/output14MreducedHeur"
 
     pharaohFilePath, tokFilePath = applyMgiza(mgizaMaster, pathToEnFile, pathToFrFile)
-    launchTmop(pathToEnFile, pharaohFilePath, tokFilePath, outputFolderPath)
+    # pharaohFilePath = "/data/rali5/Tmp/alfonsda/workRali/004tradBureau/010MgizaOutput/"
+    # tokFilePath = "/data/rali5/Tmp/alfonsda/workRali/004tradBureau/010MgizaOutput/"
+
+    #### launchTmop(pathToEnFile, pharaohFilePath, tokFilePath, outputFolderPath)
