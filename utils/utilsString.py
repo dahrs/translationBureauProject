@@ -17,6 +17,7 @@ from tkinter import TclError
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException
 from googletrans import Translator
+import spacy
 
 
 ##################################################################################
@@ -360,7 +361,7 @@ def isItGibberish(string, gibberishTreshold=0.49, exoticCharSensitive=False):
 
 
 def eliminateMultipleSpaces(string):
-    ''''''
+    """"""
     if type(string) is int or type(string) is float:
         return string
     # find all multiple spaces
@@ -374,8 +375,59 @@ def eliminateMultipleSpaces(string):
 # NON-REGEX INDICATOR OR EXTRACTOR
 ##################################################################################
 
+def tokenEditDist(string1, string2):
+    """"""
+    if type(string1) is str:
+        string1 = [t for t in string1.split(" ") if t != ""]
+    if type(string2) is str:
+        string2 = [t for t in string2.split(" ") if t != ""]
+    commonTok, exclusiveTok = [], []
+    # get all tokens in string1 not in string2
+    string2Temp = list(string2)
+    for tok1 in string1:
+        if tok1 in string2Temp:
+            commonTok.append(tok1)
+            string2Temp.remove(tok1)
+        else:
+            exclusiveTok.append(tok1)
+    # get all tokens in string2 not in string1
+    commonTokTemp = list(commonTok)
+    for tok2 in string2:
+        if tok2 not in commonTokTemp:
+            exclusiveTok.append(tok2)
+        else:
+            commonTokTemp.remove(tok2)
+    return len(exclusiveTok), len(exclusiveTok)/(len(exclusiveTok)+len(commonTok))
+
+
+def makeNgramList(string, ngramSize=2):
+    """"""
+    ngramList = []
+    for indexString in range(0, len(string)-(ngramSize - 1)):
+        stringNgram = string[indexString:indexString+ngramSize]
+        ngramList.append(stringNgram)
+    return ngramList
+
+
+def makeNgramInterceptionList(string1, string2, ngramSize=2,returnNgramsLists=False):
+    """"""
+    interceptionList = []
+    string1NgramList = makeNgramList(string1, ngramSize)
+    string2NgramList = makeNgramList(string2, ngramSize)
+    for string1Ngram in string1NgramList:
+        for string2Ngram in string2NgramList:
+            if string1Ngram == string2Ngram:
+                interceptionList.append(string1Ngram)
+                break
+    if returnNgramsLists is False:
+        return interceptionList
+    else:
+        return interceptionList, string1NgramList, string2NgramList
+
+
+
 def fillCorrespondenceList(string1, string2, ngramSize=2):
-    ''''''
+    """"""
     correspondenceList = []
     for indexChar, char in enumerate(string1[:len(string1) - (ngramSize - 1)]):
         # if the string2 has not yet got to the end of the string
@@ -495,8 +547,48 @@ def googleTranslateLangDetection(string):
 
 
 ##################################################################################
-# TRANSFORM TO NLP UNITS (TOKENS, NGRAM, POS, LEMMA, STEM, etc.)
+# TRANSFORM TO NLP UNITS (SENTENCE, TOKENS, NGRAM, POS, LEMMA, STEM, etc.)
 ##################################################################################
+
+def sentSegmenterSpacy(inputPath, outputFolder=None, spacyNlpObj=None):
+    if spacyNlpObj is None:
+        nlp = spacy.load("fr")
+    else:
+        nlp = spacyNlpObj
+    sentList = []
+    with open(inputPath) as txtFile:
+        for paragraph in txtFile.readlines():
+            doc = nlp(paragraph)
+            sentList += [(sent.text).replace("\n", "") for sent in doc.sents]
+    if outputFolder is not None:
+        fileName = inputPath.split("/")[-1]
+        with open(u"{0}{1}".format(outputFolder, fileName), "w") as outFile:
+            outFile.write("")
+            for sent in [s for s in sentList if s not in ["\n", "\t", " ", ""]]:
+                outFile.write("{0}\n".format(sent))
+        with open(u"{0}{1}.reference".format(outputFolder, fileName), "w") as outFile:
+            outFile.write(inputPath)
+        return sentList, u"{0}{1}".format(outputFolder, fileName)
+    return sentList
+
+
+def sentSegmenterNltk(inputPath, outputFolder=None):
+    sentList = []
+    with open(inputPath) as txtFile:
+        for paragraph in txtFile.readlines():
+            doc = nltk.sent_tokenize(paragraph)
+            sentList += [(sent.text).replace("\n", "") for sent in doc]
+    if outputFolder is not None:
+        fileName = inputPath.split("/")[-1]
+        with open(u"{0}{1}".format(outputFolder, fileName), "w") as outFile:
+            outFile.write("")
+            for sent in [s for s in sentList if s not in ["\n", "\t", " ", ""]]:
+                outFile.write("{0}\n".format(sent))
+        with open(u"{0}{1}.reference".format(outputFolder, fileName), "w") as outFile:
+            outFile.write(inputPath)
+        return sentList, u"{0}{1}".format(outputFolder, fileName)
+    return sentList
+
 
 def copyOfString(string):
     return u'{0}*'.format(string)[:-1]
@@ -506,42 +598,73 @@ def words(string): return re.findall(r'\w+', string.lower().replace(u'\n',
                                                                     u' '))  # extracted from peter norvig spell post : https://norvig.com/spell-correct.html
 
 
-def getTokenRegex(capturePunctuation=False, captureSymbols=False, language='english'):
-    ''''''
-    prefix, suffix, punctuation, symbols = r"", r"", r"", r""
+def getTokenRegex(capturePunctuation=False, captureSymbols=False, language=None):
+    '''
+    returns a specific regex string in order to tokenize a string
+    :param capturePunctuation: wether to capture punctuation or not => true, false, string or list of punct
+    :param captureSymbols: wether to capture symbols or not => true, false, string or list of symbols
+    :param language:
+    :return: the right regex (string)
+    '''
+    infix, punctuation, symbols, punctAndSymb = r'', r'', r'', r''
     # gets some possible punctuation
-    if capturePunctuation == True:
-        punctuation = r'[。\.\?\!\:\;¡¿\(\)\[\]\{\}]+|'
+    if capturePunctuation is True:
+        punctuation = r'\。\.\?\!\:\;\¡\¿\(\)\[\]\{\}'
     # put all the given puntuation characters in a list, then in a regex string
-    elif capturePunctuation != False:
+    elif capturePunctuation is not False:
+        # put all the punct in a list then transform it into a string
         punctList = [punct for punct in capturePunctuation]
-        punctuation = r'[{0}]+|'.format(r''.join(punctList)) if len(punctList) > 0 else r''
+        punctuation = r''.join(punctList) if len(punctList) > 0 else r''
+    punctStr = r'\b[{0}]+|'.format(punctuation) if punctuation != r'' else r''
     # adds the apostrophe at the start of the word in english and at the end of the word in other languages
-    if captureSymbols == True or u"'" in captureSymbols:
-        prefix, suffix = (r"(\b|')", r"\b") if language == 'english' else (r"\b", r"('|\b)")
+    if captureSymbols is not False:
+        if language in ['english', 'en']:
+            infix = r"[o]\'[\w]+|[\w]*[nsxz]\'(t)?|\'[mrsv][\w]*|"
+        elif language in ['french', 'fr']:
+            infix = r"[\w]*[cdnmjlstu]\'|"
+        else:
+            infix = r"[o]\'[\w]+|[\w]*[cdnmjlstu]\'(t)?|\'[mrsv][\w]*|"
     # list the symbols
-    if captureSymbols == True:
-        symbols = r'|-|\+|\#|\$|%|&|\'|\*|\^|_|`|\||~|:|@|<|>'
-    elif captureSymbols != False:
+    if captureSymbols is not False and captureSymbols is True:
+        symbols = r'\-\+\#\$\%\&\'\*\^\_\`\|\~\:\@\<\>\/'
+    elif captureSymbols is not False:
         # put all the symbols in a list then transform it into a string
         symbList = [symb for symb in captureSymbols if symb != u"'"]
-        symbols = r'{0}'.format(r''.join(symbList)) if len(symbList) > 0 else r''
-    return r"({0}{1}[\w{2}]+{3})".format(prefix, punctuation, symbols, suffix)
+        symbols = r''.join(symbList) if len(symbList) > 0 else r''
+    symbStr = r'|[{0}]+'.format(symbols) if symbols != r'' else r''
+    # list the isolated punctuation and symbols
+    if punctuation != r'' or symbols != r'':
+        optPuncSymb = u'|'.join([u'[\\{0}]+'.format(ps) for ps in u"{0}{1}".format(punctuation, symbols).replace(u'\\', u'')])
+        punctAndSymb = r'|{0}'.format(optPuncSymb)
+    return r"({0}{1}([\w\-\/]+\b{2}){3})".format(punctStr, infix, symbStr, punctAndSymb)
 
 
 def naiveRegexTokenizer(string, caseSensitive=True, eliminateStopwords=False, language=u'english',
                         capturePunctuation=False, captureSymbols=False):
-    '''
+    """
 	returns the token list using a very naive regex tokenizer
 	does not return the punctuation symbols nor the newline
-	if captureSymbols is a string or a list of strings then those strings will also be captured 
+	if captureSymbols is a string or a list of strings then those strings will also be captured
 	(ie, captureSymbols="'" , then r"(\b\w+(\b   |'   ))")
-	'''
+    :param string:
+    :param caseSensitive:
+    :param eliminateStopwords:
+    :param language:
+    :param capturePunctuation:
+    :param captureSymbols:
+    :return:
+    """
     # make the regex
     regex = getTokenRegex(capturePunctuation, captureSymbols, language)
     # make list of tokens
     plainWords = re.compile(regex, re.UNICODE)
     tokens = re.findall(plainWords, string.replace(u'\r', u'').replace(u'\n', u' '))
+    if len(tokens) == 0:
+        return u''
+    elif type(tokens[0]) is str:
+        tokens = [tokTupl for tokTupl in tokens]
+    else:
+        tokens = [tokTupl[0] for tokTupl in tokens]
     # if we don't want to be case sensitive
     if caseSensitive != True:
         tokens = [tok.lower() for tok in tokens]
@@ -942,7 +1065,7 @@ def gethigherIndex(aDict):
 
 
 def elemDictToList(elemDict):
-    ''''''
+    """"""
     correctedStringTokenList = [None] * (gethigherIndex(elemDict) + 1)
     changedTokenCounter = 0
     for keyTok, valTok in elemDict.items():
@@ -1676,7 +1799,7 @@ def makeSimilarityList4FirstTok1(tokens1, tokens2):
 
 
 def addTokToALign(immediateSimilList1, immediateSimilList2, tokenList1, tokenList2, alignList1, alignList2, ind1, ind2):
-    ''''''
+    """"""
     # we add to the token1
     emptyTokens = [u'∅'] * immediateSimilList1[0][2]
     alignList1 = alignList1 + emptyTokens + [tokenList1[ind1]]

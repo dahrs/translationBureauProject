@@ -339,9 +339,22 @@ def appendMultLinesToFile(linesList, filePath, addNewLine=True):
 
 
 def countLines(openedFile):
-	for i, l in enumerate(openedFile):
-		pass
-	return i + 1
+	if type(openedFile) is str:
+		with open(openedFile) as file:
+			i = 0
+			ln = file.readline()
+			while ln:
+				i+=1
+				ln = file.readline()
+			return i
+	else:
+		for i, l in enumerate(openedFile):
+			pass
+		try:
+			return i + 1
+		# if there are no lines
+		except UnboundLocalError:
+			return 0
 
 
 def getFileTimestampMetadata(pathToFile):
