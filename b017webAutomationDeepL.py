@@ -346,12 +346,55 @@ startTime = utilsOs.countTime()
 #                  outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/",
 #                  coffeeBreak=1650)
 
-# launch downloader until stopped
-while True:
-    launchForOneWeek(tokLimit=20000,
-                     outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/",
-                     coffeeBreak=1650)
+#######################
+# # launch downloader until stopped
+# while True:
+#     launchForOneWeek(tokLimit=20000,
+#                      outputFolderPath=u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017deepLTranslatedCorpus/",
+#                      coffeeBreak=1650)
+########################
+
+# translate 10k sentences as test set for shiv 2nd article
+# time.sleep(10000)
+with open("/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017.2nonBTdeepLTranslatedCorpus/CN_parliament_all_DeepL.en") as cn10k:
+    with open("/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017.2nonBTdeepLTranslatedCorpus/CN_parliament_all_DeepL.en2fr") as out10k:
+        lastSeenInd = 0
+        ouLn = out10k.readline()
+        while ouLn:
+            lastSeenInd += 1
+            ouLn = out10k.readline()
+    with open("/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017.2nonBTdeepLTranslatedCorpus/CN_parliament_all_DeepL.en2fr",
+            "a") as out10k:
+        session = webdriver.Firefox(executable_path=u"/u/alfonsda/progs/geckoDriver/geckodriver")
+        session.get("https://www.deepl.com/translator")
+        counter = 0
+        cnLn = cn10k.readline()
+        start = utilsOs.countTime()
+        while cnLn:
+            if counter >= lastSeenInd:
+                cnLn = cnLn.replace("\n", "")
+                session, enFrTranslAndAlt, timeStampEn = translateOneLang(session, u"en", cnLn, len(cnLn.split(" ")), [])
+                out10k.write("{0}\n".format(enFrTranslAndAlt[0]))
+                # take a coffee break if it's time
+                if utilsOs.countTime(start) >= 600:
+                    session.close()
+                    time.sleep(random.uniform(20, 60))
+                    start = utilsOs.countTime()
+                    # open the driver
+                    try:
+                        session = webdriver.Firefox()
+                    except OSError:
+                        time.sleep(600)
+                        session = webdriver.Firefox()
+                    session.get("https://www.deepl.com/translator")
+            # next
+            cnLn = cn10k.readline()
+            counter += 1
+
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))
 
 # REMINDER : weekMax = 20000 words, shiv = 2k words/day, michel=2k words/day, free = 5000 char
+
+
+

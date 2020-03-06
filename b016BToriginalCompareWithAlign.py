@@ -4,7 +4,7 @@
 import sys
 
 sys.path.append(u'../utils')
-sys.path.append(u'./utils')
+# sys.path.append(u'./utils')
 import subprocess, argparse, os, re
 import b000path, utilsOs, utilsString
 from bs4 import BeautifulSoup
@@ -42,8 +42,6 @@ def getTmxFlaggedData(tmxFilePathList):
                             frSent = tuv[0].text
                     try:
                         # replace nonbreaking hyphens and spaces
-                        enSent = enSent.replace("‑", "-").replace(" ", " ")
-                        frSent = frSent.replace("‑", "-").replace(" ", " ")
                         yield flagType, indChild, enSent, frSent, segmentNb, flagDate
                     except UnboundLocalError:
                         yield None
@@ -108,10 +106,7 @@ def selectNRandomFlaggedOrigDocs(n=10,
 def cleanStr(string, removeSpaces=False):
     string = string.replace(u'\n', u' ').replace(u'\t', u' ')
     if removeSpaces:
-        for char in [u"\t", u" ", u"'", u'"', u"*", u"/", u"-", u"+", u"\\", u"|", u":", u";", u",", u".", u"%", u"^",
-                     u"?", u"!", u"$", u"&", u"(", u")", u"[", u"]", u"{", u"}", u"<", u">", u"_", u"“", u"”", u"‘",
-                     u"’", u"«", u"»"]:
-            string = string.replace(char, u"")
+        string = re.sub(r"""[-/*+.,!?@#$%^&()_–=\[\]\{\}\\<>:"|'“”‘’«»  \r\n¿]+""", u"", string)
     # replace non breaking chars
     string = string.replace("‑", "-").replace(" ", " ")
     for n in reversed(range(2, 51)):
@@ -132,13 +127,15 @@ def convertDocFilesToHtml(docsFolderPath, dump=True, fileFormat=u"html"):
         folderPath = u'{0}{1}/'.format(docsFolderPath, origDocFolder)
         for docFile in [file for file in os.listdir(folderPath) if u'.doc' in file]:
             inputPath = u'{0}{1}'.format(folderPath, docFile)
-            outputPath = u'{0}{1}'.format(folderPath, docFile.replace(u'.doc', u''))
+            outputPath = u'{0}{1}'.format(folderPath, re.sub(r"\.doc[x]?", u"", docFile))
+            if not os.path.isdir(outputPath):
+                outputPath = u'{0}{1}'.format(folderPath, docFile.replace(u".doc", ""))
             # convert and dump
             if dump is True:
                 subprocess.call(['libreoffice', '--headless', '--convert-to', fileFormat, inputPath,
                                  '--outdir', outputPath])
             # save path to html index file into list
-            htmlPathList.append(u'{0}/{1}'.format(outputPath, docFile.replace(u'.doc', u'.{0}'.format(fileFormat))))
+            htmlPathList.append(u'{0}/{1}'.format(outputPath, re.sub(r"\.doc[x]?", u'.{0}'.format(fileFormat), docFile)))
     return htmlPathList
 
 
@@ -181,11 +178,13 @@ def findTheAlignFiles(path):
     return None, None
 
 
-def guessLang(htmlLns, enLns, frLns, counter, flaggedEn, flaggedFr):
+def guessLang(htmlLns, enLns, frLns, counter, flaggedEn, flaggedFr, removeSpaces=False):
+    enLns = [cleanStr(ln, removeSpaces) for ln in enLns]
+    frLns = [cleanStr(ln, removeSpaces) for ln in frLns]
     enSet = list2Set(enLns)
     frSet = list2Set(frLns)
     for htLn in htmlLns:
-        cleanHtLn = cleanStr(htLn)
+        cleanHtLn = cleanStr(htLn, removeSpaces)
         if cleanHtLn in enSet:
             counter[0] += 1
         if cleanHtLn in frSet:
@@ -218,12 +217,17 @@ def useBeautifulSoup(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter
     lnList.append(u'<body>')
     # open the alignment files
     with open(alignedPathEn) as enFile:
-        enLns = [cleanStr(ln.replace(u'\n', u''), removeSpaces) for ln in enFile.readlines()]
+        enLns = [cleanStr(ln, removeSpaces) for ln in enFile.readlines()]
     with open(alignedPathFr) as frFile:
-        frLns = [cleanStr(ln.replace(u'\n', u''), removeSpaces) for ln in frFile.readlines()]
+        frLns = [cleanStr(ln, removeSpaces) for ln in frFile.readlines()]
     # guess the language
     htmlLns = [cleanStr(ln, removeSpaces) for ln in soup.get_text().split(u'\n')]
-    langLns, langSet, langFlagged, counter, lang = guessLang(htmlLns, enLns, frLns, counter, flaggedEn, flaggedFr)
+    # ## langLns, langSet, langFlagged, counter, lang = guessLang(htmlLns, enLns, frLns, counter, flaggedEn, flaggedFr,
+    #                                                          removeSpaces)
+    if re.search(r"[0-9]{1,2}_EN[_\.]", htmlFilePath.split("/")[-2]) is not None:
+        langLns, langSet, langFlagged, lang = enLns, list2Set(enLns), set(flaggedEn), "en"
+    else:
+        langLns, langSet, langFlagged, lang = frLns, list2Set(frLns), set(flaggedFr), "fr"
     # highlight in the html the sentences appearing in the aligned file
     for bs4Elem in soup.find_all(u'p'):
         elemString = [bs4Elem.string]
@@ -296,37 +300,49 @@ def getLinesAsHtml(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter,
         .highlightFlagged { background-color:#EFAC9F; }\n</style>''')
     lnList.append(u'<body>')
     # open the alignment files
-    with open(alignedPathEn) as enFile:
-        enLns = [cleanStr(ln.replace(u'\n', u''), removeSpaces) for ln in enFile.readlines()]
-    with open(alignedPathFr) as frFile:
-        frLns = [cleanStr(ln.replace(u'\n', u''), removeSpaces) for ln in frFile.readlines()]
-    # guess the language
+    if alignedPathEn is None:
+        enLns = []
+    else:
+        with open(alignedPathEn) as enFile:
+            enLns = [cleanStr(ln, removeSpaces) for ln in enFile.readlines()]
+    if alignedPathFr is None:
+        frLns = []
+    else:
+        with open(alignedPathFr) as frFile:
+            frLns = [cleanStr(ln, removeSpaces) for ln in frFile.readlines()]
+    # get html lines
     with open(htmlFilePath) as hfp:
-        htmlLns = [hln.replace(u"\n", u"").replace(u"\t", u"").replace(u" ", u"") for hln in hfp.readlines()]
+        htmlLns = [cleanStr(hln, removeSpaces) for hln in hfp.readlines()]
     ##################################################################
     total = len(enLns)
     aligned = 0
     ##################################################################
-    langLns, langSet, langFlagged, counter, lang = guessLang(htmlLns, enLns, frLns, counter, flaggedEn, flaggedFr)
+    # quess the language
+    # ## langLns, langSet, langFlagged, counter, lang = guessLang(htmlLns, enLns, frLns, counter, flaggedEn, flaggedFr,
+    #                                                          removeSpaces)
+    if re.search(r"[0-9]{1,2}_EN[_\.]", htmlFilePath.split("/")[-2]) is not None:
+        langLns, langSet, langFlagged, lang = enLns, list2Set(enLns), set(flaggedEn), "en"
+    else:
+        langLns, langSet, langFlagged, lang = frLns, list2Set(frLns), set(flaggedFr), "fr"
     # highlight in the html the sentences appearing in the aligned file
     for elemString in htmlLns:
         # check if it appears in the aligned files
         if elemString is not u"":
-            cleanElemStr = cleanStr(elemString, removeSpaces)
-            if cleanElemStr in set(langLns):
+            if elemString in set(langLns):
                 # if the sentence is one of the flagged lines put the string between highlight tags
-                typeOfHighlight = u'highlightFlagged' if cleanElemStr in langFlagged else u'highlightMatch{0}'.format(
+                typeOfHighlight = u'highlightFlagged' if elemString in langFlagged else u'highlightMatch{0}'.format(
                     hlNb)
                 hlNb = hlNb + 1 if hlNb < 4 else 0
                 # put the string between highlight tags
-                elemString = u'<p><span class="{0}">{1}</span></p>'.format(typeOfHighlight, cleanElemStr)
+                origElemString = elemString
+                elemString = u'<p><span class="{0}">{1}</span></p>'.format(typeOfHighlight, elemString)
                 ##################################################################
                 total += 1
                 aligned += 1
                 ##################################################################
                 # remove from the aligned list
                 try:
-                    langLns.remove(cleanElemStr)
+                    langLns.remove(origElemString)
                 except ValueError:
                     pass
             else:
@@ -335,20 +351,20 @@ def getLinesAsHtml(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter,
                 # dejavu marker: so we do not take into account what was already <mark>ed
                 dejavu = float(u'-inf')
                 # search for a partial match
-                for i in range(len(cleanElemStr)):
-                    for n in reversed(range(6, len(cleanElemStr))):
+                for i in range(len(elemString)):
+                    for n in reversed(range(6, len(elemString))):
                         if i > dejavu:
-                            if cleanElemStr[i:i + n + 1] in set(langLns):
+                            if elemString[i:i + n + 1] in set(langLns):
                                 start = 0 if dejavu == float(u'-inf') else dejavu + 1
                                 # if the sentence is one of the flagged lines put the string between highlight tags
-                                typeOfHighlight = u'highlightFlagged' if cleanElemStr[
+                                typeOfHighlight = u'highlightFlagged' if elemString[
                                                                          i:i + n + 1] in langFlagged else u'highlightMatch{0}'.format(
                                     hlNb)
                                 hlNb = hlNb + 1 if hlNb < 4 else 0
                                 # add the partial element (perhaps preceded by the not found segment)
-                                subElemString = u'{0}{1}{2}'.format(subElemString, cleanElemStr[start:i],
+                                subElemString = u'{0}{1}{2}'.format(subElemString, elemString[start:i],
                                                                     u'<span class="{0}">{1}</span>'.format(
-                                                                        typeOfHighlight, cleanElemStr[i:i + n + 1]))
+                                                                        typeOfHighlight, elemString[i:i + n + 1]))
                                 ##################################################################
                                 total += 1
                                 aligned += 1
@@ -356,7 +372,7 @@ def getLinesAsHtml(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter,
                                 ##################################################################
                                 # remove from the aligned list
                                 try:
-                                    langLns.remove(cleanElemStr[i:i + n + 1])
+                                    langLns.remove(elemString[i:i + n + 1])
                                 except ValueError:
                                     pass
                 # if there wasn't even a partial match
@@ -367,7 +383,7 @@ def getLinesAsHtml(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter,
                     elemString = u'<p>{0}</p>'.format(elemString)
                 # if there was a partial match, add the remainder
                 else:
-                    elemString = u'{0}{1}</p>'.format(subElemString, cleanElemStr[dejavu + 1:])
+                    elemString = u'{0}{1}</p>'.format(subElemString, elemString[dejavu + 1:])
             lnList.append(elemString)
     ##################################################################
     # print(22222, total, aligned, lang)
@@ -375,7 +391,21 @@ def getLinesAsHtml(htmlFilePath, lnList, alignedPathEn, alignedPathFr, counter,
     return lnList, langLns, counter
 
 
-def highlightHtmlAlign(listOfHtmlFilePaths, removeSpaces=False):
+def copyTmxToSampleFolder(listOfOutputFolderPaths):
+    from shutil import copyfile
+    for outFold in tqdm(listOfOutputFolderPaths):
+        fpSplit = outFold.split(u'/')
+        lang = "en" if re.search(r"[0-9]{1,2}_EN[_\.]", fpSplit[-2]) is not None else "fr"
+        tmxPath = "{0}{1}/".format(b000path.getBtFolderPath(), u"/".join(fpSplit[-3].split("*")[:-1]))
+        tmxFiles = ["{0}{1}".format(tmxPath, f) for f in os.listdir(tmxPath) if (fpSplit[-3].split("*")[-1] in f and "tmx.{0}".format(lang) in f)]
+        if len(tmxFiles) == 1:
+            copyfile(tmxFiles[0], "{0}{1}".format(outFold, tmxFiles[0].split("/")[-1]))
+        else:
+            print(outFold)
+
+
+
+def highlightHtmlAlign(listOfHtmlFilePaths, removeSpaces=False, alignUsed=""):
     """
     open the html file and highlights the sentences that were aligned
     :param listOfHtmlFilePaths: list containing the file paths to the html version of the original docs
@@ -383,32 +413,76 @@ def highlightHtmlAlign(listOfHtmlFilePaths, removeSpaces=False):
     :return: None
     """
     for htmlFilePath in tqdm(listOfHtmlFilePaths):
-        # print(10000, htmlFilePath)
+        fpSplit = htmlFilePath.split(u'/')
         lnList = []
         counter = [0, 0]
+        encounteredError = False
+        # overwrite old files
+        with open(u'{0}.highlight{1}.html'.format(htmlFilePath, alignUsed), "w") as highFile:
+            highFile.write("")
+        with open(u'{0}.remnant{1}'.format(htmlFilePath, alignUsed), "w") as remnFile:
+            remnFile.write("")
         # get the path to the aligned files
-        alignedPathEn, alignedPathFr = findTheAlignFiles(htmlFilePath)
+        if alignUsed == "":
+            alignedPathEn, alignedPathFr = findTheAlignFiles(htmlFilePath)
+        elif alignUsed == "spacy":
+            alignPath = "{0}/".format("/".join(fpSplit[:-1]))
+            alignPathFile = ["{0}{1}".format(alignPath, f) for f in os.listdir(alignPath) if ".spacy_split" in f]
+            # if there is no file then return none ang write the path to an error log
+            if len(alignPathFile) == 0:
+                with open("./errorLog", "a") as errorLog:
+                    errorLog.write("{0}\n".format(listOfHtmlFilePaths))
+                encounteredError = True
+            else:
+                alignedPathEn = alignPathFile[0] if re.search(r"[0-9]{1,2}_EN[_\.]", fpSplit[-2]) is not None else None
+                alignedPathFr = alignPathFile[0] if alignedPathEn is None else None
+        elif alignUsed == "nltk":
+            alignPath = "{0}/".format("/".join(fpSplit[:-1]))
+            alignPathFile = ["{0}{1}".format(alignPath, f) for f in os.listdir(alignPath) if ".nltk_split" in f]
+            # if there is no file then return none ang write the path to an error log
+            if len(alignPathFile) == 0:
+                with open("./errorLog", "a") as errorLog:
+                    errorLog.write("{0}\n".format(alignPathFile))
+                encounteredError = True
+            else:
+                alignedPathEn = alignPathFile[0] if re.search(r"[0-9]{1,2}_EN[_\.]", fpSplit[-2]) is not None else None
+                alignedPathFr = alignPathFile[0] if alignedPathEn is None else None
+        else:
+            alignPath = "{0}/".format("/".join(fpSplit[:-1]))
+            alignPathFile = ["{0}{1}".format(alignPath, f) for f in os.listdir(alignPath) if ".tmx." in f]
+            # if there is no file then return none ang write the path to an error log
+            if len(alignPathFile) == 0:
+                with open("./errorLog", "a") as errorLog:
+                    errorLog.write("{0}\n".format(alignPathFile))
+                encounteredError = True
+            else:
+                alignedPathEn = alignPathFile[0] if re.search(r"[0-9]{1,2}_EN[_\.]", fpSplit[-2]) is not None else None
+                alignedPathFr = alignPathFile[0] if alignedPathEn is None else None
         # if there are multiple choices, unable to choose amongst them, pass to the next one
-        if alignedPathEn is None:
+        if alignedPathEn is None and alignedPathFr is None:
+            pass
+        # if there was no file to be found, pass tot he next one
+        elif encounteredError is True:
             pass
         else:
+            flaggedEn, flaggedFr = [], []
+            # if there is a flagged sentence file
             try:
-                # get the flagged lines from the tmx file
-                fpSplit = htmlFilePath.split(u'/')
-                flagSect = u'{0}/{1}'.format(fpSplit[-2], fpSplit[-1])
-                flaggedFilePaths = [file for file in os.listdir(htmlFilePath.replace(flagSect, u'')) if u'.tmx' in file]
-                flaggedFilePaths = [u'{0}{1}'.format(htmlFilePath.replace(flagSect, u''), flaggedFile) for flaggedFile
-                                    in flaggedFilePaths]
-                flaggedEn, flaggedFr = [], []
+                # get the FLAGGED SENTENCE along with the rest of the tmx sentences
+                lang = "en" if re.search(r"[0-9]{1,2}_EN[_\.]", fpSplit[-2]) is not None else "fr"
+                tmxPath = "{0}DC-24/{1}/".format(b000path.getBtOriginalDocsPath(), u"/".join(fpSplit[-3].split("*")[:-1]))
+                flaggedFilePaths = ["{0}{1}".format(tmxPath, f) for f in os.listdir(tmxPath) if
+                                    (fpSplit[-3].split("*")[-1] in f and ".tmx." not in f)]
                 if len(flaggedFilePaths) != 0:
                     for infoTupl in getTmxFlaggedData(flaggedFilePaths):
                         if infoTupl is not None:
                             flagType, indChild, enSent, frSent, segmentNb, flagDate = infoTupl
-                            if removeSpaces is not False:
-                                enSent = enSent.replace(u" ", "").replace(u"\t", "")
-                                frSent = frSent.replace(u" ", "").replace(u"\t", "")
-                            flaggedEn.append(cleanStr(enSent.replace(u'\n', u'')))
-                            flaggedFr.append(cleanStr(frSent.replace(u'\n', u'')))
+                            flaggedEn.append(cleanStr(enSent, removeSpaces))
+                            flaggedFr.append(cleanStr(frSent, removeSpaces))
+            # if there is no flagged sentence file
+            except FileNotFoundError:
+                pass
+            try:
                 # open the html file as a beautiful soup object
                 if u'.html' in htmlFilePath:
                     lnList, langLns, counter = useBeautifulSoup(htmlFilePath, lnList, alignedPathEn, alignedPathFr,
@@ -419,12 +493,14 @@ def highlightHtmlAlign(listOfHtmlFilePaths, removeSpaces=False):
                                                               counter, flaggedEn, flaggedFr, removeSpaces)
                 lnList.append(u'</body>')
                 lnList.append(u'</html>')
+
                 # dump the html in a different html file
-                utilsOs.dumpRawLines(lnList, u'{0}.highlight.html'.format(htmlFilePath), addNewline=True, rewrite=True)
+                utilsOs.dumpRawLines(lnList, u'{0}.highlight{1}.html'.format(htmlFilePath, alignUsed), addNewline=True, rewrite=True)
                 # dump the lines we did not find
-                utilsOs.dumpRawLines(langLns, u'{0}.remnant'.format(htmlFilePath), addNewline=True, rewrite=True)
+                utilsOs.dumpRawLines(langLns, u'{0}.remnant{1}'.format(htmlFilePath, alignUsed), addNewline=True, rewrite=True)
             except FileNotFoundError:
                 pass
+
 
 
 def countNbSpInTmx(pathsList):
@@ -557,7 +633,7 @@ def getSentences(htmlFilePath):
         else:
             allSent.append(tagText)
     # get remnant sentences
-    with open(htmlFilePath.replace(".highlight.html", ".remnant")) as remnFile:
+    with open(htmlFilePath.replace(".highlight.html", ".remnant").replace(".highlightnltk.html", ".remnantnltk").replace(".highlightspacy.html", ".remnantspacy")) as remnFile:
         tmxExclusivSent = [s.replace("\n", "") for s in remnFile.readlines()]
     # finish adding to sent
     origExclusivSent = [s for s in allSent if s not in set(commonSent)]
@@ -588,8 +664,6 @@ def getTypeOfMismatch(htmlFilePath):
                 if len(tmxSent) in range(len(origSent) - 3, len(origSent) + 4) and tmxNgrams[0] != origNgrams[0] and \
                         tmxNgrams[-1] != origNgrams[-1]:
                     typeOfMismatch["displacement"] += 1
-                    # print(111, repr(origSent))
-                    # print(222, repr(the))
                 elif len(tmxSent) <= len(origSent):
                     typeOfMismatch["elision in tmx"] += 1
                 elif len(tmxSent) > len(origSent):
@@ -607,7 +681,6 @@ def getTypeOfMismatch(htmlFilePath):
 
 def tenMoreLines(ln, openFile, ind, fileIndexes, fileSentences):
     for x in range(10):
-        print(6666, ln, ind)
         if ln:
             fileIndexes.append(ind)
             fileSentences.append(ln)
@@ -615,7 +688,7 @@ def tenMoreLines(ln, openFile, ind, fileIndexes, fileSentences):
             ind += 1
             ln = openFile.readline()
         else:
-            print(99999999999999999)
+            pass
     return ln, openFile, ind, fileIndexes, fileSentences
 
 
@@ -623,8 +696,6 @@ def getData(alignaInd, i, aFileIndexes, aFileSentences, aCuts, aSent, aRef, aLn,
     if alignaInd is None:
         aSent.append(u"***∅***")
         return float("inf"), aFileIndexes, aFileSentences, aCuts, aSent, aRef
-    print(alignaInd, i)
-    print(aFileIndexes)
     if alignaInd in aFileIndexes:
         whereItIs = aFileIndexes.index(alignaInd)
         # get data
@@ -636,20 +707,16 @@ def getData(alignaInd, i, aFileIndexes, aFileSentences, aCuts, aSent, aRef, aLn,
         del aFileIndexes[whereItIs]
         del aFileSentences[whereItIs]
     else:
-        print(333333, alignaInd, aFileIndexes)
         while alignaInd not in aFileIndexes:
             aLn, aFile, aIndex, aFileIndexes, aFileSentences = tenMoreLines(aLn, aFile,
                                                                             aIndex,
                                                                             aFileIndexes,
                                                                             aFileSentences)
             if alignaInd == 30:
-                print(1111, aFile)
-                print(44444, alignaInd, aFileIndexes)
                 raise Exception
 
             if len(aFileIndexes) >= 500:
                 break
-
         try:
             whereItIs = aFileIndexes.index(alignaInd)
             # get data
@@ -662,7 +729,6 @@ def getData(alignaInd, i, aFileIndexes, aFileSentences, aCuts, aSent, aRef, aLn,
             del aFileSentences[whereItIs]
         except ValueError:
             whereItIs = None
-        print(88888888888888888888)
     return whereItIs, aFileIndexes, aFileSentences, aCuts, aSent, aRef
 
 
@@ -693,10 +759,10 @@ def getYasaAlign(srcFilePath, trgtFilePath, outputFolderPath):
                 raliSplit = raliLn.split(u" ")
                 # get the line indexes and score
                 indexSect = arcadeSplit[1].split(";")
-                indexSrc = [int(s) - 1 if s != "" else None for s in indexSect[0].split(" ")]
-                indexTgrt = [int(s) - 1 if s != "" else None for s in indexSect[1].split(" ")]
-                arcadeScore = float(arcadeSplit[3])
-                raliScore = float(raliSplit[1].replace(u"\n", ""))
+                indexSrc = [int(s.replace(u",", "")) - 1 if s != "" else None for s in indexSect[0].split(" ")]
+                indexTgrt = [int(s.replace(u",", "")) - 1 if s != "" else None for s in indexSect[1].split(" ")]
+                arcadeScore = float(arcadeSplit[3].replace(u",", ""))
+                raliScore = float(raliSplit[1].replace(u"\n", "").replace(u",", ""))
                 indexInfo.append({u"src": indexSrc, "trgt": indexTgrt, "scores": [arcadeScore, raliScore]})
                 # next line
                 arcadeLn = arcadeFile.readline()
@@ -717,60 +783,56 @@ def getYasaAlign(srcFilePath, trgtFilePath, outputFolderPath):
     srcFileIndexes, srcFileSentences, srcIndex = [], [], 0
     trgtFileIndexes, trgtFileSentences, trgtIndex = [], [], 0
     with open(srcFilePath) as srcFile:
-        # prepare the window of sentences for the source file
-        srcLn = srcFile.readline()
-        srcLn, srcFile, srcIndex, srcFileIndexes, srcFileSentences = tenMoreLines(srcLn, srcFile, srcIndex,
-                                                                                  srcFileIndexes, srcFileSentences)
         with open(trgtFilePath) as trgtFile:
-            # prepare the window of sentences for the source file
-            trgtLn = trgtFile.readline()
-            trgtLn, trgtFile, trgtIndex, trgtFileIndexes, trgtFileSentences = tenMoreLines(trgtLn, trgtFile, trgtIndex,
-                                                                                           trgtFileIndexes,
-                                                                                           trgtFileSentences)
-            # browse the aling index data
-            for e, alignDict in enumerate(indexInfo):
-                srcCuts, srcSent, srcRef, trgtCuts, trgtSent, trgtRef = [], [], [], [], [], []
+            # get lines of source file
+            srcLns = [s.replace(u"\n", "") for s in srcFile.readlines()]
+            # get lines of target file
+            trgtLns = [s.replace(u"\n", "") for s in trgtFile.readlines()]
+            # browse the alingment indexes data
+            for alignDict in indexInfo:
                 # src data
+                srcSent, srcCuts = "", []
                 for i, alignSrcInd in enumerate(alignDict["src"]):
-                    whereItIs, srcFileIndexes, srcFileSentences, srcCuts, srcSent, srcRef = getData(alignSrcInd, i,
-                                                                                                    srcFileIndexes,
-                                                                                                    srcFileSentences,
-                                                                                                    srcCuts, srcSent,
-                                                                                                    srcRef, srcLn,
-                                                                                                    srcFile, srcIndex)
-                # dump all src data
-                if whereItIs is not None:
-                    with open(srcRefOutputPath, "a") as refFile:
-                        refFile.write(u"{0}\t{1}\n".format(srcFilePath, srcRef))
-                    with open(srcOutputPath, "a") as srcSentFile:
-                        srcSentFile.write(u"{0}\n".format(u" ".join(srcSent)))
-                    with open(srcOutputPathCutIndex, "a") as cutsFile:
-                        cutsFile.write(u"{0}\n".format(srcCuts))
+                    # match to a sentence
+                    if alignSrcInd is not None:
+                        srcSent = u"{0}{1} ".format(srcSent, srcLns[alignSrcInd])
+                        srcCuts.append(len(srcSent))
+                    else:
+                        srcSent = u"{0} ".format(srcSent)
+                        srcCuts.append(None)
+                srcRef = [e for e in alignDict["src"] if e is not None]
+                srcSent = srcSent[:-1]
+                srcCuts = srcCuts[:-1]
+                # dump src data
+                with open(srcRefOutputPath, "a") as refFile:
+                    refFile.write(u"{0}\t{1}\n".format(srcFilePath, srcRef))
+                with open(srcOutputPath, "a") as srcSentFile:
+                    srcSentFile.write(u"{0}\n".format(srcSent))
+                with open(srcOutputPathCutIndex, "a") as cutsFile:
+                    cutsFile.write(u"{0}\n".format(srcCuts))
                 # trgt data
-                for i, alignTrgtInd in enumerate(alignDict["trgt"]):
-                    whereItIs, trgtFileIndexes, trgtFileSentences, trgtCuts, trgtSent, trgtRef = getData(alignTrgtInd,
-                                                                                                         i,
-                                                                                                         trgtFileIndexes,
-                                                                                                         trgtFileSentences,
-                                                                                                         trgtCuts,
-                                                                                                         trgtSent,
-                                                                                                         trgtRef, trgtLn,
-                                                                                                         trgtFile, trgtIndex)
+                trgtSent, trgtCuts = "", []
+                for i, aligntrgtInd in enumerate(alignDict["trgt"]):
+                    # match to a sentence
+                    if aligntrgtInd is not None:
+                        trgtSent = u"{0}{1} ".format(trgtSent, trgtLns[aligntrgtInd])
+                        trgtCuts.append(len(trgtSent))
+                    else:
+                        trgtSent = u"{0} ".format(trgtSent)
+                        trgtCuts.append(None)
+                trgtRef = [e for e in alignDict["trgt"] if e is not None]
+                trgtSent = trgtSent[:-1]
+                trgtCuts = trgtCuts[:-1]
                 # dump all trgt data
-                if whereItIs is not None:
-                    with open(trgtRefOutputPath, "a") as refFile:
-                        refFile.write(u"{0}\t{1}\n".format(trgtFilePath, trgtRef))
-                    with open(trgtOutputPath, "a") as trgtSentFile:
-                        trgtSentFile.write(u"{0}\n".format(u" ".join(trgtSent)))
-                    with open(trgtOutputPathCutIndex, "a") as cutsFile:
-                        cutsFile.write(u"{0}\n".format(trgtCuts))
+                with open(trgtRefOutputPath, "a") as refFile:
+                    refFile.write(u"{0}\t{1}\n".format(trgtFilePath, trgtRef))
+                with open(trgtOutputPath, "a") as trgtSentFile:
+                    trgtSentFile.write(u"{0}\n".format(trgtSent))
+                with open(trgtOutputPathCutIndex, "a") as cutsFile:
+                    cutsFile.write(u"{0}\n".format(trgtCuts))
                 # dump the scores
                 with open(scoreOutputPath, "a") as refFile:
                     refFile.write(u"{0}\n".format(alignDict["scores"]))
-                print(10)
-            print(100)
-        print(1000)
-    print(10000)
     return srcOutputPath, trgtOutputPath
 
 
@@ -812,6 +874,7 @@ def dumpYasaOut(srcPath, trgtPath, tPath, currentFolder, otherFolder, sentSegmen
     with open(trgtPath) as trgtSpa:
         otherTPath = [f for f in os.listdir("{0}/{1}/".format(currentFolder, otherFolder))]
         otherTPath = [f for f in otherTPath if f[-4:] == ".txt"][0]
+        otherTPath = "{0}/{1}/{2}".format(currentFolder, otherFolder, otherTPath)
         with open("{0}.{1}_split".format(otherTPath, sentSegmenter), "w") as outTrgtSpa:
             outTrgtSpa.write("")
             for ln in [l for l in trgtSpa.readlines() if l not in ["***∅***\n", "***∅***"]]:
@@ -823,8 +886,7 @@ def segmentAndYasaAlign(in_folder):
     txtPaths = utilsOs.goDeepGetFiles(in_folder, fileList=[], format=u".txt")
     nlpFr = spacy.load("fr")
     nlpEn = spacy.load("en")
-    for tPath in txtPaths:
-        print(tPath)
+    for tPath in tqdm(txtPaths):
         outFolder, fileName = "/".join(tPath.split("/")[:-1]), tPath.split("/")[-1]
         # guess language
         if re.search(r"[0-9]{1,2}_EN[_\.]", fileName) is not None:
@@ -862,7 +924,7 @@ def segmentAndYasaAlign(in_folder):
 
 
 def getLengthRemnant(htmlFilePath, remnList=None):
-    remnantFilePath = htmlFilePath.replace(".highlight.html", ".remnant")
+    remnantFilePath = htmlFilePath.replace(".highlight.html", ".remnant").replace(".highlightnltk.html", ".remnantnltk").replace(".highlightspacy.html", ".remnantspacy")
     with open(remnantFilePath) as remnantFile:
         # get the lengths
         lnLengths = [len(ln.replace("\n", "")) for ln in remnantFile.readlines()]
@@ -968,11 +1030,22 @@ def launchTask(task, inputPath, outputPath, option):
     # GET A SAMPLE OF ORIGINAL DOCS (does not require inputPath)
     if task in ["getOriginals"]:
         # select n random flagged docs, default is 10
-        option = 10 if option == -1 else option
+        option = 10 if option not in [""] else option
         selectNRandomFlaggedOrigDocs(option, outputPath)
     # HIGHLIGHT THE SENT IN THE TMX APPEARING IN THE ORIGINAL (does not require outputPath)
-    elif task in ["highlight"]:
-        if option != -1:
+    elif task in ["highlight", "highlights"]:
+        option = re.split(r"[ ]?,[ ]?", option)
+        convert = True if option[0].lower() in ["convert", "conv"] else False
+        removeSpaces = False if option[1] in [False, "False", "false", "f"] else True
+        if option[2] in ["t", "tmx", "Tmx", "TMX", ""]:
+            alignUsed = ""
+        elif option[2] in ["s", "spa", "spacy", "Spacy"]:
+            alignUsed = "spacy"
+        elif option[2] in ["n", "nltk", "NLTK"]:
+            alignUsed = "nltk"
+        else:
+            raise TypeError("option argument not in the choices")
+        if convert:
             # inputPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/NOT-FLAGGED/'
             # inputPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/FLAGGED/'
             # inputPath = u'/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/'
@@ -987,17 +1060,30 @@ def launchTask(task, inputPath, outputPath, option):
             # pathsList = [f for f in pathsList if u'.tmx' not in f]
             # pathsList = [f for f in pathsList if u'flagging-' not in f]
             # pathsList = [f for f in pathsList if u'QUALITY' in f]
-            # print(len(pathsList))
             # # countNbSpInTmx(pathsList)
-        highlightHtmlAlign(pathList, removeSpaces=True)
+        highlightHtmlAlign(pathList, removeSpaces, alignUsed)
     # COUNT THE NB OF SP/CHARS, NOT FOUND SENT and REMNANTS (does not require outputPath)
-    elif task in ["stats"]:
+    elif task in ["stats", "stat"]:
         # inputPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23_exact_match/"
         # inputPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23_nonbreaking_remove/"
         # inputPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/"
+        #  get the options right
+        sourceLang = ""
+        section = (1,1)
+        form = ""
+        if option not in [""]:
+            option = re.split(r"[ ]?,[ ]?", option)
+            sourceLang = "" if option[0] in ["", "both", "all", "fr-en", "en-fr", "fren", "enfr"] else option[0]
+            try:
+                section = (int(option[1]), int(option[2]))
+                if len(option) == 4:
+                    form = option[3].lower() if option[3].lower() not in ["t", "tmx", "Tmx", "TMX"] else ""
+            except TypeError:
+                raise TypeError("option argument not in the choices")
         # get the paths to highlighted files
-        intersectionPaths = utilsOs.goDeepGetFiles(inputPath, fileList=[], format=u".highlight.html")
-        getAlignDataStats(intersectionPaths, classifyByMismatchType=False, sourceLang="en", section=(1, 1), countInChars=True)
+        intersectionPaths = utilsOs.goDeepGetFiles(inputPath, fileList=[], format=u"txt.highlight{0}.html".format(form))
+        getAlignDataStats(intersectionPaths, classifyByMismatchType=False, sourceLang=sourceLang, section=section,
+                          countInChars=True)
     # SENTENCE SEGMENTATION (does not require option)
     elif task in ["segmentation", "segment"]:
         # outSpacy = "/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23_exact_match/a_spacy_sent_split_docs/"
@@ -1018,6 +1104,8 @@ def launchTask(task, inputPath, outputPath, option):
         # inputPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23_nonbreaking_remove/"
         # inputPath = u"/data/rali5/Tmp/alfonsda/workRali/004tradBureau/008originalDocumentsBt/sampleNOT-FLAGGEDinDC23/"
         segmentAndYasaAlign(inputPath)
+    else:
+        raise ValueError("the task is not recognized")
 
 
 ########################################################################
@@ -1034,7 +1122,8 @@ if __name__ == '__main__':
                         help="Task to launch. Choices: getOriginals, highlight, stats, segmentation, yasa")
     parser.add_argument("-in", "--input", default="", type=str, help="path to the input folder or file")
     parser.add_argument("-out", "--output", default="", type=str, help="path to the output folder or file")
-    parser.add_argument("-opt", "--option", default=-1, type=int, help="optional argument to send to the task function")
+    parser.add_argument("-opt", "--option", default="", type=str,
+                        help="optional argument to send to the task function, if multiple, separate using a comma ','")
     args = parser.parse_args()
 
     task = args.task
