@@ -4,11 +4,12 @@
 import sys
 sys.path.append(u"../utils")
 sys.path.append(u"./utils")
-import time, datetime, random, b000path, utilsOs
+import re, time, datetime, random, b000path, utilsOs
 from tkinter import Tk
 from tkinter import TclError
 from selenium import webdriver
 from selenium.common.exceptions import NoSuchElementException, ElementClickInterceptedException
+from selenium.webdriver.common.keys import Keys
 
 
 def authentificateBtUseSelenium(user, passw, session=None):
@@ -331,6 +332,156 @@ def launchForOneWeek(tokLimit=20000,
         today = datetime.datetime.today().weekday()
     return totalTokCount
 
+
+def launchForACorpusDeepL(inPath, outPath=None, continueWhereWeLeftOf=True):
+    outPath = outPath if outPath is not None else re.sub(r"[._]en", ".fr2en", re.sub(r"[._]en", ".en2fr", inPath))
+    with open(inPath) as cn10k:
+        if continueWhereWeLeftOf is not True:
+            with open(outPath, "w") as out10k:
+                out10k.write("")
+                lastSeenInd = float("-inf")
+        else:
+            with open(outPath) as out10k:
+                lastSeenInd = 0
+                ouLn = out10k.readline()
+                while ouLn:
+                    lastSeenInd += 1
+                    ouLn = out10k.readline()
+        with open(outPath, "a") as out10k:
+            session = webdriver.Firefox(executable_path=u"/u/alfonsda/progs/geckoDriver/geckodriver")
+            session.get("https://www.deepl.com/translator")
+            counter = 0
+            cnLn = cn10k.readline()
+            start = utilsOs.countTime()
+            while cnLn:
+                if counter >= lastSeenInd:
+                    cnLn = cnLn.replace("\n", "")
+                    session, enFrTranslAndAlt, timeStampEn = translateOneLang(session, u"en", cnLn,
+                                                                              len(cnLn.split(" ")), [])
+                    out10k.write("{0}\n".format(enFrTranslAndAlt[0]))
+                    # take a coffee break if it's time
+                    if utilsOs.countTime(start) >= 600:
+                        session.close()
+                        time.sleep(random.uniform(20, 60))
+                        start = utilsOs.countTime()
+                        # open the driver
+                        try:
+                            session = webdriver.Firefox()
+                        except OSError:
+                            time.sleep(600)
+                            session = webdriver.Firefox()
+                        session.get("https://www.deepl.com/translator")
+                # next
+                cnLn = cn10k.readline()
+                counter += 1
+    session.close()
+
+
+def chooseLangGoogleTrans(session):
+    # choose english
+    langChoice = session.find_element_by_xpath(
+        "/html/body/div[2]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[1]/div[3]")
+    langChoice.click()
+    time.sleep(0.2)
+    textArea = session.find_element_by_xpath('//*[@id="sl_list-search-box"]')
+    textArea.click()
+    time.sleep(0.2)
+    textArea.send_keys("english")
+    srcLang = session.find_element_by_xpath(
+        "/html/body/div[2]/div[2]/div[3]/div/div[2]/div[1]/div[3]/div[21]/div[2]/div/b")
+    srcLang.click()
+    time.sleep(0.2)
+    # choose french
+    langChoice = session.find_element_by_xpath(
+        "/html/body/div[2]/div[2]/div[1]/div[2]/div[1]/div[1]/div[1]/div[1]/div[4]/div[3]")
+    langChoice.click()
+    time.sleep(0.2)
+    textArea = session.find_element_by_xpath('//*[@id="tl_list-search-box"]')
+    textArea.click()
+    time.sleep(0.2)
+    textArea.send_keys("french")
+    trgtLang = session.find_element_by_xpath(
+        "/html/body/div[2]/div[2]/div[3]/div/div[2]/div[2]/div[3]/div[27]/div[2]/div")
+    trgtLang.click()
+    return session
+
+
+def writeSrcGetTrgt(session, srcString):
+    # send src text
+    srcTextArea = session.find_element_by_xpath('//*[@id="source"]')
+    srcTextArea.click()
+    time.sleep(0.2)
+    srcTextArea.send_keys(srcString)
+    srcTextArea.send_keys(Keys.ENTER)
+    time.sleep(random.uniform(0.7, 1.0))
+    # get trgt (translation)
+    try:
+        trgtTextArea = session.find_element_by_xpath(
+            "/html/body/div[2]/div[2]/div[1]/div[2]/div[1]/div[1]/div[2]/div[3]/div[1]/div[2]/div/span[1]")
+        translation = trgtTextArea.text
+        time.sleep(random.uniform(0.4, 0.6))
+    except NoSuchElementException:
+        try:
+            trgtTextArea = session.find_element_by_xpath(
+                "/html/body/div[2]/div[2]/div[1]/div[2]/div[1]/div[1]/div[2]/div[3]/div[1]/div[2]/div/span[1]/span")
+            translation = trgtTextArea.text
+            time.sleep(random.uniform(0.4, 0.6))
+        except NoSuchElementException:
+            translation = ""
+            for n in range(1, 10):
+                trgtTextArea = session.find_element_by_xpath(
+                    "/html/body/div[2]/div[2]/div[1]/div[2]/div[1]/div[1]/div[2]/div[3]/div[1]/div[2]/div/span[1]/span[{0}]".format(n))
+                translation += "{0} ".format(trgtTextArea.text)
+            translation = translation[:-1]
+    srcTextArea.clear()
+    return translation, session
+
+
+def launchForACorpusGoogle(inPath, outPath=None, continueWhereWeLeftOf=True):
+    outPath = outPath if outPath is not None else re.sub(r"[._]en", ".fr2en", re.sub(r"[._]en", ".en2fr", inPath))
+    with open(inPath) as cn10k:
+        if continueWhereWeLeftOf is not True:
+            with open(outPath, "w") as out10k:
+                out10k.write("")
+                lastSeenInd = float("-inf")
+        else:
+            with open(outPath) as out10k:
+                lastSeenInd = 0
+                ouLn = out10k.readline()
+                while ouLn:
+                    lastSeenInd += 1
+                    ouLn = out10k.readline()
+        with open(outPath, "a") as out10k:
+            session = webdriver.Firefox(executable_path=u"/u/alfonsda/progs/geckoDriver/geckodriver")
+            session.get("https://translate.google.ca/")
+            counter = 0
+            cnLn = cn10k.readline()
+            start = utilsOs.countTime()
+            while cnLn:
+                if counter >= lastSeenInd:
+                    cnLn = cnLn.replace("\n", "")
+
+                    session = chooseLangGoogleTrans(session)
+                    translation, session = writeSrcGetTrgt(session, cnLn)
+                    out10k.write("{0}\n".format(translation))
+                    # take a coffee break if it's time
+                    if utilsOs.countTime(start) >= 600:
+                        session.close()
+                        time.sleep(random.uniform(20, 60))
+                        start = utilsOs.countTime()
+                        # open the driver
+                        try:
+                            session = webdriver.Firefox(executable_path=u"/u/alfonsda/progs/geckoDriver/geckodriver")
+                        except OSError:
+                            time.sleep(600)
+                            session = webdriver.Firefox(executable_path=u"/u/alfonsda/progs/geckoDriver/geckodriver")
+                        session.get("https://translate.google.ca/")
+                # next
+                cnLn = cn10k.readline()
+                counter += 1
+    session.close()
+
+
 # count the time the algorithm takes to run
 startTime = utilsOs.countTime()
 
@@ -356,40 +507,15 @@ startTime = utilsOs.countTime()
 
 # translate 10k sentences as test set for shiv 2nd article
 # time.sleep(10000)
-with open("/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017.2nonBTdeepLTranslatedCorpus/CN_parliament_all_DeepL.en") as cn10k:
-    with open("/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017.2nonBTdeepLTranslatedCorpus/CN_parliament_all_DeepL.en2fr") as out10k:
-        lastSeenInd = 0
-        ouLn = out10k.readline()
-        while ouLn:
-            lastSeenInd += 1
-            ouLn = out10k.readline()
-    with open("/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017.2nonBTdeepLTranslatedCorpus/CN_parliament_all_DeepL.en2fr",
-            "a") as out10k:
-        session = webdriver.Firefox(executable_path=u"/u/alfonsda/progs/geckoDriver/geckodriver")
-        session.get("https://www.deepl.com/translator")
-        counter = 0
-        cnLn = cn10k.readline()
-        start = utilsOs.countTime()
-        while cnLn:
-            if counter >= lastSeenInd:
-                cnLn = cnLn.replace("\n", "")
-                session, enFrTranslAndAlt, timeStampEn = translateOneLang(session, u"en", cnLn, len(cnLn.split(" ")), [])
-                out10k.write("{0}\n".format(enFrTranslAndAlt[0]))
-                # take a coffee break if it's time
-                if utilsOs.countTime(start) >= 600:
-                    session.close()
-                    time.sleep(random.uniform(20, 60))
-                    start = utilsOs.countTime()
-                    # open the driver
-                    try:
-                        session = webdriver.Firefox()
-                    except OSError:
-                        time.sleep(600)
-                        session = webdriver.Firefox()
-                    session.get("https://www.deepl.com/translator")
-            # next
-            cnLn = cn10k.readline()
-            counter += 1
+# # with DEEPL
+# inPath = "/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017.2nonBTdeepLTranslatedCorpus/CN_parliament_all_DeepL.en"
+# outPath = "/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017.2nonBTdeepLTranslatedCorpus/CN_parliament_all_DeepL.en2fr"
+# launchForACorpusDeepL(inPath, outPath, continueWhereWeLeftOf=True)
+# with GOOGLE
+inPath = "/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017.2nonBTdeepLTranslatedCorpus/CN_parliament_all_DeepL.en"
+outPath = "/data/rali5/Tmp/alfonsda/workRali/004tradBureau/017.2nonBTdeepLTranslatedCorpus/CN_parliament_all_GoogleTranslate.en2fr"
+launchForACorpusGoogle(inPath, outPath, continueWhereWeLeftOf=True)
+
 
 # print the time the algorithm took to run
 print(u'\nTIME IN SECONDS ::', utilsOs.countTime(startTime))
